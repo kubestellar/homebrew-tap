@@ -5,27 +5,27 @@ class KubectlClaude < Formula
   desc "AI-powered multi-cluster Kubernetes management for Claude Code"
   homepage "https://github.com/kubestellar/kubectl-claude"
   license "Apache-2.0"
-  version "0.1.0"
+  version "0.2.0"
 
   on_macos do
     on_intel do
-      url "https://github.com/kubestellar/kubectl-claude/releases/download/v0.1.0/kubectl-claude_0.1.0_darwin_amd64.tar.gz"
-      sha256 "c25d85821bebb0aa28b32637447a6bd2d768a060a9eb868f7ab6bc66dd536c12"
+      url "https://github.com/kubestellar/kubectl-claude/releases/download/v0.2.0/kubectl-claude_0.2.0_darwin_amd64.tar.gz"
+      sha256 "f553035d9df21c3cfdf0833e89cd80fd74876ccbfba6af0c28fc95beea53cd00"
     end
     on_arm do
-      url "https://github.com/kubestellar/kubectl-claude/releases/download/v0.1.0/kubectl-claude_0.1.0_darwin_arm64.tar.gz"
-      sha256 "ec02f9414a2484bd9ea1901184266391229760c6364560dc1b9f6d2fefee594b"
+      url "https://github.com/kubestellar/kubectl-claude/releases/download/v0.2.0/kubectl-claude_0.2.0_darwin_arm64.tar.gz"
+      sha256 "0ef5be88023662c1fca2bd32ec565eb44b00c85a3aaf74552c0a7c8c30cec66e"
     end
   end
 
   on_linux do
     on_intel do
-      url "https://github.com/kubestellar/kubectl-claude/releases/download/v0.1.0/kubectl-claude_0.1.0_linux_amd64.tar.gz"
-      sha256 "0da2044e403d0f12692e04ceb44b1e9b3bd2772f3c39930f2ec4309c654c6554"
+      url "https://github.com/kubestellar/kubectl-claude/releases/download/v0.2.0/kubectl-claude_0.2.0_linux_amd64.tar.gz"
+      sha256 "1c1296150e00edc6ec3031d69d7fa29405324561432dae571cc9e10d19305fd7"
     end
     on_arm do
-      url "https://github.com/kubestellar/kubectl-claude/releases/download/v0.1.0/kubectl-claude_0.1.0_linux_arm64.tar.gz"
-      sha256 "4ee18816b0173d303e6f490b374ee0170b0cabbe3e626756186786551364e93a"
+      url "https://github.com/kubestellar/kubectl-claude/releases/download/v0.2.0/kubectl-claude_0.2.0_linux_arm64.tar.gz"
+      sha256 "ef64a8d92e6f6341bcf2df64367aa6be426bf78f7fec393f87917661931c37ab"
     end
   end
 
