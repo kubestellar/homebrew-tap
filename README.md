@@ -35,6 +35,17 @@ Or install via the Claude Code plugin marketplace:
 /plugin marketplace add kubestellar/claude-plugins
 ```
 
+**Allow tools without prompts** - add to `~/.claude/settings.json`:
+```json
+{
+  "permissions": {
+    "allow": [
+      "mcp__plugin_kubectl-claude_kubectl-claude__*"
+    ]
+  }
+}
+```
+
 ## Links
 
 - [kubectl-claude](https://github.com/kubestellar/kubectl-claude)
