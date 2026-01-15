@@ -45,8 +45,9 @@ kubectl-claude --mcp-server
 | `/k8s-security` | Security audit (privileged, root, host access) |
 | `/k8s-rbac` | Analyze RBAC permissions for a subject |
 | `/k8s-audit-kubeconfig` | Audit kubeconfig clusters and recommend cleanup |
+| `/k8s-ownership` | Set up resource ownership tracking with OPA Gatekeeper |
 
-### MCP Tools (23 tools)
+### MCP Tools (30 tools)
 
 **Cluster Management**
 - `list_clusters` - Discover clusters from kubeconfig
@@ -69,6 +70,15 @@ kubectl-claude --mcp-server
 - `check_security_issues` - Privileged containers, root users, host network
 - `analyze_namespace` - Comprehensive namespace analysis
 - `get_warning_events` - Warning events only
+- `find_resource_owners` - Find who owns/manages resources via managedFields, labels
+
+**OPA Gatekeeper Policy**
+- `check_gatekeeper` - Check if Gatekeeper is installed
+- `get_ownership_policy_status` - Get policy config and violation count
+- `list_ownership_violations` - List resources missing ownership labels
+- `install_ownership_policy` - Install ownership policy (dryrun/warn/enforce)
+- `set_ownership_policy_mode` - Change enforcement mode
+- `uninstall_ownership_policy` - Remove the policy
 
 ### Allow Tools Without Prompts
 
