@@ -5,21 +5,21 @@
 class KubectlClaude < Formula
   desc "AI-powered multi-cluster Kubernetes management for Claude Code"
   homepage "https://github.com/kubestellar/kubectl-claude"
-  version "0.4.2"
+  version "0.4.3"
   license "Apache-2.0"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/kubestellar/kubectl-claude/releases/download/v0.4.2/kubectl-claude_0.4.2_darwin_amd64.tar.gz"
-      sha256 "641ac665a334a84765e2893471dcd5a3dca66190fdf67baca159e5af302c8b3c"
+      url "https://github.com/kubestellar/kubectl-claude/releases/download/v0.4.3/kubectl-claude_0.4.3_darwin_amd64.tar.gz"
+      sha256 "e0736c5e970f992a99f7ded3bb93b5b93d8d8ba39aa61b9f398215bd61111144"
 
       def install
         bin.install "kubectl-claude"
       end
     end
     if Hardware::CPU.arm?
-      url "https://github.com/kubestellar/kubectl-claude/releases/download/v0.4.2/kubectl-claude_0.4.2_darwin_arm64.tar.gz"
-      sha256 "1e9373dafaf2c3557d8f33dd9077c5829c7df594907c47fe0a4810cee30b43e0"
+      url "https://github.com/kubestellar/kubectl-claude/releases/download/v0.4.3/kubectl-claude_0.4.3_darwin_arm64.tar.gz"
+      sha256 "1bf53357cc866eb8e099c698f1988619d721b6e039c647df3c1acf68c2350935"
 
       def install
         bin.install "kubectl-claude"
@@ -29,15 +29,15 @@ class KubectlClaude < Formula
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/kubestellar/kubectl-claude/releases/download/v0.4.2/kubectl-claude_0.4.2_linux_amd64.tar.gz"
-      sha256 "ca919c273126c6fbb31f712113efe23e30d762b2f07dbeddc8666c2bd5c2bdb1"
+      url "https://github.com/kubestellar/kubectl-claude/releases/download/v0.4.3/kubectl-claude_0.4.3_linux_amd64.tar.gz"
+      sha256 "54575a438b2155aae5434195214c65106556b3cfd184a135e5bc8f05fb22d0d0"
       def install
         bin.install "kubectl-claude"
       end
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/kubestellar/kubectl-claude/releases/download/v0.4.2/kubectl-claude_0.4.2_linux_arm64.tar.gz"
-      sha256 "43003b9add5d930aa8eab58a7bf1b48f81dd7a51a803013b99b35b82a03f7a09"
+      url "https://github.com/kubestellar/kubectl-claude/releases/download/v0.4.3/kubectl-claude_0.4.3_linux_arm64.tar.gz"
+      sha256 "0ff980ec0fce7b18d6fb479440400278d2511fcd39dda4171e23748947ff708b"
       def install
         bin.install "kubectl-claude"
       end
