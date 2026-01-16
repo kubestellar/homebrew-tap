@@ -5,21 +5,21 @@
 class KlaudeDeploy < Formula
   desc "App-centric multi-cluster deployment and operations for Kubernetes"
   homepage "https://github.com/kubestellar/klaude"
-  version "0.7.1"
+  version "0.8.0"
   license "Apache-2.0"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/kubestellar/klaude/releases/download/v0.7.1/klaude-deploy_0.7.1_darwin_amd64.tar.gz"
-      sha256 "0da1dd5aa8acdb535c7fa6806fb741c0c87814ceef9c962b3df43a9fd9141f58"
+      url "https://github.com/kubestellar/klaude/releases/download/v0.8.0/klaude-deploy_0.8.0_darwin_amd64.tar.gz"
+      sha256 "47cfeb85dd0047a2020fd390fcc97aaa82ff2d97577ce826ebfceee95f9e4374"
 
       def install
         bin.install "klaude-deploy"
       end
     end
     if Hardware::CPU.arm?
-      url "https://github.com/kubestellar/klaude/releases/download/v0.7.1/klaude-deploy_0.7.1_darwin_arm64.tar.gz"
-      sha256 "6fcd52f1d2c258a0d40bf785e0b42bd155388063896be87c461f13c7f1aa0ce4"
+      url "https://github.com/kubestellar/klaude/releases/download/v0.8.0/klaude-deploy_0.8.0_darwin_arm64.tar.gz"
+      sha256 "1dfdfffa2f118cd194057ffb8de6a3603c51c8a706a68cf67dd4ac568d81be2c"
 
       def install
         bin.install "klaude-deploy"
@@ -29,15 +29,15 @@ class KlaudeDeploy < Formula
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/kubestellar/klaude/releases/download/v0.7.1/klaude-deploy_0.7.1_linux_amd64.tar.gz"
-      sha256 "f012c5eb3fc02fa3b9365c8c670b304a578da870878f34ce67c2c4c34e984767"
+      url "https://github.com/kubestellar/klaude/releases/download/v0.8.0/klaude-deploy_0.8.0_linux_amd64.tar.gz"
+      sha256 "026e1dd102c9a61cf74d08fd3d0b4fdae67d8e1ffdc092d46c36adb8566aa29e"
       def install
         bin.install "klaude-deploy"
       end
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/kubestellar/klaude/releases/download/v0.7.1/klaude-deploy_0.7.1_linux_arm64.tar.gz"
-      sha256 "bf17fc034e563d3a44d5d1446f7b0751988b857d8b1b91196fb10e414ccb79ef"
+      url "https://github.com/kubestellar/klaude/releases/download/v0.8.0/klaude-deploy_0.8.0_linux_arm64.tar.gz"
+      sha256 "5c528fc2520277297573d386ce1bae0dcddfcacf73223bc66c361250b14557ab"
       def install
         bin.install "klaude-deploy"
       end
