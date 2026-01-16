@@ -5,21 +5,21 @@
 class KlaudeOps < Formula
   desc "Multi-cluster Kubernetes diagnostics, RBAC analysis, and security checks"
   homepage "https://github.com/kubestellar/klaude"
-  version "0.8.0"
+  version "0.8.1"
   license "Apache-2.0"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/kubestellar/klaude/releases/download/v0.8.0/klaude-ops_0.8.0_darwin_amd64.tar.gz"
-      sha256 "b592d6c53aa0b02db1a53a6d9955ab20cec209921f91180ccba7779a4c1a2aec"
+      url "https://github.com/kubestellar/klaude/releases/download/v0.8.1/klaude-ops_0.8.1_darwin_amd64.tar.gz"
+      sha256 "c986060b6a5a7422ad5fffa831fef7dff0a94b8cd4ead8c441960ee034f9ff50"
 
       def install
         bin.install "klaude-ops"
       end
     end
     if Hardware::CPU.arm?
-      url "https://github.com/kubestellar/klaude/releases/download/v0.8.0/klaude-ops_0.8.0_darwin_arm64.tar.gz"
-      sha256 "944ebe78853c749135c65f50985ba55d773ac7c432084e1d959a28be65d4a41c"
+      url "https://github.com/kubestellar/klaude/releases/download/v0.8.1/klaude-ops_0.8.1_darwin_arm64.tar.gz"
+      sha256 "f6d081002f9cd25816c569ccae1be4574af7e046da984488a607e9a24f701af0"
 
       def install
         bin.install "klaude-ops"
@@ -29,15 +29,15 @@ class KlaudeOps < Formula
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/kubestellar/klaude/releases/download/v0.8.0/klaude-ops_0.8.0_linux_amd64.tar.gz"
-      sha256 "9c5968c537706e55536c31d0322ebbf96c638852edc9331741815e57ee29379f"
+      url "https://github.com/kubestellar/klaude/releases/download/v0.8.1/klaude-ops_0.8.1_linux_amd64.tar.gz"
+      sha256 "97bf8c761ab7f52aa8f553c019aa63a360e002b3f02577be70d22c1388c646b7"
       def install
         bin.install "klaude-ops"
       end
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/kubestellar/klaude/releases/download/v0.8.0/klaude-ops_0.8.0_linux_arm64.tar.gz"
-      sha256 "776cb10ab5ac30540772f6d84088509210e384b155f6557303187ce10f5b40ac"
+      url "https://github.com/kubestellar/klaude/releases/download/v0.8.1/klaude-ops_0.8.1_linux_arm64.tar.gz"
+      sha256 "b965e31e6c19ffd9036c4e9ce78d1dbea76ccedf4075b92333fdb2d67d34cafe"
       def install
         bin.install "klaude-ops"
       end
