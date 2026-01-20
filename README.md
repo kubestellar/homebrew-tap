@@ -102,8 +102,70 @@ Ask Claude Code:
 - "What permissions does the admin service account have?"
 - "Audit my kubeconfig and show stale clusters"
 
+## kkc-agent
+
+Local agent for KubeStellar Klaude Console - bridges your browser to your kubeconfig and Claude Code CLI.
+
+### Installation
+
+```bash
+brew tap kubestellar/tap
+brew install --head kkc-agent
+```
+
+### Usage
+
+```bash
+# Start the agent (runs on localhost:8585)
+kkc-agent
+
+# Or run as a background service
+brew services start kubestellar/tap/kkc-agent
+```
+
+### Configuration
+
+| Environment Variable | Description | Default |
+|---------------------|-------------|---------|
+| `KKC_ALLOWED_ORIGINS` | Comma-separated list of allowed origins for CORS | localhost only |
+| `KKC_AGENT_TOKEN` | Optional shared secret for authentication | (none) |
+
+#### Adding Custom Origins
+
+If you're running the console on a custom domain:
+
+```bash
+# Single origin
+KKC_ALLOWED_ORIGINS="https://my-console.example.com" kkc-agent
+
+# Multiple origins
+KKC_ALLOWED_ORIGINS="https://console1.example.com,https://console2.example.com" kkc-agent
+```
+
+#### Running as a Service with Custom Origins
+
+Add to your shell profile (`~/.zshrc` or `~/.bashrc`):
+
+```bash
+export KKC_ALLOWED_ORIGINS="https://my-console.example.com"
+```
+
+Then restart:
+
+```bash
+brew services restart kubestellar/tap/kkc-agent
+```
+
+### Security
+
+- **Origin Validation**: Only allows connections from configured origins
+- **Localhost Only**: Binds to `127.0.0.1` - not accessible from other machines
+- **Optional Token Auth**: Can require a shared secret via `KKC_AGENT_TOKEN`
+- **Command Allowlist**: Only permits safe kubectl commands
+
 ## Links
 
+- [KubeStellar Klaude Console](https://github.com/kubestellar/console)
 - [kubectl-claude](https://github.com/kubestellar/kubectl-claude)
 - [KubeStellar](https://kubestellar.io)
 - [Claude Plugins Marketplace](https://github.com/kubestellar/claude-plugins)
