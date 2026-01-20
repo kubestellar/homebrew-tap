@@ -4,10 +4,9 @@
 class KkcAgent < Formula
   desc "Local agent for KubeStellar Klaude Console - bridges browser to kubeconfig and Claude Code"
   homepage "https://github.com/kubestellar/console"
-  version "0.2.0"
+  version "0.3.0"
   license "Apache-2.0"
 
-  # Build from source until first binary release
   head "https://github.com/kubestellar/console.git", branch: "main"
 
   depends_on "go" => :build
@@ -28,7 +27,18 @@ class KkcAgent < Formula
 
       The agent listens on http://127.0.0.1:8585 (localhost only).
       Open the KubeStellar Klaude Console in your browser to connect.
+
+      Environment variables:
+        KKC_ALLOWED_ORIGINS  - Comma-separated list of additional allowed origins
+        KKC_AGENT_TOKEN      - Optional shared secret for authentication
     EOS
+  end
+
+  service do
+    run [opt_bin/"kkc-agent"]
+    keep_alive true
+    log_path var/"log/kkc-agent.log"
+    error_log_path var/"log/kkc-agent.log"
   end
 
   test do
