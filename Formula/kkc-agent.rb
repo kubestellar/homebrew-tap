@@ -4,8 +4,8 @@
 class KkcAgent < Formula
   desc "Local agent for KubeStellar Klaude Console - bridges browser to kubeconfig and Claude Code"
   homepage "https://github.com/kubestellar/console"
-  url "https://github.com/kubestellar/console/archive/refs/tags/v0.3.3.tar.gz"
-  sha256 "440b0894682c47a095b622f6b3d183477a639f9fea0bbd6402877de17941748a"
+  url "https://github.com/kubestellar/console/archive/refs/tags/v0.3.4.tar.gz"
+  sha256 "c898f3d3197383e89965e79a723aadccb38c51ae1a13483b5f4d4643bd3aacd1"
   license "Apache-2.0"
 
   head "https://github.com/kubestellar/console.git", branch: "main"
@@ -43,6 +43,6 @@ class KkcAgent < Formula
   end
 
   test do
-    assert_match "v0.3.3", shell_output("#{bin}/kkc-agent --version")
+    assert_match "v0.3.4", shell_output("#{bin}/kkc-agent --version")
   end
 end
