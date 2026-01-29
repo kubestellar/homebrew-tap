@@ -102,7 +102,7 @@ Ask Claude Code:
 - "What permissions does the admin service account have?"
 - "Audit my kubeconfig and show stale clusters"
 
-## ksc-agent
+## kc-agent
 
 Local agent for KubeStellar Console - bridges your browser to your kubeconfig and Claude Code CLI.
 
@@ -110,25 +110,25 @@ Local agent for KubeStellar Console - bridges your browser to your kubeconfig an
 
 ```bash
 brew tap kubestellar/tap
-brew install ksc-agent
+brew install kc-agent
 ```
 
 ### Usage
 
 ```bash
 # Start the agent (runs on localhost:8585)
-ksc-agent
+kc-agent
 
 # Or run as a background service
-brew services start kubestellar/tap/ksc-agent
+brew services start kubestellar/tap/kc-agent
 ```
 
 ### Configuration
 
 | Environment Variable | Description | Default |
 |---------------------|-------------|---------|
-| `KSC_ALLOWED_ORIGINS` | Comma-separated list of allowed origins for CORS | localhost only |
-| `KSC_AGENT_TOKEN` | Optional shared secret for authentication | (none) |
+| `KC_ALLOWED_ORIGINS` | Comma-separated list of allowed origins for CORS | localhost only |
+| `KC_AGENT_TOKEN` | Optional shared secret for authentication | (none) |
 
 #### Adding Custom Origins
 
@@ -136,10 +136,10 @@ If you're running the console on a custom domain:
 
 ```bash
 # Single origin
-KSC_ALLOWED_ORIGINS="https://my-console.example.com" ksc-agent
+KC_ALLOWED_ORIGINS="https://my-console.example.com" kc-agent
 
 # Multiple origins
-KSC_ALLOWED_ORIGINS="https://console1.example.com,https://console2.example.com" ksc-agent
+KC_ALLOWED_ORIGINS="https://console1.example.com,https://console2.example.com" kc-agent
 ```
 
 #### Running as a Service with Custom Origins
@@ -147,20 +147,20 @@ KSC_ALLOWED_ORIGINS="https://console1.example.com,https://console2.example.com" 
 Add to your shell profile (`~/.zshrc` or `~/.bashrc`):
 
 ```bash
-export KSC_ALLOWED_ORIGINS="https://my-console.example.com"
+export KC_ALLOWED_ORIGINS="https://my-console.example.com"
 ```
 
 Then restart:
 
 ```bash
-brew services restart kubestellar/tap/ksc-agent
+brew services restart kubestellar/tap/kc-agent
 ```
 
 ### Security
 
 - **Origin Validation**: Only allows connections from configured origins
 - **Localhost Only**: Binds to `127.0.0.1` - not accessible from other machines
-- **Optional Token Auth**: Can require a shared secret via `KSC_AGENT_TOKEN`
+- **Optional Token Auth**: Can require a shared secret via `KC_AGENT_TOKEN`
 - **Command Allowlist**: Only permits safe kubectl commands
 
 ## Links
