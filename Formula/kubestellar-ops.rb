@@ -5,41 +5,41 @@
 class KubestellarOps < Formula
   desc "Multi-cluster Kubernetes diagnostics, RBAC analysis, and security checks"
   homepage "https://github.com/kubestellar/kubestellar-mcp"
-  version "0.8.1"
+  version "0.8.2-nightly.20260129"
   license "Apache-2.0"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/kubestellar/kubestellar-mcp/releases/download/v0.8.1/klaude-ops_0.8.1_darwin_amd64.tar.gz"
-      sha256 "c986060b6a5a7422ad5fffa831fef7dff0a94b8cd4ead8c441960ee034f9ff50"
+      url "https://github.com/kubestellar/kubestellar-mcp/releases/download/v0.8.2-nightly.20260129/kubestellar-ops_0.8.2-nightly.20260129_darwin_amd64.tar.gz"
+      sha256 "11ccef283deb0723421bd4609b0df032af6c32ef747b7c3a211c96839fb16587"
 
       def install
-        bin.install "klaude-ops" => "kubestellar-ops"
+        bin.install "kubestellar-ops"
       end
     end
     if Hardware::CPU.arm?
-      url "https://github.com/kubestellar/kubestellar-mcp/releases/download/v0.8.1/klaude-ops_0.8.1_darwin_arm64.tar.gz"
-      sha256 "f6d081002f9cd25816c569ccae1be4574af7e046da984488a607e9a24f701af0"
+      url "https://github.com/kubestellar/kubestellar-mcp/releases/download/v0.8.2-nightly.20260129/kubestellar-ops_0.8.2-nightly.20260129_darwin_arm64.tar.gz"
+      sha256 "8f6af2e8f05c5f05123addd523b2ed359028ad4733e3197aa673a664879f8fa0"
 
       def install
-        bin.install "klaude-ops" => "kubestellar-ops"
+        bin.install "kubestellar-ops"
       end
     end
   end
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/kubestellar/kubestellar-mcp/releases/download/v0.8.1/klaude-ops_0.8.1_linux_amd64.tar.gz"
-      sha256 "97bf8c761ab7f52aa8f553c019aa63a360e002b3f02577be70d22c1388c646b7"
+      url "https://github.com/kubestellar/kubestellar-mcp/releases/download/v0.8.2-nightly.20260129/kubestellar-ops_0.8.2-nightly.20260129_linux_amd64.tar.gz"
+      sha256 "aa0b57f05974e1d2911cd4113f259f8fbdafd0118c2822bc856be7ed473b32f5"
       def install
-        bin.install "klaude-ops" => "kubestellar-ops"
+        bin.install "kubestellar-ops"
       end
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/kubestellar/kubestellar-mcp/releases/download/v0.8.1/klaude-ops_0.8.1_linux_arm64.tar.gz"
-      sha256 "b965e31e6c19ffd9036c4e9ce78d1dbea76ccedf4075b92333fdb2d67d34cafe"
+      url "https://github.com/kubestellar/kubestellar-mcp/releases/download/v0.8.2-nightly.20260129/kubestellar-ops_0.8.2-nightly.20260129_linux_arm64.tar.gz"
+      sha256 "a6d383036d2ff941cff80a9642767eaff143f88b9a897e72b9816335e5e52f84"
       def install
-        bin.install "klaude-ops" => "kubestellar-ops"
+        bin.install "kubestellar-ops"
       end
     end
   end
