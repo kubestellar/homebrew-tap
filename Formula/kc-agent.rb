@@ -11,7 +11,7 @@ class KcAgent < Formula
   on_macos do
     if Hardware::CPU.intel?
       url "https://github.com/kubestellar/console/releases/download/v0.3.9-nightly.20260211/kc-agent_0.3.9-nightly.20260211_darwin_amd64.tar.gz"
-      sha256 "dccbf76a1423cab1ed94689bca9800a9744c12a7b39416daf3ec4f034dc6255c"
+      sha256 "ff066077030b82441162b62e4e84d339f1348de5b464bc10d6b1b5c18d9a3d4d"
 
       def install
         bin.install "kc-agent"
@@ -19,7 +19,7 @@ class KcAgent < Formula
     end
     if Hardware::CPU.arm?
       url "https://github.com/kubestellar/console/releases/download/v0.3.9-nightly.20260211/kc-agent_0.3.9-nightly.20260211_darwin_arm64.tar.gz"
-      sha256 "c6393f98efef9593f2cbe357d7c792f4fae597c0805a91e544257b0c65b5360d"
+      sha256 "cb39bc0ff40c3f99caf111e4ca90cb47bd48d1060b3d068d4abb17ab685f9802"
 
       def install
         bin.install "kc-agent"
@@ -30,14 +30,14 @@ class KcAgent < Formula
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
       url "https://github.com/kubestellar/console/releases/download/v0.3.9-nightly.20260211/kc-agent_0.3.9-nightly.20260211_linux_amd64.tar.gz"
-      sha256 "ba678ca93f08847d4ee767e1281e639c3cab8cea0e91db8eb5c4812d4f8c1c31"
+      sha256 "0313eebd5f57e5c091ca3824a595dbc39f940c0a60c994e647867902d202c24e"
       def install
         bin.install "kc-agent"
       end
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
       url "https://github.com/kubestellar/console/releases/download/v0.3.9-nightly.20260211/kc-agent_0.3.9-nightly.20260211_linux_arm64.tar.gz"
-      sha256 "57ad2b355b4425588e2299093530591f42547449baa7ce9be0580c713ab52091"
+      sha256 "d2c0261527cbb120948b34489040b21bea3d6e3e0b183bb3e13fa240f87a604f"
       def install
         bin.install "kc-agent"
       end
