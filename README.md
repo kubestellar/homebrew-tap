@@ -6,6 +6,11 @@ Official Homebrew tap for KubeStellar tools.
 
 ```bash
 brew tap kubestellar/tap
+
+# Install the KubeStellar Console
+brew install kubestellar-console
+
+# Install kubectl-claude (AI-powered multi-cluster management)
 brew install kubectl-claude
 ```
 
@@ -101,6 +106,63 @@ Ask Claude Code:
 - "Check for security misconfigurations"
 - "What permissions does the admin service account have?"
 - "Audit my kubeconfig and show stale clusters"
+
+## kubestellar-console
+
+Multi-cluster Kubernetes management console with built-in AI support.
+
+### Installation
+
+```bash
+brew tap kubestellar/tap
+brew install kubestellar-console
+```
+
+This installs the console server binary and a launcher script. The `kc-agent` formula is installed automatically as a dependency.
+
+### Usage
+
+```bash
+# Start the console (opens browser to http://localhost:8080)
+kubestellar-console
+
+# Start on a custom port
+kubestellar-console --port 9090
+
+# Show help
+kubestellar-console --help
+```
+
+### Configuration
+
+| Environment Variable | Description | Default |
+|---------------------|-------------|---------|
+| `KC_CONSOLE_PORT` | Console server port | `8080` |
+| `KC_DATA_DIR` | Data directory for PID files, logs, .env | `~/.kubestellar-console` |
+| `GITHUB_CLIENT_ID` | GitHub OAuth client ID (optional) | (none) |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth client secret (optional) | (none) |
+
+To enable GitHub OAuth login, create `~/.kubestellar-console/.env`:
+
+```bash
+GITHUB_CLIENT_ID=your-client-id
+GITHUB_CLIENT_SECRET=your-client-secret
+```
+
+Without OAuth credentials, the console starts in dev mode with auto-login.
+
+### What it does
+
+- Downloads and runs the pre-built KubeStellar Console binary
+- Starts `kc-agent` as a background daemon (bridges browser to local kubeconfig)
+- Opens your browser automatically
+- Press `Ctrl+C` to stop the console (kc-agent continues in background)
+
+### Quick start (without Homebrew)
+
+```bash
+curl -sSL https://raw.githubusercontent.com/kubestellar/console/main/start.sh | bash
+```
 
 ## kc-agent
 
