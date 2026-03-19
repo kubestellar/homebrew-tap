@@ -4,30 +4,30 @@
 class KubestellarConsole < Formula
   desc "Multi-cluster Kubernetes management console with built-in AI support"
   homepage "https://github.com/kubestellar/console"
-  version "0.3.15"
+  version "0.3.16"
   license "Apache-2.0"
 
   depends_on "kubestellar/tap/kc-agent"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/kubestellar/console/releases/download/v0.3.15/console_0.3.15_darwin_amd64.tar.gz"
-      sha256 "f3d4a0e5dbb1951fc02d4d48382b40821e31f0c6837701863f3fe3ac76a5ca75"
+      url "https://github.com/kubestellar/console/releases/download/v0.3.16/console_0.3.16_darwin_amd64.tar.gz"
+      sha256 "b90af25f9f6f851be92adb90c5c4b5c3eb3b8b72c134b7410eb1d6b31a308212"
     end
     if Hardware::CPU.arm?
-      url "https://github.com/kubestellar/console/releases/download/v0.3.15/console_0.3.15_darwin_arm64.tar.gz"
-      sha256 "7604116bf5248c0fd501124bd41c50fb40fd6e55f32493cb83857709c466f20e"
+      url "https://github.com/kubestellar/console/releases/download/v0.3.16/console_0.3.16_darwin_arm64.tar.gz"
+      sha256 "2c92f12b8a85df825d9648a5a278b252b07efe390f3ca207b62a8864036d2f12"
     end
   end
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/kubestellar/console/releases/download/v0.3.15/console_0.3.15_linux_amd64.tar.gz"
-      sha256 "23e038e2d32a8fa5ddecec4f337c111e331ded6fc7ec248f94604288c536df63"
+      url "https://github.com/kubestellar/console/releases/download/v0.3.16/console_0.3.16_linux_amd64.tar.gz"
+      sha256 "145ffef8bb48989403543722bc15e13e9acb6b7552d877e3455327aa126726b1"
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/kubestellar/console/releases/download/v0.3.15/console_0.3.15_linux_arm64.tar.gz"
-      sha256 "7431366a9840ab44ec9d93a5e1914b444e1ac3c9b79236f170a6d9b6c1371058"
+      url "https://github.com/kubestellar/console/releases/download/v0.3.16/console_0.3.16_linux_arm64.tar.gz"
+      sha256 "5c76cba754c0a8e1e7471270d81ae5b6668d3573777dd6080e001ff0bd9501c6"
     end
   end
 
