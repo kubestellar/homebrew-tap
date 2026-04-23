@@ -7,11 +7,15 @@ Official Homebrew tap for KubeStellar tools.
 ```bash
 brew tap kubestellar/tap
 
-# Install the KubeStellar Console
+# Install the KubeStellar Console (includes kc-agent as dependency)
 brew install kubestellar-console
 
 # Install kubectl-claude (AI-powered multi-cluster management)
 brew install kubectl-claude
+
+# Install KubeStellar operational tools
+brew install kubestellar-ops
+brew install kubestellar-deploy
 ```
 
 ## kubectl-claude
