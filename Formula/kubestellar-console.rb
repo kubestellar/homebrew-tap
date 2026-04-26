@@ -4,30 +4,30 @@
 class KubestellarConsole < Formula
   desc "Multi-cluster Kubernetes management console with built-in AI support"
   homepage "https://github.com/kubestellar/console"
-  version "0.3.22"
+  version "0.3.23"
   license "Apache-2.0"
 
   depends_on "kubestellar/tap/kc-agent"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/kubestellar/console/releases/download/v0.3.22/console_0.3.22_darwin_amd64.tar.gz"
-      sha256 "ef8bac997ee953fd060413391eba22f399f1876626aab696967cc015bc0d54ea"
+      url "https://github.com/kubestellar/console/releases/download/v0.3.23/console_0.3.23_darwin_amd64.tar.gz"
+      sha256 "250b17e2eeba1123d7beca547c395e34ca4578ff75e477f245aac10449a031dc"
     end
     if Hardware::CPU.arm?
-      url "https://github.com/kubestellar/console/releases/download/v0.3.22/console_0.3.22_darwin_arm64.tar.gz"
-      sha256 "c321301e3ff08d8a0691a8cb939c887ea906b0244619dc76c61eec3c91fa0b0c"
+      url "https://github.com/kubestellar/console/releases/download/v0.3.23/console_0.3.23_darwin_arm64.tar.gz"
+      sha256 "bc7512bf386b75ecea9846b5896a1af2a7f6241b48123c7e7bf226820759c7d3"
     end
   end
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/kubestellar/console/releases/download/v0.3.22/console_0.3.22_linux_amd64.tar.gz"
-      sha256 "cbddf39bc54e9fae866d829c2ea2bf7f47dfb2d73de3d15d9641e4d01100f29c"
+      url "https://github.com/kubestellar/console/releases/download/v0.3.23/console_0.3.23_linux_amd64.tar.gz"
+      sha256 "02027391a96761cba3995097d6240b4b0baa848152d46396e5149a16d76cbe7d"
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/kubestellar/console/releases/download/v0.3.22/console_0.3.22_linux_arm64.tar.gz"
-      sha256 "a500a3f952ebd65ed40ce875e5c397ac4378ff4e7d3609f3ac1fa18cf71aed63"
+      url "https://github.com/kubestellar/console/releases/download/v0.3.23/console_0.3.23_linux_arm64.tar.gz"
+      sha256 "59543b7452a2da542e69b9d33dd0b28d7df9d0f365045242fcb2cb0b87965cda"
     end
   end
 
