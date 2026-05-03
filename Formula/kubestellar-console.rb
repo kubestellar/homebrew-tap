@@ -4,30 +4,30 @@
 class KubestellarConsole < Formula
   desc "Multi-cluster Kubernetes management console with built-in AI support"
   homepage "https://github.com/kubestellar/console"
-  version "0.3.23"
+  version "0.3.24"
   license "Apache-2.0"
 
   depends_on "kubestellar/tap/kc-agent"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/kubestellar/console/releases/download/v0.3.23/console_0.3.23_darwin_amd64.tar.gz"
-      sha256 "250b17e2eeba1123d7beca547c395e34ca4578ff75e477f245aac10449a031dc"
+      url "https://github.com/kubestellar/console/releases/download/v0.3.23/console_0.3.24_darwin_amd64.tar.gz"
+      sha256 "2a3ebdabcc71b194ab67987406e632f9d1ede5734375d981daee79342e682a1c"
     end
     if Hardware::CPU.arm?
-      url "https://github.com/kubestellar/console/releases/download/v0.3.23/console_0.3.23_darwin_arm64.tar.gz"
-      sha256 "bc7512bf386b75ecea9846b5896a1af2a7f6241b48123c7e7bf226820759c7d3"
+      url "https://github.com/kubestellar/console/releases/download/v0.3.23/console_0.3.24_darwin_arm64.tar.gz"
+      sha256 "a46f2b15e4b47b2c7d102a98a281ddf07aee4621ac93f07ba96ed0c14ea04a0d"
     end
   end
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/kubestellar/console/releases/download/v0.3.23/console_0.3.23_linux_amd64.tar.gz"
-      sha256 "02027391a96761cba3995097d6240b4b0baa848152d46396e5149a16d76cbe7d"
+      url "https://github.com/kubestellar/console/releases/download/v0.3.23/console_0.3.24_linux_amd64.tar.gz"
+      sha256 "9bb4a05fa94934226f5808dbf1ddce17ba691bbe4f42e2951c1212f6b72fb266"
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/kubestellar/console/releases/download/v0.3.23/console_0.3.23_linux_arm64.tar.gz"
-      sha256 "59543b7452a2da542e69b9d33dd0b28d7df9d0f365045242fcb2cb0b87965cda"
+      url "https://github.com/kubestellar/console/releases/download/v0.3.23/console_0.3.24_linux_arm64.tar.gz"
+      sha256 "ebc689327230fc45e4bb5598c448296e2c219b41aee2758534e2b968a3abd1b1"
     end
   end
 
