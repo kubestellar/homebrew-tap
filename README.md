@@ -7,11 +7,8 @@ Official Homebrew tap for KubeStellar tools.
 ```bash
 brew tap kubestellar/tap
 
-# Install the KubeStellar Console (includes kc-agent as dependency)
-brew install kubestellar-console
-
-# Install kubectl-claude (AI-powered multi-cluster management)
-brew install kubectl-claude
+# Install the local agent (bridges browser to kubeconfig and Claude Code)
+brew install kc-agent
 
 # Install KubeStellar operational tools
 brew install kubestellar-ops
@@ -21,6 +18,9 @@ brew install kubestellar-deploy
 ## kubectl-claude
 
 AI-powered multi-cluster Kubernetes management for Claude Code.
+
+> **Note:** `kubectl-claude` is not yet available as a Homebrew formula.
+> Install via the Claude Code plugin marketplace or from [source](https://github.com/kubestellar/kubectl-claude).
 
 ### Usage Methods
 
@@ -115,27 +115,16 @@ Ask Claude Code:
 
 Multi-cluster Kubernetes management console with built-in AI support.
 
-### Installation
+> **Note:** There is no `kubestellar-console` Homebrew formula yet.
+> Use the quick-start script below or install from source.
+
+### Quick start
 
 ```bash
-brew tap kubestellar/tap
-brew install kubestellar-console
+curl -sSL https://raw.githubusercontent.com/kubestellar/console/main/start.sh | bash
 ```
 
-This installs the console server binary and a launcher script. The `kc-agent` formula is installed automatically as a dependency.
-
-### Usage
-
-```bash
-# Start the console (opens browser to http://localhost:8080)
-kubestellar-console
-
-# Start on a custom port
-kubestellar-console --port 9090
-
-# Show help
-kubestellar-console --help
-```
+This downloads and runs the pre-built KubeStellar Console binary, starts `kc-agent` as a background daemon, and opens your browser automatically. Press `Ctrl+C` to stop the console (kc-agent continues in background).
 
 ### Configuration
 
@@ -151,21 +140,6 @@ To enable GitHub OAuth login, create `~/.kubestellar-console/.env`:
 ```bash
 GITHUB_CLIENT_ID=your-client-id
 GITHUB_CLIENT_SECRET=your-client-secret
-```
-
-Without OAuth credentials, the console starts in dev mode with auto-login.
-
-### What it does
-
-- Downloads and runs the pre-built KubeStellar Console binary
-- Starts `kc-agent` as a background daemon (bridges browser to local kubeconfig)
-- Opens your browser automatically
-- Press `Ctrl+C` to stop the console (kc-agent continues in background)
-
-### Quick start (without Homebrew)
-
-```bash
-curl -sSL https://raw.githubusercontent.com/kubestellar/console/main/start.sh | bash
 ```
 
 ## kc-agent
@@ -184,9 +158,6 @@ brew install kc-agent
 ```bash
 # Start the agent (runs on localhost:8585)
 kc-agent
-
-# Or run as a background service
-brew services start kubestellar/tap/kc-agent
 ```
 
 ### Configuration
@@ -206,20 +177,6 @@ KC_ALLOWED_ORIGINS="https://my-console.example.com" kc-agent
 
 # Multiple origins
 KC_ALLOWED_ORIGINS="https://console1.example.com,https://console2.example.com" kc-agent
-```
-
-#### Running as a Service with Custom Origins
-
-Add to your shell profile (`~/.zshrc` or `~/.bashrc`):
-
-```bash
-export KC_ALLOWED_ORIGINS="https://my-console.example.com"
-```
-
-Then restart:
-
-```bash
-brew services restart kubestellar/tap/kc-agent
 ```
 
 ### Security
