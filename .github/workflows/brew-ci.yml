@@ -34,20 +34,37 @@ jobs:
             echo "::endgroup::"
           done
 
-      - name: brew install smoke test (all formulae)
+      - name: brew install smoke test (available formulae)
         run: |
+          event_name="${{ github.event_name }}"
           for formula in Formula/*.rb; do
             name=$(basename "$formula" .rb)
-            echo "::group::brew install kubestellar/tap/$name"
-            brew install --formula "kubestellar/tap/$name"
+            echo "::group::brew fetch kubestellar/tap/$name"
+            if brew fetch --formula "kubestellar/tap/$name"; then
+              echo "::endgroup::"
+              echo "::group::brew install kubestellar/tap/$name"
+              brew install --formula "kubestellar/tap/$name"
+            else
+              echo "::endgroup::"
+              if [ "$event_name" = "pull_request" ]; then
+                echo "::notice title=Skipping install::Release artifact for kubestellar/tap/$name is not available yet"
+                continue
+              fi
+              echo "::error title=Missing release artifact::kubestellar/tap/$name could not be fetched"
+              exit 1
+            fi
             echo "::endgroup::"
           done
 
-      - name: brew test (all formulae)
+      - name: brew test (installed formulae)
         run: |
           for formula in Formula/*.rb; do
             name=$(basename "$formula" .rb)
+            if ! brew list --formula | grep -qx "$name"; then
+              echo "::notice title=Skipping test::kubestellar/tap/$name was not installed"
+              continue
+            fi
             echo "::group::brew test kubestellar/tap/$name"
-            brew test "kubestellar/tap/$name" || true
+            brew test "kubestellar/tap/$name"
             echo "::endgroup::"
           done
