@@ -18,6 +18,19 @@ Thanks for helping keep this tap up to date.
 - Keep formula names aligned with the published binary name.
 - Prefer small, targeted edits when updating release assets or metadata.
 
+## Proposing a new formula
+
+When a new KubeStellar tool is ready for Homebrew distribution, start with a pull request in this repository. In that PR description, include:
+
+- the upstream source repository and release page
+- the binary name that should become the formula name
+- the GoReleaser configuration or release process that will keep the formula updated after the first merge
+- any packaging requirements such as extra dependencies, shell completions, or post-install caveats
+
+For the initial scaffold, copy the structure of an existing formula such as `Formula/kubestellar-ops.rb` or `Formula/kubestellar-deploy.rb`, then adapt the metadata and test block for the new tool. Keep version, URL, and checksum fields aligned with the upstream release assets that GoReleaser will publish.
+
+If the upstream repository does not already publish Homebrew-ready release artifacts, coordinate that change upstream first; this tap is only the last step in the release flow. New formula additions are reviewed by the maintainers listed in `OWNERS`.
+
 ## Local validation
 
 - Use `brew install --build-from-source <formula>` to smoke-test changes.
@@ -32,4 +45,5 @@ Formula versions, URLs, and checksums are **automatically synchronized** by GoRe
 
 - All commits must include DCO sign-off (`git commit -s`).
 - Open a PR for review after the tap changes are ready.
+- In the PR body, summarize the upstream release you are packaging and call out any required GoReleaser or release-pipeline coordination.
 - Maintainers listed in `OWNERS` review tap changes.
