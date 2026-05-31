@@ -17,11 +17,80 @@ brew install kubestellar-deploy
 
 ## kubectl-claude
 
-`kubectl-claude` is planned, but it is not published as a Homebrew formula
-in this tap yet.
+`kubectl-claude` is not published as a Homebrew formula in this tap today.
+The upstream project now lives at
+[`kubestellar/kubestellar-mcp`](https://github.com/kubestellar/kubestellar-mcp)
+and ships the two supported binaries you can install from this tap right now:
 
-For now, install it from the upstream project or use the Claude Code plugin
-marketplace when that workflow is what you need.
+```bash
+brew tap kubestellar/tap
+brew install kubestellar-ops kubestellar-deploy
+```
+
+> `brew install kubestellar/tap/kubectl-claude` is not available yet.
+> Use the formulas above or the Claude Code plugins below.
+
+### What it installs
+
+- `kubestellar-ops` — multi-cluster diagnostics, RBAC analysis, and security checks
+- `kubestellar-deploy` — app-centric deployment, GitOps, Helm, and rollout workflows
+
+### Basic usage
+
+```bash
+# Inspect clusters from your current kubeconfig
+kubestellar-ops clusters list
+kubestellar-ops clusters health
+
+# Run the deployment tool as an MCP server for Claude Code
+kubestellar-deploy --mcp-server
+```
+
+### Configuration
+
+- The CLI tools use your current kubeconfig by default.
+- Set `KUBECONFIG` if you want to use a non-default config file.
+- No separate API key is required for the binaries themselves.
+
+```bash
+export KUBECONFIG=$HOME/.kube/config
+```
+
+### Claude Code plugin workflow
+
+If you want the Claude Code marketplace workflow mentioned above, add the
+KubeStellar marketplace and install the plugins explicitly:
+
+```text
+/plugin marketplace add kubestellar/claude-plugins
+/plugin install kubestellar-ops
+/plugin install kubestellar-deploy
+/mcp
+```
+
+After `/mcp`, you should see both plugins connected.
+
+### Common use cases
+
+- Audit cluster health, pod issues, and warning events across clusters
+- Inspect RBAC permissions and security misconfigurations
+- Deploy or update an app across multiple clusters
+- Run Helm or GitOps workflows through Claude Code
+
+### Build from source
+
+If you prefer to install from source, follow the upstream project:
+
+```bash
+git clone https://github.com/kubestellar/kubestellar-mcp.git
+cd kubestellar-mcp
+go build -o bin/kubestellar-ops ./cmd/kubestellar-ops
+go build -o bin/kubestellar-deploy ./cmd/kubestellar-deploy
+sudo mv bin/kubestellar-* /usr/local/bin/
+```
+
+See the upstream repository for releases and full documentation:
+<https://github.com/kubestellar/kubestellar-mcp>
 
 ## kubestellar-console
 
