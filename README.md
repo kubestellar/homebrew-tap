@@ -15,6 +15,16 @@ brew install kubestellar-ops
 brew install kubestellar-deploy
 ```
 
+## Formula status
+
+| Tool | Homebrew status | Notes |
+|------|------------------|-------|
+| `kc-agent` | ✅ Available | Install with `brew install kc-agent` |
+| `kubestellar-ops` | ✅ Available | Install with `brew install kubestellar-ops` |
+| `kubestellar-deploy` | ✅ Available | Install with `brew install kubestellar-deploy` |
+| `kubectl-claude` | ⏳ Not available | Track progress: [kubestellar/kubestellar-mcp#142](https://github.com/kubestellar/kubestellar-mcp/issues/142) |
+| `kubestellar-console` | ⏳ Not available | Track progress: [kubestellar/console#16351](https://github.com/kubestellar/console/issues/16351) |
+
 ## kubectl-claude
 
 `kubectl-claude` is not published as a Homebrew formula in this tap today.
@@ -28,6 +38,7 @@ brew install kubestellar-ops kubestellar-deploy
 ```
 
 > `brew install kubestellar/tap/kubectl-claude` is not available yet.
+> Track progress: [kubestellar/kubestellar-mcp#142](https://github.com/kubestellar/kubestellar-mcp/issues/142)
 > Use the formulas above or the Claude Code plugins below.
 
 ### What it installs
@@ -97,6 +108,7 @@ See the upstream repository for releases and full documentation:
 Multi-cluster Kubernetes management console with built-in AI support.
 
 > **Note:** There is no `kubestellar-console` Homebrew formula yet.
+> Track progress: [kubestellar/console#16351](https://github.com/kubestellar/console/issues/16351)
 > Use the quick-start script below or install from source.
 
 ### Quick start
@@ -170,7 +182,7 @@ KC_ALLOWED_ORIGINS="https://console1.example.com,https://console2.example.com" k
 ## Links
 
 - [KubeStellar Console](https://github.com/kubestellar/console)
-- [kubectl-claude](https://github.com/kubestellar/kubectl-claude)
+- [KubeStellar MCP](https://github.com/kubestellar/kubestellar-mcp)
 - [KubeStellar](https://kubestellar.io)
 - [Claude Plugins Marketplace](https://github.com/kubestellar/claude-plugins)
 
