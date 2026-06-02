@@ -22,12 +22,12 @@ brew install kubestellar-deploy
 | `kc-agent` | ✅ Available | Install with `brew install kc-agent` |
 | `kubestellar-ops` | ✅ Available | Install with `brew install kubestellar-ops` |
 | `kubestellar-deploy` | ✅ Available | Install with `brew install kubestellar-deploy` |
-| `kubectl-claude` | ⏳ Not available | Track progress: [kubestellar/kubestellar-mcp#142](https://github.com/kubestellar/kubestellar-mcp/issues/142) |
-| `kubestellar-console` | ⏳ Not available | Track progress: [kubestellar/console#16351](https://github.com/kubestellar/console/issues/16351) |
+| `kubectl-claude` | ❌ Retired | Use `kubestellar-mcp` directly via `kubestellar-ops` and `kubestellar-deploy` |
+| `kubestellar-console` | ❌ Not planned | Use the quick-start script or install from source; `kc-agent` is available via Homebrew |
 
 ## kubectl-claude
 
-`kubectl-claude` is not published as a Homebrew formula in this tap today.
+`kubectl-claude` is not published as a Homebrew formula in this tap and will not be added.
 The upstream project now lives at
 [`kubestellar/kubestellar-mcp`](https://github.com/kubestellar/kubestellar-mcp)
 and ships the two supported binaries you can install from this tap right now:
@@ -37,9 +37,9 @@ brew tap kubestellar/tap
 brew install kubestellar-ops kubestellar-deploy
 ```
 
-> `brew install kubestellar/tap/kubectl-claude` is not available yet.
-> Track progress: [kubestellar/kubestellar-mcp#142](https://github.com/kubestellar/kubestellar-mcp/issues/142)
-> Use the formulas above or the Claude Code plugins below.
+> `brew install kubestellar/tap/kubectl-claude` is not available and is not planned.
+> Use `kubestellar-ops` and `kubestellar-deploy` instead.
+> See the upstream Homebrew guidance: [kubestellar/kubestellar-mcp/docs/HOMEBREW.md](https://github.com/kubestellar/kubestellar-mcp/blob/main/docs/HOMEBREW.md)
 
 ### What it installs
 
@@ -107,9 +107,9 @@ See the upstream repository for releases and full documentation:
 
 Multi-cluster Kubernetes management console with built-in AI support.
 
-> **Note:** There is no `kubestellar-console` Homebrew formula yet.
-> Track progress: [kubestellar/console#16351](https://github.com/kubestellar/console/issues/16351)
+> **Note:** There is no `kubestellar-console` Homebrew formula, and none is planned.
 > Use the quick-start script below or install from source.
+> `kc-agent` is available via Homebrew, and the upstream Homebrew guidance is here: [kubestellar/console/docs/HOMEBREW.md](https://github.com/kubestellar/console/blob/main/docs/HOMEBREW.md)
 
 ### Quick start
 
