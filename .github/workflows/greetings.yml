@@ -1,5 +1,7 @@
 name: Greetings
 
+permissions: read-all
+
 on:
   pull_request_target:
     types: [opened, reopened]
