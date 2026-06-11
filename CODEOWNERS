@@ -1,0 +1,11 @@
+# CODEOWNERS — require review for all formula changes (supply-chain protection)
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# All Homebrew formula files require review from maintainers
+/Formula/ @kubestellar/console-maintainers @clubanderson
+
+# CI/CD workflows
+/.github/ @kubestellar/console-maintainers @clubanderson
+
+# Catch-all
+* @clubanderson
