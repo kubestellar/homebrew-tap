@@ -1,0 +1,14 @@
+Fixes #41
+
+## Changes
+
+This PR fixes two brew audit --strict violations in Formula/kc-agent.rb:
+
+1. Description length: Shortened from 83 to 65 characters (requirement: < 80)
+2. Bin path style: Changed from interpolated string to Ruby style
+
+These changes align with Homebrew formula best practices and resolve the CI failures on the main branch.
+
+## Note
+
+This is a manual fix for the current release. The root cause is that GoReleaser auto-generates this file on each release. For a permanent solution, the GoReleaser template in the console repo should be updated to generate compliant formulae.
