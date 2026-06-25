@@ -12,13 +12,13 @@ on:
   pull_request_target:
     types: [opened]
 
-permissions: read-all  # default read-only; writes scoped to job below
+permissions: {}  # default deny-all; permissions scoped to job below
 
 jobs:
   ai-fix:
     if: github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository
     permissions:
-      contents: write  # needed: create fix commits and push changes
+      contents: write  # needed: read and write repository content
       issues: write  # needed: manage issue assignments
       pull-requests: write  # needed: create and comment on PRs
     uses: kubestellar/infra/.github/workflows/reusable-ai-fix.yml@1a04a3fd17771e78e5cf6d42a3fda84e3ba478f3  # main@2026-06-19
