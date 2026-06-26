@@ -6,11 +6,12 @@ on:
   issues:
     types: [opened, reopened]
 
-permissions:
-  contents: read
-  issues: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   greet:
+    permissions:
+      contents: read  # needed: read repository context
+      issues: write  # needed: comment on issues
+      pull-requests: write  # needed: comment on pull requests
     uses: kubestellar/infra/.github/workflows/reusable-greetings.yml@1a04a3fd17771e78e5cf6d42a3fda84e3ba478f3  # main@2026-06-19

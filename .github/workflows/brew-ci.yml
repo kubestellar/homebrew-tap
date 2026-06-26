@@ -12,13 +12,14 @@ on:
       - 'Formula/**'
       - '.github/workflows/brew-ci.yml'
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   brew-audit-and-install:
     name: brew audit + install smoke test
     runs-on: macos-latest
+    permissions:
+      contents: read  # needed: checkout repository
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
