@@ -8,16 +8,15 @@ on:
   schedule:
     - cron: '0 4 * * 1' # Weekly Monday 04:00 UTC
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   analyze:
     name: Analyze (ruby)
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      security-events: write
+      contents: read  # needed: checkout repository
+      security-events: write  # needed: upload CodeQL results
     steps:
       - name: Checkout repository
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
