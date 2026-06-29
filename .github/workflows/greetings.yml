@@ -13,5 +13,11 @@ permissions:
 
 jobs:
   greet:
+    # Fork guard: restrict pull_request_target to same-repo PRs only.
+    # Prevents untrusted fork contributors from triggering this workflow
+    # with write token access (re-adds guard removed by PR #137).
+    if: >-
+      github.event_name != 'pull_request_target' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     uses: kubestellar/infra/.github/workflows/reusable-greetings.yml@main
     secrets: inherit
