@@ -12,7 +12,7 @@ on:
       - 'Formula/**'
       - '.github/workflows/brew-ci.yml'
 
-permissions: {}
+permissions: read-all
 
 jobs:
   brew-audit-and-install:
