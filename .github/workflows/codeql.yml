@@ -8,7 +8,7 @@ on:
   schedule:
     - cron: '0 4 * * 1' # Weekly Monday 04:00 UTC
 
-permissions: {}
+permissions: read-all
 
 jobs:
   analyze:
