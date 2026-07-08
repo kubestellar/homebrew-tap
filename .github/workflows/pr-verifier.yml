@@ -18,5 +18,9 @@ jobs:
     steps:
       - name: Validate PR title (Conventional Commits)
         uses: amannn/action-semantic-pull-request@e32d7e603df1aa1ba07e981f2a23455dee596825 # v5
+        with:
+          # Allow optional [actor] prefix before the conventional commit type,
+          # e.g. "[scanner] fix: description" or "fix: description"
+          subjectPattern: ^(?:\[[^\]]+\]\s+)?[a-z]+(\([^)]+\))?!?:\s.+$
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
