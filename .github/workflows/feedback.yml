@@ -10,5 +10,4 @@ permissions:
 
 jobs:
   feedback:
-    uses: kubestellar/infra/.github/workflows/reusable-feedback.yml@main
-    secrets: inherit
+    uses: kubestellar/infra/.github/workflows/reusable-feedback.yml@1a04a3f
