@@ -10,5 +10,7 @@ permissions:
 
 jobs:
   verify:
+    # Skip for Dependabot PRs - the reusable workflow may not support dependabot's token
+    if: github.actor != 'dependabot[bot]'
     uses: kubestellar/infra/.github/workflows/reusable-pr-verifier.yml@main
     secrets: inherit
