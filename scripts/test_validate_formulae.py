@@ -34,6 +34,34 @@ VALID_DEPLOY = textwrap.dedent("""\
     end
 """)
 
+MULTI_URL_OPS = textwrap.dedent("""\
+    # typed: false
+    # frozen_string_literal: true
+    class KubestellarOps < Formula
+      version "1.2.3"
+      on_macos do
+        if Hardware::CPU.intel?
+          url "https://example.com/releases/v1.2.3/ops_1.2.3_darwin_amd64.tar.gz"
+          sha256 "1111111111111111111111111111111111111111111111111111111111111111"
+        end
+        if Hardware::CPU.arm?
+          url "https://example.com/releases/v1.2.3/ops_1.2.3_darwin_arm64.tar.gz"
+          sha256 "2222222222222222222222222222222222222222222222222222222222222222"
+        end
+      end
+      on_linux do
+        if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
+          url "https://example.com/releases/v1.2.3/ops_1.2.3_linux_amd64.tar.gz"
+          sha256 "3333333333333333333333333333333333333333333333333333333333333333"
+        end
+        if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
+          url "https://example.com/releases/v1.2.3/ops_1.2.3_linux_arm64.tar.gz"
+          sha256 "4444444444444444444444444444444444444444444444444444444444444444"
+        end
+      end
+    end
+""")
+
 
 def _write(directory: Path, name: str, content: str) -> Path:
     p = directory / name
@@ -109,6 +137,34 @@ class TestParseFormula(unittest.TestCase):
             p = _write(Path(d), "ops.rb", content)
             result = parse_formula(p)
             self.assertTrue(any("expected sha256 after url" in e for e in result["errors"]))
+
+    def test_multi_url_formula_valid(self):
+        with tempfile.TemporaryDirectory() as d:
+            p = _write(Path(d), "kubestellar-ops.rb", MULTI_URL_OPS)
+            result = parse_formula(p)
+            self.assertNotIn("error", result)
+            self.assertEqual(result["version"], "1.2.3")
+            self.assertEqual(result["errors"], [])
+
+    def test_multi_url_formula_reports_partial_drift(self):
+        content = MULTI_URL_OPS.replace(
+            "https://example.com/releases/v1.2.3/ops_1.2.3_linux_amd64.tar.gz",
+            "https://example.com/releases/vWRONG/ops_WRONG_linux_amd64.tar.gz",
+        ).replace(
+            "3333333333333333333333333333333333333333333333333333333333333333",
+            "shortsha",
+        )
+        with tempfile.TemporaryDirectory() as d:
+            p = _write(Path(d), "kubestellar-ops.rb", content)
+            result = parse_formula(p)
+            self.assertEqual(
+                len([e for e in result["errors"] if "does not embed version" in e]),
+                1,
+            )
+            self.assertEqual(
+                len([e for e in result["errors"] if "malformed sha256" in e]),
+                1,
+            )
 
 
 class TestValidate(unittest.TestCase):
