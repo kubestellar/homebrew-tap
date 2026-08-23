@@ -167,7 +167,46 @@ class TestParseFormula(unittest.TestCase):
             )
 
 
+class TestParseFormulaEdgeCases(unittest.TestCase):
+    def test_url_with_no_subsequent_line(self):
+        content = textwrap.dedent("""\
+            class Ops < Formula
+              version "1.0.0"
+              url "https://example.com/v1.0.0/ops_1.0.0.tar.gz\"""")
+        with tempfile.TemporaryDirectory() as d:
+            p = _write(Path(d), "ops.rb", content)
+            result = parse_formula(p)
+            self.assertTrue(any("no line after url" in e for e in result["errors"]))
+
+    def test_url_followed_only_by_blank_lines(self):
+        content = (
+            'class Ops < Formula\n'
+            '  version "1.0.0"\n'
+            '  url "https://example.com/v1.0.0/ops_1.0.0.tar.gz"\n'
+            '\n'
+            '\n'
+            '\n'
+        )
+        with tempfile.TemporaryDirectory() as d:
+            p = _write(Path(d), "ops.rb", content)
+            result = parse_formula(p)
+            self.assertTrue(any("no line after url" in e for e in result["errors"]))
+
+
 class TestValidate(unittest.TestCase):
+    def test_validate_propagates_parse_error(self):
+        content = VALID_OPS.replace('version "1.2.3"\n', "")
+        with tempfile.TemporaryDirectory() as d:
+            _write(Path(d), "kubestellar-ops.rb", content)
+            rc = validate(Path(d))
+            self.assertEqual(rc, 1)
+
+    def test_lockstep_skipped_when_partner_missing(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(Path(d), "kubestellar-ops.rb", VALID_OPS)
+            rc = validate(Path(d))
+            self.assertEqual(rc, 0)
+
     def test_valid_directory(self):
         with tempfile.TemporaryDirectory() as d:
             _write(Path(d), "kubestellar-ops.rb", VALID_OPS)
