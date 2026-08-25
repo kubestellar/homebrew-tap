@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Unit tests for scripts/validate_formulae.py."""
 
+import subprocess
 import sys
 import tempfile
 import textwrap
@@ -232,6 +233,110 @@ class TestValidate(unittest.TestCase):
         if formula_dir.exists():
             rc = validate(formula_dir)
             self.assertEqual(rc, 0)
+
+
+class TestParseFormulaMoreEdgeCases(unittest.TestCase):
+    def test_url_line_matches_outer_but_inner_regex_fails(self):
+        # A `url "` line with no closing quote matches the outer
+        # `re.match(r'^\s*url\s+"', ...)` sentinel but fails the inner
+        # `re.search(r'url\s+"([^"]+)"', ...)` extraction. The parser
+        # must skip that malformed url line silently rather than crash.
+        content = (
+            'class Ops < Formula\n'
+            '  version "1.0.0"\n'
+            '  url "\n'
+            '  sha256 "aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899"\n'
+            'end\n'
+        )
+        with tempfile.TemporaryDirectory() as d:
+            p = _write(Path(d), "ops.rb", content)
+            result = parse_formula(p)
+            # Must not error out; the malformed url line is skipped.
+            self.assertNotIn("error", result)
+            self.assertEqual(result["version"], "1.0.0")
+            self.assertEqual(result["errors"], [])
+
+    def test_url_followed_by_non_sha_line(self):
+        # Ensures the "expected sha256 after url" branch fires when the
+        # next non-blank line is neither blank nor a sha256 directive.
+        content = textwrap.dedent("""\
+            class Ops < Formula
+              version "1.0.0"
+              url "https://example.com/v1.0.0/ops_1.0.0.tar.gz"
+              desc "hi"
+              sha256 "aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899"
+            end
+        """)
+        with tempfile.TemporaryDirectory() as d:
+            p = _write(Path(d), "ops.rb", content)
+            result = parse_formula(p)
+            self.assertTrue(any("expected sha256 after url" in e for e in result["errors"]))
+
+    def test_lockstep_group_all_partners_missing(self):
+        # If none of the group's members are present, lockstep is skipped
+        # (len(available) < 2) — smoke-test that a lone unrelated formula
+        # validates cleanly.
+        content = textwrap.dedent("""\
+            class Solo < Formula
+              version "1.0.0"
+              url "https://example.com/v1.0.0/solo_1.0.0.tar.gz"
+              sha256 "aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899"
+            end
+        """)
+        with tempfile.TemporaryDirectory() as d:
+            _write(Path(d), "solo.rb", content)
+            rc = validate(Path(d))
+            self.assertEqual(rc, 0)
+
+
+class TestMainEntryPoint(unittest.TestCase):
+    """Cover the ``if __name__ == "__main__":`` block via subprocess."""
+
+    SCRIPT = Path(__file__).parent / "validate_formulae.py"
+
+    def test_main_with_explicit_dir_ok(self):
+        with tempfile.TemporaryDirectory() as d:
+            _write(Path(d), "kubestellar-ops.rb", VALID_OPS)
+            _write(Path(d), "kubestellar-deploy.rb", VALID_DEPLOY)
+            result = subprocess.run(
+                [sys.executable, str(self.SCRIPT), d],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, msg=result.stderr)
+            self.assertIn("OK", result.stdout)
+
+    def test_main_with_explicit_dir_fail(self):
+        # Cause a lockstep mismatch so validate() returns 1.
+        deploy_v2 = VALID_DEPLOY.replace("1.2.3", "2.0.0")
+        with tempfile.TemporaryDirectory() as d:
+            _write(Path(d), "kubestellar-ops.rb", VALID_OPS)
+            _write(Path(d), "kubestellar-deploy.rb", deploy_v2)
+            result = subprocess.run(
+                [sys.executable, str(self.SCRIPT), d],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("lockstep version mismatch", result.stderr)
+
+    def test_main_defaults_to_formula_dir(self):
+        # No CLI arg → defaults to Path("Formula"). Run from the repo root
+        # so the real Formula/ directory is picked up.
+        repo_root = Path(__file__).parent.parent
+        if not (repo_root / "Formula").exists():
+            self.skipTest("Formula/ directory not present")
+        result = subprocess.run(
+            [sys.executable, str(self.SCRIPT)],
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=str(repo_root),
+        )
+        self.assertEqual(result.returncode, 0, msg=result.stderr)
+        self.assertIn("OK", result.stdout)
 
 
 if __name__ == "__main__":
