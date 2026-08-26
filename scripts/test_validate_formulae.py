@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Unit tests for scripts/validate_formulae.py."""
 
+import re
 import subprocess
 import sys
 import tempfile
@@ -337,6 +338,145 @@ class TestMainEntryPoint(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, msg=result.stderr)
         self.assertIn("OK", result.stdout)
+
+
+# ---------------------------------------------------------------------------
+# Formula policy tests
+#
+# These tests complement the drift checker by enforcing repo-wide policy
+# on every Formula/*.rb file — properties that the parser does NOT check
+# but that would represent real regressions if violated:
+#
+#   * every published formula must have a `test do` block (Homebrew audit
+#     downgrades taps that don't self-test)
+#   * every url must use https (no http, ftp, file, git+ssh, etc.)
+#   * every url host must be in an allowlist of trusted domains — this is
+#     a supply-chain guard against a rogue PR pointing at attacker infra
+#   * every name listed in LOCKSTEP_GROUPS must correspond to a real file
+#     in Formula/ (guards against typos when adding new lockstep pairs)
+# ---------------------------------------------------------------------------
+
+FORMULA_DIR = Path(__file__).resolve().parent.parent / "Formula"
+
+# Homebrew formulae in this tap may pull artifacts only from these hosts.
+# Extend this set with a code change (reviewed) when a new upstream lands.
+ALLOWED_URL_HOSTS = {
+    "github.com",
+    "objects.githubusercontent.com",  # GH release CDN redirects land here
+}
+
+
+def _extract_url_hosts(text: str) -> list[str]:
+    """Return hosts of every `url "..."` in a formula body, in order."""
+    hosts = []
+    for m in re.finditer(r'^\s*url\s+"([^"]+)"', text, re.MULTILINE):
+        url = m.group(1)
+        # crude but sufficient: strip scheme, take everything before the
+        # next `/`. Formulae never use userinfo or non-default ports.
+        scheme, _, rest = url.partition("://")
+        host = rest.split("/", 1)[0]
+        hosts.append((url, scheme, host))
+    return hosts
+
+
+class TestFormulaPolicy(unittest.TestCase):
+    """Whole-repo policy checks on Formula/*.rb — run against real files."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.formula_files = sorted(FORMULA_DIR.glob("*.rb"))
+        if not cls.formula_files:
+            raise unittest.SkipTest(f"no .rb files in {FORMULA_DIR}")
+
+    def test_every_formula_has_a_test_block(self):
+        # `brew audit --strict` requires a `test do` block on every
+        # formula; if someone deletes one during a refactor, we want to
+        # catch it in unit tests before it reaches `brew` in CI.
+        missing = []
+        for f in self.formula_files:
+            body = f.read_text()
+            if not re.search(r'^\s*test\s+do\b', body, re.MULTILINE):
+                missing.append(f.name)
+        self.assertEqual(
+            missing, [],
+            msg=f"Formula(e) missing `test do` block: {missing}",
+        )
+
+    def test_every_url_uses_https(self):
+        # `http://` / `ftp://` / `file://` / `git+ssh://` in a release
+        # URL would be a downgrade attack surface. Homebrew accepts
+        # them but our tap does not.
+        offenders = []
+        for f in self.formula_files:
+            for url, scheme, _host in _extract_url_hosts(f.read_text()):
+                if scheme != "https":
+                    offenders.append((f.name, url, scheme))
+        self.assertEqual(
+            offenders, [],
+            msg=f"Formula url(s) not using https: {offenders}",
+        )
+
+    def test_every_url_host_is_in_allowlist(self):
+        # Supply-chain guard: a malicious PR could point `url` at
+        # attacker-controlled infrastructure. This test fails loudly
+        # if any host outside ALLOWED_URL_HOSTS shows up.
+        offenders = []
+        for f in self.formula_files:
+            for url, _scheme, host in _extract_url_hosts(f.read_text()):
+                if host not in ALLOWED_URL_HOSTS:
+                    offenders.append((f.name, host, url))
+        self.assertEqual(
+            offenders, [],
+            msg=(
+                "Formula url(s) point at hosts not in ALLOWED_URL_HOSTS. "
+                "If this is legitimate, add the host to the allowlist in "
+                f"this test file. Offenders: {offenders}"
+            ),
+        )
+
+    def test_lockstep_groups_reference_real_formulae(self):
+        # Guards against a typo in LOCKSTEP_GROUPS silently making a
+        # lockstep pair partially skipped in production — since
+        # `validate()` returns without complaint when only 1 partner
+        # exists. If we intended a group of 2 but only 1 name matches
+        # a file, that's a bug in the constant, not in the tap.
+        from validate_formulae import LOCKSTEP_GROUPS
+        formula_stems = {f.stem for f in self.formula_files}
+        for group in LOCKSTEP_GROUPS:
+            missing = group - formula_stems
+            self.assertEqual(
+                missing, set(),
+                msg=(
+                    f"LOCKSTEP_GROUPS entry {sorted(group)} references "
+                    f"formulae that do not exist in {FORMULA_DIR}: "
+                    f"{sorted(missing)}"
+                ),
+            )
+
+    def test_every_formula_has_at_least_one_url(self):
+        # A formula with no `url` line would be caught by `brew audit`
+        # but not by our drift checker (no urls -> no url iteration ->
+        # no errors). Assert every formula has at least one release URL.
+        empty = []
+        for f in self.formula_files:
+            hosts = _extract_url_hosts(f.read_text())
+            if not hosts:
+                empty.append(f.name)
+        self.assertEqual(
+            empty, [],
+            msg=f"Formula(e) with no url line: {empty}",
+        )
+
+    def test_drift_check_passes_on_real_formula_dir(self):
+        # Integration: the exact command CI runs
+        # (`python3 -u scripts/validate_formulae.py Formula`) must exit 0
+        # on every commit. This test is a belt-and-suspenders duplicate
+        # of TestValidateEndToEnd.test_real_formulae but framed as a
+        # policy test so it appears in the policy failure cluster if
+        # someone accidentally introduces drift while adding a formula.
+        from validate_formulae import validate
+        rc = validate(FORMULA_DIR)
+        self.assertEqual(rc, 0, msg="drift check failed on real Formula/")
 
 
 if __name__ == "__main__":
