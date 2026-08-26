@@ -572,5 +572,110 @@ class TestFormulaSupplyChainPolicy(unittest.TestCase):
         )
 
 
+def _expected_class_name(stem: str) -> str:
+    """Homebrew derives a formula's Ruby class name from its filename by
+    splitting on '-' and '_' and PascalCasing each segment. For example:
+      ``kc-agent``            -> ``KcAgent``
+      ``kubestellar-deploy``  -> ``KubestellarDeploy``
+      ``my_thing``            -> ``MyThing``
+    """
+    parts = re.split(r'[-_]', stem)
+    return "".join(p[:1].upper() + p[1:] for p in parts if p)
+
+
+class TestFormulaClassAndMetadataPolicy(unittest.TestCase):
+    """Repo-wide checks for structural fields that ``brew audit --strict``
+    treats as fatal but the drift checker does not currently inspect:
+
+      * class-name-must-match-filename — ``brew install`` fails outright if
+        the class token differs from Homebrew's PascalCased filename, so a
+        typo like ``class Kcagent`` instead of ``class KcAgent`` bricks the
+        tap for every user until reverted
+      * every formula must declare a ``desc`` line — required by
+        ``brew audit --strict`` and shown in ``brew info``
+      * every formula must declare a ``license`` line — required by
+        ``brew audit --strict`` for the core tap and highly recommended for
+        third-party taps
+
+    Failing these tests locally is cheaper than discovering them in the
+    macOS-only ``brew-ci.yml`` job on a PR.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.formula_files = sorted(FORMULA_DIR.glob("*.rb"))
+        if not cls.formula_files:
+            raise unittest.SkipTest(f"no .rb files in {FORMULA_DIR}")
+
+    def test_class_name_matches_filename(self):
+        offenders = []
+        class_re = re.compile(r'^\s*class\s+([A-Za-z0-9_]+)\s*<\s*Formula\b',
+                              re.MULTILINE)
+        for f in self.formula_files:
+            expected = _expected_class_name(f.stem)
+            m = class_re.search(f.read_text())
+            if not m:
+                offenders.append((f.name, None, expected))
+                continue
+            if m.group(1) != expected:
+                offenders.append((f.name, m.group(1), expected))
+        self.assertEqual(
+            offenders, [],
+            msg=(
+                "Formula(e) whose Ruby class name does not match "
+                "Homebrew's PascalCased filename (brew install will "
+                f"fail): {offenders}"
+            ),
+        )
+
+    def test_every_formula_has_desc(self):
+        missing = [
+            f.name for f in self.formula_files
+            if not re.search(r'^\s*desc\s+"[^"]+"', f.read_text(), re.MULTILINE)
+        ]
+        self.assertEqual(
+            missing, [],
+            msg=f"Formula(e) missing `desc` line: {missing}",
+        )
+
+    def test_every_formula_has_license(self):
+        missing = [
+            f.name for f in self.formula_files
+            if not re.search(r'^\s*license\s+"[^"]+"', f.read_text(), re.MULTILINE)
+        ]
+        self.assertEqual(
+            missing, [],
+            msg=f"Formula(e) missing `license` line: {missing}",
+        )
+
+
+class TestExpectedClassName(unittest.TestCase):
+    """Direct coverage for the ``_expected_class_name`` helper."""
+
+    def test_single_word(self):
+        self.assertEqual(_expected_class_name("solo"), "Solo")
+
+    def test_hyphenated(self):
+        self.assertEqual(_expected_class_name("kc-agent"), "KcAgent")
+        self.assertEqual(
+            _expected_class_name("kubestellar-deploy"), "KubestellarDeploy"
+        )
+
+    def test_underscore(self):
+        self.assertEqual(_expected_class_name("my_thing"), "MyThing")
+
+    def test_mixed_separators(self):
+        self.assertEqual(_expected_class_name("a-b_c"), "ABC")
+
+    def test_double_separator_is_ignored(self):
+        # Empty segments are skipped, mirroring Homebrew's behaviour.
+        self.assertEqual(_expected_class_name("a--b"), "AB")
+
+    def test_preserves_internal_capitalization(self):
+        # PascalCase only lifts the first character; internal casing (e.g.
+        # an acronym typed as `MCP`) survives untouched.
+        self.assertEqual(_expected_class_name("kMCP-agent"), "KMCPAgent")
+
+
 if __name__ == "__main__":
     unittest.main()
