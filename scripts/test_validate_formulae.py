@@ -962,5 +962,149 @@ class TestCLIEntrypoint(unittest.TestCase):
             self.assertNotEqual(rc, 0)
 
 
+class TestFormulaPlatformURLPolicy(unittest.TestCase):
+    """Cross-formula copy-paste guards on every Formula/*.rb.
+
+    The drift checker enforces that a formula's `url` embeds its own
+    `version` string, but it does NOT check that:
+
+      * every formula ships both an `on_macos` and an `on_linux` block
+        (a GoReleaser regression that drops one whole platform would
+        leave the tap silently broken on that OS),
+      * a URL inside an `on_macos` block actually points at a darwin
+        artifact (and same for linux),
+      * a formula's URLs actually reference that formula's own tarball
+        stem (a copy-paste of, say, a `kc-agent_*.tar.gz` URL into
+        `kubestellar-ops.rb` would pass every existing check because
+        the version string still matches).
+
+    These are the three failure modes most likely to slip past a
+    version-only drift audit, so we assert them here on real files.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.formula_files = sorted(FORMULA_DIR.glob("*.rb"))
+        if not cls.formula_files:
+            raise unittest.SkipTest(f"no .rb files in {FORMULA_DIR}")
+
+    def test_every_formula_has_both_macos_and_linux_blocks(self):
+        # Homebrew supports macOS and Linux. Every formula in this
+        # tap ships binaries for both today; a regression that drops
+        # one platform should be caught here, not by an end-user
+        # `brew install` failing on their laptop.
+        missing = []
+        for f in self.formula_files:
+            body = f.read_text()
+            has_macos = bool(re.search(r'^\s*on_macos\s+do\b', body, re.MULTILINE))
+            has_linux = bool(re.search(r'^\s*on_linux\s+do\b', body, re.MULTILINE))
+            if not (has_macos and has_linux):
+                missing.append((f.name, {"macos": has_macos, "linux": has_linux}))
+        self.assertEqual(
+            missing, [],
+            msg=(
+                "Formula(e) missing an on_macos/on_linux block. If a "
+                "formula is intentionally single-platform, exclude it "
+                "from this test explicitly. Offenders: " + repr(missing)
+            ),
+        )
+
+    def test_url_platform_token_matches_enclosing_block(self):
+        # Walk each formula line by line, track whether we're inside
+        # an `on_macos do` or `on_linux do` block, and require that
+        # each `url` inside those blocks embeds the matching platform
+        # token (`darwin` for macOS, `linux` for Linux). This is the
+        # single most likely copy-paste bug: a darwin tarball URL
+        # accidentally landing in the on_linux branch. `sha256`
+        # comparison alone can't catch it because the sha of the
+        # darwin artifact IS a valid 64-hex sha.
+        offenders = []
+        for f in self.formula_files:
+            lines = f.read_text().splitlines()
+            # depth counters: nesting inside on_macos / on_linux
+            in_macos = 0
+            in_linux = 0
+            # We don't fully parse Ruby; we just track `on_macos do`
+            # / `on_linux do` opens and end-of-block closes by
+            # matching indentation of the paired `end`. Homebrew
+            # formula style keeps these top-level with consistent
+            # indent, so this simple heuristic is sufficient for the
+            # tap's actual files.
+            block_stack: list[str] = []
+            for line in lines:
+                stripped = line.strip()
+                if re.match(r'^on_macos\s+do\b', stripped):
+                    block_stack.append("macos")
+                    in_macos += 1
+                    continue
+                if re.match(r'^on_linux\s+do\b', stripped):
+                    block_stack.append("linux")
+                    in_linux += 1
+                    continue
+                # A top-level `end` (2-space indent) closes an
+                # on_macos/on_linux block. Inner `end`s (for `if`,
+                # `define_method`) sit at deeper indent.
+                if stripped == "end" and re.match(r'^  end\s*$', line):
+                    if block_stack:
+                        closed = block_stack.pop()
+                        if closed == "macos":
+                            in_macos -= 1
+                        else:
+                            in_linux -= 1
+                    continue
+
+                url_match = re.match(r'^\s*url\s+"([^"]+)"', line)
+                if not url_match:
+                    continue
+                url = url_match.group(1)
+                if in_macos > 0 and "darwin" not in url:
+                    offenders.append((f.name, "on_macos", url))
+                if in_linux > 0 and "linux" not in url:
+                    offenders.append((f.name, "on_linux", url))
+        self.assertEqual(
+            offenders, [],
+            msg=(
+                "url() inside on_macos must contain 'darwin' and "
+                "url() inside on_linux must contain 'linux'. This "
+                "test guards against a copy-paste where a URL for "
+                "one platform lands in the other platform's block "
+                "— the sha256 would still be a valid 64-hex string "
+                "but `brew install` would download the wrong "
+                "binary. Offenders: " + repr(offenders)
+            ),
+        )
+
+    def test_url_filename_references_formula_stem(self):
+        # GoReleaser names artifacts `<binary>_<version>_<os>_<arch>.tar.gz`.
+        # A formula's URL filename must therefore reference that
+        # formula's own binary name — i.e. its file stem, with
+        # dashes/underscores treated as equivalent (GoReleaser
+        # replaces `-` with `_` in some templates and not others).
+        # Without this check, a PR that copy-pastes a `kc-agent`
+        # release URL into `kubestellar-ops.rb` would pass every
+        # existing test provided the version strings match.
+        offenders = []
+        for f in self.formula_files:
+            body = f.read_text()
+            stem = f.stem  # e.g. "kc-agent"
+            # Accept either the exact stem or its `_`-normalized form
+            # in the URL's tarball basename (last path segment).
+            variants = {stem, stem.replace("-", "_"), stem.replace("_", "-")}
+            for m in re.finditer(r'^\s*url\s+"([^"]+)"', body, re.MULTILINE):
+                url = m.group(1)
+                basename = url.rsplit("/", 1)[-1]
+                if not any(v in basename for v in variants):
+                    offenders.append((f.name, url, sorted(variants)))
+        self.assertEqual(
+            offenders, [],
+            msg=(
+                "Formula URL tarball basename must reference the "
+                "formula's own stem (dashes/underscores equivalent). "
+                "This catches copy-paste of one formula's release "
+                "URL into another formula. Offenders: " + repr(offenders)
+            ),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
