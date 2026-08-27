@@ -870,5 +870,97 @@ class TestFormulaConsistencyHelpers(unittest.TestCase):
         )
 
 
+class TestCLIEntrypoint(unittest.TestCase):
+    """
+    Exercise `if __name__ == "__main__": validate(...)` at the tail of
+    validate_formulae.py by running the module in-process with runpy.
+    Covers the argv-parsing branch (custom dir vs default 'Formula/') and
+    the sys.exit(...) return-code plumbing.
+    """
+
+    SCRIPT = Path(__file__).resolve().parent / "validate_formulae.py"
+
+    def _run_as_main(self, argv):
+        """Invoke the script's __main__ guard with the given argv.
+
+        runpy.run_path executes the file with __name__ == "__main__", so
+        the tail block runs in this process and is picked up by
+        coverage.py. sys.exit inside the block raises SystemExit, which we
+        catch and return the code from.
+        """
+        import runpy
+        old_argv = sys.argv[:]
+        sys.argv = argv
+        try:
+            try:
+                runpy.run_path(str(self.SCRIPT), run_name="__main__")
+                return 0
+            except SystemExit as e:
+                code = e.code
+                if code is None:
+                    return 0
+                if isinstance(code, int):
+                    return code
+                return 1
+        finally:
+            sys.argv = old_argv
+
+    def _write_valid_formula(self, tmpdir, name="valid-tool"):
+        klass = name.replace('-', '').capitalize()
+        (tmpdir / f"{name}.rb").write_text(textwrap.dedent(f"""
+            class {klass} < Formula
+              desc "test tool"
+              homepage "https://github.com/kubestellar/kubestellar"
+              version "1.2.3"
+              url "https://github.com/kubestellar/kubestellar/releases/download/v1.2.3/{name}-1.2.3.tar.gz"
+              sha256 "0000000000000000000000000000000000000000000000000000000000000000"
+              license "Apache-2.0"
+              def install
+                bin.install "{name}"
+              end
+              test do
+                system "true"
+              end
+            end
+            """).strip() + "\n")
+
+    def test_cli_uses_argv_when_provided(self):
+        # Explicit dir via argv[1]: exits 0.
+        with tempfile.TemporaryDirectory() as td:
+            formula_dir = Path(td) / "custom-formula-dir"
+            formula_dir.mkdir()
+            self._write_valid_formula(formula_dir, name="valid-tool")
+
+            rc = self._run_as_main(["validate_formulae.py", str(formula_dir)])
+
+            self.assertEqual(rc, 0)
+
+    def test_cli_defaults_to_Formula_when_no_argv(self):
+        # No argv[1]: falls back to Path("Formula") resolved against CWD.
+        with tempfile.TemporaryDirectory() as td:
+            tmp = Path(td)
+            (tmp / "Formula").mkdir()
+            self._write_valid_formula(tmp / "Formula", name="default-tool")
+
+            old_cwd = Path.cwd()
+            try:
+                import os
+                os.chdir(tmp)
+                rc = self._run_as_main(["validate_formulae.py"])
+            finally:
+                os.chdir(old_cwd)
+
+            self.assertEqual(rc, 0)
+
+    def test_cli_returns_nonzero_on_validation_failure(self):
+        # Directory missing → validate() returns 1 → SystemExit(1).
+        with tempfile.TemporaryDirectory() as td:
+            missing = Path(td) / "does-not-exist"
+
+            rc = self._run_as_main(["validate_formulae.py", str(missing)])
+
+            self.assertNotEqual(rc, 0)
+
+
 if __name__ == "__main__":
     unittest.main()
