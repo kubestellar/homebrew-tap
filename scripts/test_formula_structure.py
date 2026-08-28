@@ -147,6 +147,137 @@ class FormulaStructureTests(unittest.TestCase):
                         f"start with formula name prefix '{name}_'",
                     )
 
+    def test_every_url_embeds_declared_version(self):
+        # The URL for every platform must contain the formula's own
+        # `version` string. A codegen bug that bumps `version` while
+        # leaving stale URLs (or vice-versa) would produce a formula
+        # that installs the wrong tarball — `brew install` would fetch
+        # yesterday's artefact, verify against today's sha256, and
+        # error out cryptically ("SHA256 mismatch"). This test surfaces
+        # that drift at PR time.
+        ver_re = re.compile(r'^\s*version\s+"([^"]+)"', re.MULTILINE)
+        url_re = re.compile(r'url\s+"([^"]+)"')
+        for name, text in self.formulae.items():
+            with self.subTest(formula=name):
+                vm = ver_re.search(text)
+                self.assertIsNotNone(vm, f"{name}.rb has no version line")
+                version = vm.group(1)
+                for url in url_re.findall(text):
+                    self.assertIn(
+                        version, url,
+                        f"{name}.rb: url {url!r} does not contain "
+                        f"declared version {version!r} — codegen drift",
+                    )
+                    # The GoReleaser convention also puts a `v` prefix
+                    # on the tag path ("releases/download/v<version>/"),
+                    # so the URL must also contain "v<version>/" —
+                    # otherwise the tag path is stale even though the
+                    # tarball basename happens to match.
+                    self.assertIn(
+                        f"/v{version}/", url,
+                        f"{name}.rb: url {url!r} does not contain tag "
+                        f"segment /v{version}/ — release tag drift",
+                    )
+
+    def test_url_host_is_github_releases(self):
+        # Every download URL must resolve through
+        # github.com/<owner>/<repo>/releases/download/... . A codegen
+        # bug that emits raw.githubusercontent.com or a mirror would
+        # produce a formula that bypasses the GitHub Releases audit
+        # trail (no download counts, no artefact signature checks) and,
+        # in some cases, would not survive brew audit --strict.
+        url_re = re.compile(r'url\s+"([^"]+)"')
+        allowed_prefix = re.compile(
+            r'^https://github\.com/kubestellar/[^/]+/releases/download/'
+        )
+        for name, text in self.formulae.items():
+            with self.subTest(formula=name):
+                for url in url_re.findall(text):
+                    self.assertRegex(
+                        url, allowed_prefix,
+                        f"{name}.rb: url {url!r} is not a "
+                        f"github.com/kubestellar/<repo>/releases/download URL",
+                    )
+
+    def test_sha256_immediately_follows_url(self):
+        # Every `url "..."` line must be followed on the next non-blank
+        # line by a `sha256 "<hex>"` line. Homebrew's DSL binds sha256
+        # to the *most recent* url; a stray blank line + comment that
+        # separates them still works, but a codegen bug that swaps or
+        # drops one of the four url/sha256 pairs would silently reuse
+        # the previous sha256 for a different tarball.
+        url_or_sha_re = re.compile(
+            r'^\s*(?P<kind>url|sha256)\s+"[^"]+"', re.MULTILINE
+        )
+        for name, text in self.formulae.items():
+            with self.subTest(formula=name):
+                kinds = [m.group("kind") for m in url_or_sha_re.finditer(text)]
+                # Expected shape: url, sha256, url, sha256, ... exactly
+                # 4 pairs (one per platform slot).
+                self.assertEqual(
+                    len(kinds), 8,
+                    f"{name}.rb: expected 8 url/sha256 lines, got "
+                    f"{len(kinds)}: {kinds}",
+                )
+                for i, kind in enumerate(kinds):
+                    expected = "url" if i % 2 == 0 else "sha256"
+                    self.assertEqual(
+                        kind, expected,
+                        f"{name}.rb: url/sha256 order broken at index "
+                        f"{i} (got {kind}, expected {expected}); "
+                        f"full sequence: {kinds}",
+                    )
+
+    def test_test_block_actually_exercises_installed_binary(self):
+        # A `test do` block that never touches `bin/"<binary>"` passes
+        # brew audit but proves nothing — the install could ship a
+        # broken artefact and `brew test` would still be green. Require
+        # every test block to reference `bin/"<expected-binary>"`.
+        test_block_re = re.compile(
+            r'test\s+do\s*\n(?P<body>[^}]*?)\n\s*end\s*\n',
+            re.DOTALL,
+        )
+        for name, text in self.formulae.items():
+            with self.subTest(formula=name):
+                m = test_block_re.search(text)
+                self.assertIsNotNone(m, f"{name}.rb missing 'test do' block")
+                body = m.group("body")
+                self.assertIn(
+                    f'bin/"{name}"', body,
+                    f"{name}.rb: test block does not exercise "
+                    f'bin/"{name}" — a broken install would still pass '
+                    f"brew test",
+                )
+                # And it must actually run something — at least one
+                # `system` or `assert_` invocation.
+                self.assertTrue(
+                    re.search(r'\bsystem\b|\bassert_\w+', body),
+                    f"{name}.rb: test block has no system/assert_* "
+                    f"invocation — brew test is a no-op",
+                )
+
+    def test_all_formulae_share_apache_license(self):
+        # This tap ships Apache-2.0 binaries. A codegen bug that emits
+        # a different SPDX id per formula would create an inconsistent
+        # legal story for downstream consumers. Guard against silent
+        # drift; if we ever intentionally take on a formula with a
+        # different license, this test is the reminder to review the
+        # change.
+        license_re = re.compile(r'^\s*license\s+"([^"]+)"', re.MULTILINE)
+        seen = {}
+        for name, text in self.formulae.items():
+            m = license_re.search(text)
+            self.assertIsNotNone(m, f"{name}.rb missing license line")
+            seen[name] = m.group(1)
+        self.assertEqual(
+            len(set(seen.values())), 1,
+            f"formulae disagree on license id: {seen}",
+        )
+        self.assertEqual(
+            list(seen.values())[0], "Apache-2.0",
+            f"unexpected license id: {seen}",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
