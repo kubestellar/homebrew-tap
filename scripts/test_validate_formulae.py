@@ -1106,5 +1106,173 @@ class TestFormulaPlatformURLPolicy(unittest.TestCase):
         )
 
 
+class TestFormulaArchAndShaCopyPasteGuards(unittest.TestCase):
+    """Additional cross-formula copy-paste guards on Formula/*.rb.
+
+    Two failure modes not caught by any existing policy test:
+
+      * A GoReleaser template regression (or manual copy-paste) that
+        leaves the same URL — and therefore the same sha256 — under
+        two different arch branches. Version and platform tokens
+        would still match, but the arm64 shelf would silently install
+        the amd64 binary (or vice versa).
+      * Duplicate sha256 values across different URLs inside a single
+        formula: a strong signal that two artifacts were accidentally
+        pointed at the same tarball. sha256 collisions between
+        genuinely different binaries are cryptographically negligible,
+        so duplicates in real files are always mistakes.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.formula_files = sorted(FORMULA_DIR.glob("*.rb"))
+        if not cls.formula_files:
+            raise unittest.SkipTest(f"no .rb files in {FORMULA_DIR}")
+
+    def _iter_arch_scoped_urls(self, body: str):
+        """Yield (arch_token_expected, url) for each url() inside a
+        Hardware::CPU.intel?/arm? branch of an on_macos/on_linux block.
+
+        Uses the same line-by-line stack heuristic as
+        TestFormulaPlatformURLPolicy: it is deliberately shallow
+        because homebrew formula style is regular, and it is verified
+        by the mutation tests below.
+        """
+        block_stack: list[str] = []  # tracks on_macos/on_linux + arch
+        arch: str | None = None
+        for line in body.splitlines():
+            stripped = line.strip()
+            if re.match(r"^on_macos\s+do\b", stripped) or re.match(
+                r"^on_linux\s+do\b", stripped
+            ):
+                block_stack.append("platform")
+                continue
+            # `if Hardware::CPU.intel?` or `if Hardware::CPU.arm?`
+            m = re.match(r"^if\s+Hardware::CPU\.(intel|arm)\?", stripped)
+            if m:
+                arch = "amd64" if m.group(1) == "intel" else "arm64"
+                block_stack.append("arch")
+                continue
+            # A generic `if ... do`-less `if` opens a block too; catch
+            # any other `if ` at deeper indent so our stack stays sane.
+            if re.match(r"^if\b", stripped):
+                block_stack.append("other")
+                continue
+            if stripped == "end":
+                if block_stack:
+                    kind = block_stack.pop()
+                    if kind == "arch":
+                        arch = None
+                continue
+            url_match = re.match(r'^\s*url\s+"([^"]+)"', line)
+            if url_match and arch is not None:
+                yield arch, url_match.group(1)
+
+    def test_url_arch_token_matches_hardware_cpu_branch(self):
+        # Inside `if Hardware::CPU.intel?` the URL must reference an
+        # `amd64` artifact; inside `if Hardware::CPU.arm?` it must
+        # reference `arm64`. This catches the specific copy-paste
+        # where an arm64 URL is dropped into the intel branch (or
+        # vice versa) — the platform token stays correct so
+        # TestFormulaPlatformURLPolicy wouldn't fire.
+        offenders = []
+        for f in self.formula_files:
+            for expected_arch, url in self._iter_arch_scoped_urls(f.read_text()):
+                other = "arm64" if expected_arch == "amd64" else "amd64"
+                if expected_arch not in url or other in url:
+                    offenders.append((f.name, expected_arch, url))
+        self.assertEqual(
+            offenders,
+            [],
+            msg=(
+                "url() inside `if Hardware::CPU.intel?` must contain "
+                "'amd64'; inside `Hardware::CPU.arm?` must contain "
+                "'arm64'. Guards against copy-paste of an arch URL "
+                "into the wrong CPU branch. Offenders: " + repr(offenders)
+            ),
+        )
+
+    def test_url_arch_check_would_fire_on_swapped_arch_token(self):
+        # Meta-check: prove the arch guard actually catches a swap.
+        # Take one real formula, flip 'amd64' -> 'arm64' in an
+        # intel-branch URL, and verify the same policy rejects it.
+        real = None
+        for f in self.formula_files:
+            for expected_arch, url in self._iter_arch_scoped_urls(f.read_text()):
+                if expected_arch == "amd64" and "amd64" in url:
+                    real = (f, url)
+                    break
+            if real:
+                break
+        if real is None:
+            self.skipTest("no amd64-tagged intel-branch URL to mutate")
+        f, orig_url = real
+        mutated = f.read_text().replace(orig_url, orig_url.replace("amd64", "arm64"), 1)
+        offenders_after_mutation = []
+        for expected_arch, url in self._iter_arch_scoped_urls(mutated):
+            other = "arm64" if expected_arch == "amd64" else "amd64"
+            if expected_arch not in url or other in url:
+                offenders_after_mutation.append((f.name, expected_arch, url))
+        self.assertTrue(
+            offenders_after_mutation,
+            msg=(
+                "Arch guard failed to catch a synthetic amd64→arm64 "
+                "swap in an intel branch of "
+                f"{f.name}; the guard is a no-op and would let a "
+                "real regression through."
+            ),
+        )
+
+    def test_sha256_values_are_unique_within_each_formula(self):
+        # A goreleaser template regression that emits the same URL
+        # under two arch/platform branches would also emit the same
+        # sha256. sha256 collisions between distinct real binaries
+        # are cryptographically impossible, so any duplicate within a
+        # single formula is a copy-paste bug.
+        dup_offenders = []
+        for f in self.formula_files:
+            body = f.read_text()
+            shas = re.findall(r'^\s*sha256\s+"([0-9a-f]{64})"', body, re.MULTILINE)
+            seen: dict[str, int] = {}
+            for s in shas:
+                seen[s] = seen.get(s, 0) + 1
+            dups = {s: n for s, n in seen.items() if n > 1}
+            if dups:
+                dup_offenders.append((f.name, dups))
+        self.assertEqual(
+            dup_offenders,
+            [],
+            msg=(
+                "Each sha256 in a formula must be unique — duplicates "
+                "mean two branches point at the same tarball, which is "
+                "always a mistake. Offenders: " + repr(dup_offenders)
+            ),
+        )
+
+    def test_sha256_values_are_lowercase_64_hex(self):
+        # Homebrew accepts uppercase hex but goreleaser and the wider
+        # ecosystem emit lowercase. Enforce lowercase-64-hex here so
+        # a diff that normalises casing (or accidentally truncates)
+        # is caught before merge.
+        offenders = []
+        for f in self.formula_files:
+            body = f.read_text()
+            for line_no, line in enumerate(body.splitlines(), start=1):
+                m = re.match(r'^\s*sha256\s+"([^"]+)"', line)
+                if not m:
+                    continue
+                value = m.group(1)
+                if not re.fullmatch(r"[0-9a-f]{64}", value):
+                    offenders.append((f.name, line_no, value))
+        self.assertEqual(
+            offenders,
+            [],
+            msg=(
+                "sha256 values must be exactly 64 lowercase hex "
+                "characters. Offenders: " + repr(offenders)
+            ),
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
