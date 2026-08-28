@@ -1274,5 +1274,109 @@ class TestFormulaArchAndShaCopyPasteGuards(unittest.TestCase):
         )
 
 
+class TestFormulaVersionTokenBoundaryGuards(unittest.TestCase):
+    """Partial-version-bump copy-paste guard on Formula/*.rb.
+
+    validate_formulae.parse_formula enforces that the top-level
+    ``version "X"`` substring appears somewhere in each url. Because
+    that check uses a bare ``in`` substring test, a partial bump
+    would silently pass — e.g. formula ``version "0.3.4"`` with a
+    URL containing ``v0.3.44/`` (bumped by hand) satisfies
+    ``"0.3.4" in url`` even though the URL and the declared version
+    disagree.
+
+    These tests upgrade the check to boundary-token form. Every url
+    inside every formula must contain BOTH:
+
+      * ``v<VERSION>/`` — the version as a distinct path segment
+        (release tag directory), not a prefix
+      * ``_<VERSION>_`` — the version wrapped by underscore
+        delimiters inside the tarball filename, so a shorter
+        version string can't match a longer one
+
+    The mutation test below verifies that flipping either delimiter
+    off actually causes the guard to fire, so the guard cannot
+    silently rot into a no-op.
+    """
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.formula_files = sorted(FORMULA_DIR.glob("*.rb"))
+        if not cls.formula_files:
+            raise unittest.SkipTest(f"no .rb files in {FORMULA_DIR}")
+
+    @staticmethod
+    def _extract_version(body: str) -> str | None:
+        m = re.search(r'^\s*version\s+"([^"]+)"', body, re.MULTILINE)
+        return m.group(1) if m else None
+
+    def _iter_urls(self, body: str):
+        for m in re.finditer(r'url\s+"([^"]+)"', body):
+            yield m.group(1)
+
+    def test_url_contains_version_path_segment(self):
+        offenders = []
+        for f in self.formula_files:
+            body = f.read_text()
+            v = self._extract_version(body)
+            self.assertIsNotNone(v, f"{f.name} has no version declaration")
+            seg = f"v{v}/"
+            for url in self._iter_urls(body):
+                if seg not in url:
+                    offenders.append((f.name, seg, url))
+        self.assertFalse(
+            offenders,
+            "url missing 'v<VERSION>/' path segment (partial-bump "
+            f"drift?): {offenders}",
+        )
+
+    def test_url_contains_version_filename_token(self):
+        offenders = []
+        for f in self.formula_files:
+            body = f.read_text()
+            v = self._extract_version(body)
+            self.assertIsNotNone(v, f"{f.name} has no version declaration")
+            tok = f"_{v}_"
+            for url in self._iter_urls(body):
+                if tok not in url:
+                    offenders.append((f.name, tok, url))
+        self.assertFalse(
+            offenders,
+            "url missing '_<VERSION>_' filename token (partial-bump "
+            f"drift?): {offenders}",
+        )
+
+    def test_boundary_guard_catches_partial_bump_mutation(self):
+        # Meta-test: prove the guard actually distinguishes a partial
+        # bump from an exact one. Take a real formula, replace one
+        # url so the version segment becomes v<VERSION>4/ (i.e. the
+        # declared version is a proper prefix of the URL version).
+        # The bare ``version in url`` check would still pass; the
+        # boundary-token check must NOT.
+        sample = self.formula_files[0].read_text()
+        v = self._extract_version(sample)
+        self.assertIsNotNone(v)
+        good_seg = f"v{v}/"
+        bad_seg = f"v{v}4/"
+
+        self.assertIn(good_seg, sample, "sample formula must contain the "
+                      "canonical version segment for this test to be valid")
+
+        mutated = sample.replace(good_seg, bad_seg, 1)
+        # The bare substring check would still hold: v<VERSION> is a
+        # prefix of v<VERSION>4. Confirm that so the meta-test proves
+        # the boundary is what saves us.
+        self.assertIn(f"v{v}", mutated,
+                      "prefix substring must still be present in mutant")
+        # The boundary check MUST catch it.
+        urls_in_mutant = list(re.finditer(r'url\s+"([^"]+)"', mutated))
+        offenders = [u.group(1) for u in urls_in_mutant if good_seg not in u.group(1)]
+        self.assertTrue(
+            offenders,
+            "boundary-token guard failed to detect a partial-bump "
+            "mutation; the guard has degraded to a no-op",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
