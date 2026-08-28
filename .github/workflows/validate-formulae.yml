@@ -6,16 +6,14 @@ on:
     paths:
       - 'Formula/**'
       - 'scripts/validate_formulae.py'
-      - 'scripts/test_validate_formulae.py'
-      - 'scripts/test_formula_structure.py'
+      - 'scripts/test_*.py'
       - '.github/workflows/validate-formulae.yml'
   pull_request:
     branches: [main]
     paths:
       - 'Formula/**'
       - 'scripts/validate_formulae.py'
-      - 'scripts/test_validate_formulae.py'
-      - 'scripts/test_formula_structure.py'
+      - 'scripts/test_*.py'
       - '.github/workflows/validate-formulae.yml'
 
 permissions: read-all
@@ -35,6 +33,18 @@ jobs:
 
       - name: Run formula structure unit tests
         run: python3 -u scripts/test_formula_structure.py
+
+      - name: Run formula codegen invariant tests
+        run: python3 -u scripts/test_formula_codegen_invariants.py
+
+      - name: Run cross-formula invariant tests
+        run: python3 -u scripts/test_crossformula_invariants.py
+
+      - name: Run extra formula invariant tests
+        run: python3 -u scripts/test_formula_extra_invariants.py
+
+      - name: Run further formula invariant tests
+        run: python3 -u scripts/test_formula_further_invariants.py
 
       - name: Run Formula drift check
         run: python3 -u scripts/validate_formulae.py Formula
