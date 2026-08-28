@@ -28,23 +28,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Run validate_formulae.py unit tests
-        run: python3 -u scripts/test_validate_formulae.py
-
-      - name: Run formula structure unit tests
-        run: python3 -u scripts/test_formula_structure.py
-
-      - name: Run formula codegen invariant tests
-        run: python3 -u scripts/test_formula_codegen_invariants.py
-
-      - name: Run cross-formula invariant tests
-        run: python3 -u scripts/test_crossformula_invariants.py
-
-      - name: Run extra formula invariant tests
-        run: python3 -u scripts/test_formula_extra_invariants.py
-
-      - name: Run further formula invariant tests
-        run: python3 -u scripts/test_formula_further_invariants.py
+      - name: Run all scripts/test_*.py unit tests
+        # Use unittest discover so every scripts/test_*.py is picked up
+        # automatically. Enumerating files by name is a silent-skip trap
+        # (see #268). -v surfaces per-test output so a 'Ran 0 tests'
+        # regression is visible in the job log; --buffer keeps output
+        # clean on success.
+        run: python3 -u -m unittest discover -v --buffer -s scripts -p 'test_*.py'
 
       - name: Run Formula drift check
         run: python3 -u scripts/validate_formulae.py Formula
