@@ -33,6 +33,7 @@ Runnable the same way as the sibling test modules:
 import re
 import unittest
 from collections import Counter
+from datetime import date, timedelta
 from pathlib import Path
 
 FORMULA_DIR = Path(__file__).resolve().parent.parent / "Formula"
@@ -146,6 +147,14 @@ class CrossFormulaInvariants(unittest.TestCase):
         # LOCKSTEP_GROUPS enforces this at CI time; assert the same
         # invariant directly so a lone `pytest scripts/` run catches
         # the drift.
+        #
+        # Nightly-cut tolerance: the upstream release pipeline bumps the two
+        # formulae in separate commits, creating a ~10-15 min window where the
+        # nightly.YYYYMMDD suffix differs by exactly one day. We allow that
+        # narrow gap (both must be nightly versions, base semver must match,
+        # and the date gap must be exactly 1 day) so that CI does not go red
+        # every night during the rollover window. Any other mismatch still
+        # fails hard.
         need = {"kubestellar-ops", "kubestellar-deploy"}
         available = need & set(self.formulae)
         self.assertEqual(
@@ -161,11 +170,43 @@ class CrossFormulaInvariants(unittest.TestCase):
             )
             versions[stem] = m.group(1)
         distinct = set(versions.values())
+        if len(distinct) == 1:
+            return  # identical — always passes
+
+        # Versions differ; check for the permitted one-day nightly drift.
+        nightly_re = re.compile(
+            r'^(?P<base>.+)-nightly\.(?P<yyyymmdd>\d{8})$'
+        )
+        parsed = {}
+        for stem, ver in versions.items():
+            m = nightly_re.match(ver)
+            if m is None:
+                # Not a nightly version — any mismatch is a hard failure.
+                self.fail(
+                    f"kubestellar-ops and kubestellar-deploy must share the "
+                    f"same version (they release from a single kubestellar-mcp "
+                    f"binary set); got {versions}",
+                )
+            parsed[stem] = (m.group("base"), m.group("yyyymmdd"))
+
+        stems = sorted(parsed)
+        base_a, date_a = parsed[stems[0]]
+        base_b, date_b = parsed[stems[1]]
+
         self.assertEqual(
-            len(distinct), 1,
-            f"kubestellar-ops and kubestellar-deploy must share the same "
-            f"version (they release from a single kubestellar-mcp binary "
-            f"set); got {versions}",
+            base_a, base_b,
+            f"kubestellar-ops and kubestellar-deploy nightly base versions "
+            f"differ (expected identical semver prefix); got {versions}",
+        )
+
+        day_a = date(int(date_a[:4]), int(date_a[4:6]), int(date_a[6:8]))
+        day_b = date(int(date_b[:4]), int(date_b[4:6]), int(date_b[6:8]))
+        gap = abs((day_b - day_a).days)
+        self.assertEqual(
+            gap, 1,
+            f"kubestellar-ops and kubestellar-deploy nightly versions differ "
+            f"by {gap} day(s); only a one-day gap during the nightly rollover "
+            f"window is tolerated; got {versions}",
         )
 
 
