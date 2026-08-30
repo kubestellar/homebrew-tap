@@ -65,6 +65,12 @@ IF_HW_BLOCK_RE = re.compile(
 DEPENDS_ON_RE = re.compile(r'^\s*depends_on\b', re.MULTILINE)
 RESOURCE_BLOCK_RE = re.compile(r'^\s*resource\s+"[^"]+"\s+do\b', re.MULTILINE)
 LIVECHECK_RE = re.compile(r'^\s*livecheck\s+do\b', re.MULTILINE)
+REVISION_RE = re.compile(r'^\s*revision\s+\d+\b', re.MULTILINE)
+KEG_ONLY_RE = re.compile(r'^\s*keg_only\b', re.MULTILINE)
+DEPRECATE_RE = re.compile(r'^\s*deprecate!(?=\s|$)', re.MULTILINE)
+DISABLE_RE = re.compile(r'^\s*disable!(?=\s|$)', re.MULTILINE)
+PATCH_BLOCK_RE = re.compile(r'^\s*patch\s+do\b', re.MULTILINE)
+OPTION_RE = re.compile(r'^\s*option\s+"[^"]+"', re.MULTILINE)
 
 # The install body inside `define_method(:install) do ... end`. Non-greedy
 # match; body may span multiple lines but should be a single significant
@@ -184,6 +190,80 @@ class ForbiddenStanzaInvariants(FormulaLoader):
                     LIVECHECK_RE.search(text),
                     f"{name}.rb has a livecheck stanza — nightly stamps are "
                     f"release-generated, not upstream-tracked",
+                )
+
+    def test_no_revision_stanza(self):
+        # A stray `revision N` (e.g. copy-pasted from a homebrew-core
+        # template) would silently break `brew upgrade` — Homebrew treats
+        # revision bumps as new installable versions, so shipping a
+        # revision on a nightly-based formula would either strand users
+        # on a specific rev or churn every nightly with a bogus rev bump.
+        for name, text in self.formulae.items():
+            with self.subTest(formula=name):
+                self.assertIsNone(
+                    REVISION_RE.search(text),
+                    f"{name}.rb has a `revision N` stanza — nightly-based "
+                    f"binary formulae must not carry Homebrew revision "
+                    f"bumps; the nightly stamp already versions each build",
+                )
+
+    def test_no_keg_only_stanza(self):
+        # keg_only would silently prevent PATH linking; users would run
+        # `brew install kc-agent` successfully and then find no
+        # `kc-agent` on their PATH. Never valid for these CLIs.
+        for name, text in self.formulae.items():
+            with self.subTest(formula=name):
+                self.assertIsNone(
+                    KEG_ONLY_RE.search(text),
+                    f"{name}.rb has a `keg_only` stanza — these CLIs must "
+                    f"be linked into PATH; keg_only would silently break "
+                    f"`brew install`",
+                )
+
+    def test_no_deprecate_or_disable_stanza(self):
+        # deprecate!/disable! would emit user-visible warnings or block
+        # installs on every `brew install`. A codegen template that
+        # accidentally emits one would be immediately user-facing.
+        for name, text in self.formulae.items():
+            with self.subTest(formula=name):
+                self.assertIsNone(
+                    DEPRECATE_RE.search(text),
+                    f"{name}.rb has a `deprecate!` stanza — the tap is "
+                    f"actively released; deprecation must be an explicit, "
+                    f"reviewed decision, not a codegen artifact",
+                )
+                self.assertIsNone(
+                    DISABLE_RE.search(text),
+                    f"{name}.rb has a `disable!` stanza — the tap is "
+                    f"actively released; disabling installs must be an "
+                    f"explicit, reviewed decision, not a codegen artifact",
+                )
+
+    def test_no_patch_block(self):
+        # Nothing in the GoReleaser codegen path should ever emit a
+        # `patch do` block; a stray one indicates hand-editing that will
+        # be clobbered on the next release, and would apply arbitrary
+        # source patches to a pre-built binary tarball anyway.
+        for name, text in self.formulae.items():
+            with self.subTest(formula=name):
+                self.assertIsNone(
+                    PATCH_BLOCK_RE.search(text),
+                    f"{name}.rb has a `patch do` block — pre-built-binary "
+                    f"formulae have no source to patch; the block is a "
+                    f"hand-edit that will be clobbered next release",
+                )
+
+    def test_no_option_stanza(self):
+        # `option "..."` is a deprecated Homebrew feature that
+        # `brew audit --strict` flags. A codegen template regression
+        # that leaks one in would fail audit on the tap.
+        for name, text in self.formulae.items():
+            with self.subTest(formula=name):
+                self.assertIsNone(
+                    OPTION_RE.search(text),
+                    f"{name}.rb has an `option \"...\"` stanza — options "
+                    f"are deprecated by Homebrew and rejected by "
+                    f"`brew audit --strict`",
                 )
 
 
