@@ -33,7 +33,9 @@ jobs:
         uses: Homebrew/actions/setup-homebrew@3cdb78d0f62ad29dd32de765782654f4eedea607 # 2026.08.31.1
       - name: Set up Homebrew tap
         run: |
-          # Register this repo as a local tap so brew can resolve formula paths
+          # setup-homebrew on Linux pre-registers kubestellar/tap with the remote URL.
+          # Rewire to this checkout so brew resolves in-tree formula edits.
+          brew untap kubestellar/tap || true
           brew tap kubestellar/tap "$(pwd)"
 
       - name: brew audit --strict (all formulae)
