@@ -17,13 +17,20 @@ permissions: read-all
 jobs:
   brew-audit-and-install:
     name: brew audit + install smoke test
-    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: read  # needed: checkout repository
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Set up Homebrew on Linux
+        if: ${{ matrix.os == "ubuntu-latest" }}
+        uses: Homebrew/actions/setup-homebrew@v2
       - name: Set up Homebrew tap
         run: |
           # Register this repo as a local tap so brew can resolve formula paths
