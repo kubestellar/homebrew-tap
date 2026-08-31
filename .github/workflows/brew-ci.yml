@@ -29,8 +29,8 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Set up Homebrew on Linux
-        if: ${{ matrix.os == "ubuntu-latest" }}
-        uses: Homebrew/actions/setup-homebrew@v2
+        if: ${{ matrix.os == 'ubuntu-latest' }}
+        uses: Homebrew/actions/setup-homebrew@3cdb78d0f62ad29dd32de765782654f4eedea607 # 2026.08.31.1
       - name: Set up Homebrew tap
         run: |
           # Register this repo as a local tap so brew can resolve formula paths
