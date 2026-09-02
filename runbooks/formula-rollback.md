@@ -217,4 +217,4 @@ After the upstream release is fixed and a new formula has been merged to `main`:
 
 3. Close the tracking issue.
 
-4. Consider a postmortem if the incident lasted more than 2 hours or affected more than a handful of users. Use the [postmortem template](https://github.com/kubestellar/kubestellar-mcp/blob/main/docs/postmortem-template.md) as a starting point.
+4. Consider a postmortem if the incident lasted more than 2 hours or affected more than a handful of users. Use the [postmortem template](../docs/postmortem-template.md) as a starting point.
