@@ -2,7 +2,7 @@
 name: Incident Report
 about: Report a broken formula release or other user-impacting incident
 title: "[incident] <short description>"
-labels: "kind/bug"
+labels: "kind/bug,lifecycle/frozen"
 assignees: ""
 ---
 
