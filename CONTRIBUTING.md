@@ -37,6 +37,30 @@ If the upstream repository does not already publish Homebrew-ready release artif
 - Run `brew audit --strict <formula>` before opening a PR.
 - Use `brew test <formula>` when the formula defines a meaningful test block.
 
+## Running the Python invariant tests
+
+The `scripts/` directory holds ~25 `test_*.py` invariant checkers plus the
+`validate_formulae.py` drift-check script that CI runs on every PR
+(`.github/workflows/validate-formulae.yml`). Run the same suite locally with:
+
+```sh
+python3 -m unittest discover -v --buffer -s scripts -p 'test_*.py'
+```
+
+To reproduce the coverage measurement (and the 100% baseline tracked in
+`scripts/.coveragerc`) install `coverage` and run:
+
+```sh
+python3 -m pip install --user coverage
+python3 -m coverage run --rcfile=scripts/.coveragerc \
+    -m unittest discover -s scripts -p 'test_*.py'
+python3 -m coverage report --rcfile=scripts/.coveragerc
+```
+
+The rcfile pins branch coverage on `validate_formulae.py`, omits the
+`test_*.py` scaffolding from the denominator, and sets `fail_under = 100`
+so an accidental regression trips locally before CI.
+
 ## Release sync
 
 Formula versions, URLs, and checksums are **automatically synchronized** by GoReleaser when upstream packages are released. These fields should never be manually edited. If you notice a version mismatch, wait for the next automated release cycle or contact a maintainer to trigger an upstream release.
