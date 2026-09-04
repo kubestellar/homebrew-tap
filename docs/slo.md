@@ -38,7 +38,16 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   CI failure here — today, detection relies on someone noticing the red check on
   `main` or a user filing an issue. Adding a `workflow_run`-triggered job that
   files a `kind/bug` tracking issue on failure (linking this doc and the rollback
-  runbook) would close that gap; see the tracking issue for a proposed workflow.
+  runbook) would close that gap; see
+  [#316](https://github.com/kubestellar/homebrew-tap/issues/316) for a proposed
+  workflow. Separately, `brew-ci.yml`/`validate-formulae.yml` only trigger on
+  `push`/`pull_request` to `Formula/**` — there is no `schedule:` re-run of
+  either workflow, so an upstream artifact going stale (a
+  `kubestellar-mcp` release deleted, re-tagged, or having its assets rotated
+  after this repo's formula already pinned a `sha256`) would never be
+  detected until a user hits the break, since no Formula diff exists to
+  trigger CI; see
+  [#318](https://github.com/kubestellar/homebrew-tap/issues/318).
 - **Time to rollback/mitigate ≤ 2 hours** for a confirmed broken release, using the
   [Formula Rollback Runbook](../runbooks/formula-rollback.md). Incidents exceeding
   this budget, or affecting more than a handful of users, should get a
@@ -50,7 +59,8 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   silent failure here means a security regression could go undetected for an
   entire week. **Recommendation:** extend the `workflow_run`-triggered alert
   proposed for `brew-ci.yml`/`validate-formulae.yml` to also watch `CodeQL
-  Analysis` and `Scorecard analysis`; see the tracking issue for details.
+  Analysis` and `Scorecard analysis`; see
+  [#337](https://github.com/kubestellar/homebrew-tap/issues/337) for details.
 - **Formula fuzz health ≥ 99%**, and detection latency for a fuzz regression should
   match the ≤ 15 minute target above. Unlike `CodeQL Analysis`/`Scorecard analysis`,
   `fuzz.yml` has **no `schedule:` trigger at all** — it only runs on `push`/`pull_request`
@@ -59,7 +69,10 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   matching Formula diff (e.g. from a shared script change) would go undetected
   indefinitely. **Recommendation:** add a `schedule:` trigger to `fuzz.yml` and
   extend the `workflow_run`-triggered alert proposed above to also watch
-  `Fuzzing`; see the tracking issue for details.
+  `Fuzzing`; see
+  [#337](https://github.com/kubestellar/homebrew-tap/issues/337) (same gap
+  class as [#318](https://github.com/kubestellar/homebrew-tap/issues/318))
+  for details.
 
 ## Recommendations (no backend configured)
 
