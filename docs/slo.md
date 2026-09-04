@@ -23,6 +23,7 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
 | **Formula drift health** | Fraction of `validate-formulae.yml` runs on `main` that succeed (unit tests + drift check) | [validate-formulae.yml](../.github/workflows/validate-formulae.yml) run history |
 | **Time to detect a broken release** | Time from a broken formula merging to `main` until CI reports failure or a `kind/bug` incident issue is filed | CI run timestamp vs. merge timestamp, or issue `created_at` |
 | **Time to rollback/mitigate** | Time from incident detection to a rollback PR merged or formula pinned per the [Formula Rollback Runbook](../runbooks/formula-rollback.md) | Incident issue timeline |
+| **Weekly security-scan health** | Fraction of scheduled `CodeQL Analysis` (`0 4 * * 1`) and `Scorecard analysis` (`0 6 * * 1`) runs that complete successfully | [codeql.yml](../.github/workflows/codeql.yml) / [scorecard.yml](../.github/workflows/scorecard.yml) run history |
 
 ## SLOs (Service Level Objectives)
 
@@ -41,6 +42,14 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   [Formula Rollback Runbook](../runbooks/formula-rollback.md). Incidents exceeding
   this budget, or affecting more than a handful of users, should get a
   [postmortem](postmortem-template.md).
+- **Weekly security-scan health ≥ 99%** for the scheduled `CodeQL Analysis` and
+  `Scorecard analysis` runs. Both already run on a weekly `schedule:` trigger, but
+  — like the CI failure gap above — **no automated alert currently fires** if a
+  scheduled run itself fails to complete (as opposed to reporting findings); a
+  silent failure here means a security regression could go undetected for an
+  entire week. **Recommendation:** extend the `workflow_run`-triggered alert
+  proposed for `brew-ci.yml`/`validate-formulae.yml` to also watch `CodeQL
+  Analysis` and `Scorecard analysis`; see the tracking issue for details.
 
 ## Recommendations (no backend configured)
 
