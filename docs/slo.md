@@ -24,6 +24,7 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
 | **Time to detect a broken release** | Time from a broken formula merging to `main` until CI reports failure or a `kind/bug` incident issue is filed | CI run timestamp vs. merge timestamp, or issue `created_at` |
 | **Time to rollback/mitigate** | Time from incident detection to a rollback PR merged or formula pinned per the [Formula Rollback Runbook](../runbooks/formula-rollback.md) | Incident issue timeline |
 | **Weekly security-scan health** | Fraction of scheduled `CodeQL Analysis` (`0 4 * * 1`) and `Scorecard analysis` (`0 6 * * 1`) runs that complete successfully | [codeql.yml](../.github/workflows/codeql.yml) / [scorecard.yml](../.github/workflows/scorecard.yml) run history |
+| **Formula fuzz health** | Fraction of `Fuzzing` (`fuzz.yml`: syntax, structure, URL/checksum checks) runs that succeed | [fuzz.yml](../.github/workflows/fuzz.yml) run history |
 
 ## SLOs (Service Level Objectives)
 
@@ -50,6 +51,15 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   entire week. **Recommendation:** extend the `workflow_run`-triggered alert
   proposed for `brew-ci.yml`/`validate-formulae.yml` to also watch `CodeQL
   Analysis` and `Scorecard analysis`; see the tracking issue for details.
+- **Formula fuzz health ≥ 99%**, and detection latency for a fuzz regression should
+  match the ≤ 15 minute target above. Unlike `CodeQL Analysis`/`Scorecard analysis`,
+  `fuzz.yml` has **no `schedule:` trigger at all** — it only runs on `push`/`pull_request`
+  that touch `Formula/**`. Between such changes, nothing re-validates formula
+  syntax, structure, or URL/checksum format on a cadence, so a regression with no
+  matching Formula diff (e.g. from a shared script change) would go undetected
+  indefinitely. **Recommendation:** add a `schedule:` trigger to `fuzz.yml` and
+  extend the `workflow_run`-triggered alert proposed above to also watch
+  `Fuzzing`; see the tracking issue for details.
 
 ## Recommendations (no backend configured)
 
