@@ -12,6 +12,7 @@ from __future__ import annotations
 import io
 import os
 import sys
+import types
 import unittest
 from contextlib import redirect_stderr
 from unittest import mock
@@ -74,9 +75,11 @@ class ParseArgsTests(unittest.TestCase):
 
 class ImportCoverageTests(unittest.TestCase):
     def test_returns_true_when_coverage_importable(self):
-        # `coverage` is a dev-time dep of this repo — in CI it's expected
-        # to be installed alongside the coverage_gate.py invocation.
-        self.assertTrue(coverage_gate._import_coverage())
+        # Inject a stub `coverage` module so the positive path is exercised
+        # even when the real `coverage` dev dep isn't installed in CI.
+        stub = types.ModuleType("coverage")
+        with mock.patch.dict(sys.modules, {"coverage": stub}):
+            self.assertTrue(coverage_gate._import_coverage())
 
     def test_returns_false_and_prints_hint_when_missing(self):
         stderr = io.StringIO()
