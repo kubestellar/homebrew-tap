@@ -53,6 +53,24 @@ brew fetch --formula kubestellar/tap/kubestellar-ops
 
 A fetch failure confirms a broken release. A successful fetch with smoke-test failure confirms a bad binary.
 
+### Distinguish a broken formula from CI infrastructure noise
+
+A red `brew-ci.yml`/`validate-formulae.yml` check on `main` does **not** always
+mean the formula is broken. Before starting rollback, open the failed run and
+check *which step* failed:
+
+- **`brew audit --strict`, the install smoke test, or `brew test` failed** —
+  this indicates a genuinely broken formula. Continue with
+  [Immediate Triage](#immediate-triage) below.
+- **The failure is isolated to workflow setup/cleanup steps** (for example, a
+  `Post <action-name>` cleanup step failing after the audit/install/test steps
+  already passed) — this is CI tooling noise, not a broken release. Do **not**
+  roll back or pin a formula for this; file/track it as a CI infrastructure
+  issue instead.
+
+Skipping this check risks an unnecessary rollback (and user-facing pin/unpin
+churn) for a problem that isn't actually in the formula.
+
 ---
 
 ## Immediate Triage
