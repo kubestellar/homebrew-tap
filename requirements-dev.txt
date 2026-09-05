@@ -1,0 +1,8 @@
+# Development / CI dependencies for validate-formulae unit tests + coverage.
+# Pinned exact versions so `pip install -r requirements-dev.txt` is
+# reproducible in CI and locally (see docs#5883 / #5884 for the same
+# supply-chain rationale applied to @vitest/coverage-v8).
+
+pytest==9.1.1
+pytest-cov==7.1.0
+coverage==7.16.0
