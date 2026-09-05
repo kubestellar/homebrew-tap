@@ -2,11 +2,17 @@
 """Validate Homebrew formula metadata for drift: version/URL mismatch,
 malformed sha256, missing sha256 after url, and paired formula lockstep."""
 
+import json
 import re
 import sys
 from pathlib import Path
 
 SHA256_RE = re.compile(r'^[0-9a-f]{64}$')
+
+# Prefix for the machine-readable CI summary line (see emit_summary()).
+# Grep this marker in CI logs to get a structured pass/fail count without
+# parsing the free-text OK:/FAIL: lines.
+SUMMARY_PREFIX = "VALIDATE_FORMULAE_SUMMARY:"
 
 # Formulae that must share the same version string
 LOCKSTEP_GROUPS = [
@@ -74,11 +80,27 @@ def parse_formula(path: Path) -> dict:
     return {"version": version, "errors": errors, "name": path.stem}
 
 
+def emit_summary(status: str, formula_count: int, error_count: int) -> None:
+    """Print a single-line JSON summary for CI-log observability.
+
+    This is stdout-only (no external data flow, no exporter) and exists so
+    CI tooling can grep a structured pass/fail record instead of parsing the
+    free-text OK:/FAIL: lines above it.
+    """
+    summary = {
+        "status": status,
+        "formula_count": formula_count,
+        "error_count": error_count,
+    }
+    print(f"{SUMMARY_PREFIX} {json.dumps(summary, sort_keys=True)}")
+
+
 def validate(formula_dir: Path) -> int:
     """Run all checks; return exit code (0 = pass, 1 = fail)."""
     rb_files = sorted(formula_dir.glob("*.rb"))
     if not rb_files:
         print(f"ERROR: no .rb files found in {formula_dir}", file=sys.stderr)
+        emit_summary(status="error", formula_count=0, error_count=1)
         return 1
 
     all_errors = []
@@ -107,10 +129,12 @@ def validate(formula_dir: Path) -> int:
     if all_errors:
         for e in all_errors:
             print(f"FAIL: {e}", file=sys.stderr)
+        emit_summary(status="fail", formula_count=len(rb_files), error_count=len(all_errors))
         return 1
 
     names = [p.stem for p in rb_files]
     print(f"OK: {len(rb_files)} formula(e) validated: {', '.join(names)}")
+    emit_summary(status="pass", formula_count=len(rb_files), error_count=0)
     return 0
 
 
