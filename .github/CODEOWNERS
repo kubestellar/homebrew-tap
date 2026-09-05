@@ -1,1 +1,17 @@
+# CODEOWNERS — require review for all formula changes (supply-chain protection)
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# GitHub only honors ONE CODEOWNERS file per ref, checked in this precedence
+# order: `.github/CODEOWNERS` > root `CODEOWNERS` > `docs/CODEOWNERS`. This file
+# (`.github/CODEOWNERS`) is therefore the only one GitHub reads; the former
+# root-level `CODEOWNERS` was silently ignored despite matching on `main` and
+# has been removed to avoid a second, dead copy drifting out of sync.
+
+# All Homebrew formula files require review from maintainers
+/Formula/ @kubestellar/console-maintainers @clubanderson
+
+# CI/CD workflows
+/.github/ @kubestellar/console-maintainers @clubanderson
+
+# Catch-all
 * @clubanderson
