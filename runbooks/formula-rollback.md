@@ -53,6 +53,16 @@ brew fetch --formula kubestellar/tap/kubestellar-ops
 
 A fetch failure confirms a broken release. A successful fetch with smoke-test failure confirms a bad binary.
 
+**Shortcut:** [`scripts/verify_release_health.sh`](../scripts/verify_release_health.sh)
+runs the fetch above for all three formulae (or specific ones passed as
+arguments) and prints the last commit that touched each formula file, so you
+don't have to run `brew fetch`/`git log` by hand during triage:
+
+```bash
+scripts/verify_release_health.sh                    # checks all three formulae
+scripts/verify_release_health.sh kubestellar-ops    # checks just one
+```
+
 ### Distinguish a broken formula from CI infrastructure noise
 
 A red `brew-ci.yml`/`validate-formulae.yml` check on `main` does **not** always
