@@ -37,6 +37,19 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   A red `main` check on `brew-ci.yml` or `validate-formulae.yml` means the next
   `brew install`/`brew upgrade` for at least one formula is very likely broken for
   end users — treat every `main` failure as a candidate incident, not routine noise.
+- **Formula CI health** and **Formula drift health** currently only get a data
+  point when a `Formula/**` (or related-path) change triggers `brew-ci.yml` /
+  `validate-formulae.yml` on `main`. Neither workflow has a `schedule:` trigger,
+  so a break with **no matching Formula diff** — e.g. an upstream
+  [`kubestellar-mcp`](https://github.com/kubestellar/kubestellar-mcp) release
+  being deleted/re-tagged/pruned, a transient CDN/host 404 on the pinned
+  release URL, or a yanked binary after its `sha256` was already pinned — goes
+  undetected indefinitely between merges, with the ≤15-minute detection SLO
+  below having no mechanism behind it for this failure class. **Recommendation:**
+  add a daily `schedule:` trigger to `brew-ci.yml` and/or `validate-formulae.yml`
+  (see the proposed diff on
+  [#318](https://github.com/kubestellar/homebrew-tap/issues/318)) so the tap's
+  live installability is re-verified on a cadence, not only on a Formula push.
 - **Time to detect a broken `main` release ≤ 15 minutes.** CI on `main` normally
   completes well within this window; a failed run should be triaged as soon as it
   is reported. **Recommendation:** no automated alert currently fires on a `main`
