@@ -1,0 +1,46 @@
+# Coverage configuration for the invariant test suite under scripts/.
+#
+# The only production code in scripts/ is validate_formulae.py; every other
+# scripts/*.py is a unittest-based invariant checker (test_*.py). This file
+# pins the invocation shape so `coverage run` in this repo always measures
+# the same statements and reports the same threshold contributors see on CI.
+#
+# Contributor invocation (from repo root):
+#   python3 -m coverage run --rcfile=scripts/.coveragerc \
+#       -m unittest discover -s scripts -p 'test_*.py'
+#   python3 -m coverage report --rcfile=scripts/.coveragerc
+#
+# Rationale for the threshold: as of the file that ships alongside this
+# config, `validate_formulae.py` is at 100% line + 100% branch coverage
+# under all 26 test_*.py suites. The gate is therefore set to fail_under
+# = 100 so any accidental regression (new untested branch, dead code
+# left behind by a refactor) trips locally before CI. See tracking issue
+# kubestellar/homebrew-tap#332 for the parallel CI gate.
+
+[run]
+branch = True
+source = validate_formulae
+# Nothing else in scripts/ is production code; the test_*.py files import
+# from validate_formulae only. Explicitly omitting them keeps the report
+# focused and avoids inflating the denominator with test scaffolding.
+omit =
+    scripts/test_*.py
+    */__pycache__/*
+
+[report]
+# Fail contributors' local runs (and any future CI gate wired to this
+# rcfile) if coverage drops below the current baseline. See file header
+# for the rationale on 100 vs. a lower ratchet.
+fail_under = 100
+show_missing = True
+skip_covered = False
+precision = 1
+exclude_lines =
+    pragma: no cover
+    # Defensive branches that are only reached when the interpreter is
+    # invoked as a script; unittest discovery never triggers them.
+    if __name__ == .__main__.:
+    raise NotImplementedError
+
+[html]
+directory = scripts/htmlcov
