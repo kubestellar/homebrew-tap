@@ -24,6 +24,14 @@
 # this file; Homebrew CI / Validate Formulae are also watched for
 # main-branch failures, since a red main check is the primary user-facing
 # signal for this tap (see docs/slo.md).
+#
+# Auto-filed issues are labeled `lifecycle/frozen` in addition to
+# `kind/bug` so the stale-bot (`.github/workflows/stale.yml`) cannot
+# silently auto-close an unresolved workflow-failure tracking issue after
+# 90 days of inactivity — `lifecycle/frozen` is one of `reusable-stale.yml`'s
+# default exempt labels, whereas `kind/bug` alone is not (see #327, which
+# fixed the same gap for the Incident Report template and flagged this
+# workflow as still needing the same fix once applied).
 name: Open Issue on Scheduled Workflow Failure
 
 on:
@@ -186,7 +194,7 @@ jobs:
           gh issue create \
             --repo "$REPOSITORY" \
             --title "$TITLE" \
-            --label "workflow-failure,kind/bug" \
+            --label "workflow-failure,kind/bug,lifecycle/frozen" \
             --body-file "$BODY_FILE"
 
           rm -f "$BODY_FILE"
