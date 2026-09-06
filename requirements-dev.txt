@@ -1,0 +1,7 @@
+# Pinned dev dependencies for validate-formulae.yml.
+# Kept minimal (pytest + pytest-cov) so the Validate Formulae job installs
+# reproducibly and Scorecard's Pinned-Dependencies check stays green
+# (compare docs#5883/#5884 which pinned the equivalent vitest tooling).
+pytest==9.1.1
+pytest-cov==7.1.0
+coverage==7.16.0
