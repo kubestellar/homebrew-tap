@@ -8,7 +8,12 @@ repository. Because `main` is served live to every `brew install` the moment a
 formula change merges, CI health on `main` is the primary user-facing signal
 for this repo. No exporter, metrics backend, or external data flow is added by
 this document — it defines SLIs derived from existing GitHub Actions checks
-and recommends how to interpret them operationally.
+and recommends how to interpret them operationally. It also links a
+ready-to-apply, but not yet active, `workflow_run`-based alert spec (see
+[`runbooks/proposed-scheduled-workflow-failure-issue.yml`](../runbooks/proposed-scheduled-workflow-failure-issue.yml)
+and the [Scheduled Workflow Failure Runbook](../runbooks/scheduled-workflow-failure.md))
+that a maintainer with `workflows` permission can apply to close the alert
+gaps described below.
 
 ## User-facing service
 
@@ -36,9 +41,13 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   completes well within this window; a failed run should be triaged as soon as it
   is reported. **Recommendation:** no automated alert currently fires on a `main`
   CI failure here — today, detection relies on someone noticing the red check on
-  `main` or a user filing an issue. Adding a `workflow_run`-triggered job that
-  files a `kind/bug` tracking issue on failure (linking this doc and the rollback
-  runbook) would close that gap; see the tracking issue for a proposed workflow.
+  `main` or a user filing an issue. A ready-to-apply `workflow_run`-triggered job
+  that files a `kind/bug` tracking issue on failure (linking this doc and the
+  [Scheduled Workflow Failure Runbook](../runbooks/scheduled-workflow-failure.md))
+  is checked in at
+  [`runbooks/proposed-scheduled-workflow-failure-issue.yml`](../runbooks/proposed-scheduled-workflow-failure-issue.yml) —
+  applying it (moving it under `.github/workflows/`) requires `workflows`
+  permission this agent's GitHub App installation does not have.
 - **Time to rollback/mitigate ≤ 2 hours** for a confirmed broken release, using the
   [Formula Rollback Runbook](../runbooks/formula-rollback.md). Incidents exceeding
   this budget, or affecting more than a handful of users, should get a
@@ -48,18 +57,20 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   — like the CI failure gap above — **no automated alert currently fires** if a
   scheduled run itself fails to complete (as opposed to reporting findings); a
   silent failure here means a security regression could go undetected for an
-  entire week. **Recommendation:** extend the `workflow_run`-triggered alert
-  proposed for `brew-ci.yml`/`validate-formulae.yml` to also watch `CodeQL
-  Analysis` and `Scorecard analysis`; see the tracking issue for details.
+  entire week. The proposed
+  [`runbooks/proposed-scheduled-workflow-failure-issue.yml`](../runbooks/proposed-scheduled-workflow-failure-issue.yml)
+  also watches `CodeQL Analysis` and `Scorecard analysis`.
 - **Formula fuzz health ≥ 99%**, and detection latency for a fuzz regression should
   match the ≤ 15 minute target above. Unlike `CodeQL Analysis`/`Scorecard analysis`,
   `fuzz.yml` has **no `schedule:` trigger at all** — it only runs on `push`/`pull_request`
   that touch `Formula/**`. Between such changes, nothing re-validates formula
   syntax, structure, or URL/checksum format on a cadence, so a regression with no
   matching Formula diff (e.g. from a shared script change) would go undetected
-  indefinitely. **Recommendation:** add a `schedule:` trigger to `fuzz.yml` and
-  extend the `workflow_run`-triggered alert proposed above to also watch
-  `Fuzzing`; see the tracking issue for details.
+  indefinitely. **Recommendation:** add a weekly `schedule:` trigger to `fuzz.yml`
+  (e.g. `0 8 * * 1`, offset from `codeql.yml`'s `0 4 * * 1` and `scorecard.yml`'s
+  `0 6 * * 1`) and include `Fuzzing` in the proposed
+  [`scheduled-workflow-failure-issue.yml`](../runbooks/proposed-scheduled-workflow-failure-issue.yml)
+  alert's watch list, as that spec already assumes.
 
 ## Recommendations (no backend configured)
 
