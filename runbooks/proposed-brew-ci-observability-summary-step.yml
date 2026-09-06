@@ -1,0 +1,41 @@
+# PROPOSED WORKFLOW STEP — not yet active.
+#
+# This agent's GitHub App installation lacks the `workflows: write`
+# permission GitHub requires to create/update files under
+# `.github/workflows/`, so this ready-to-apply step is checked in here
+# under `runbooks/` instead (see runbooks/proposed-scheduled-workflow-failure-issue.yml
+# for the same constraint on a different file). A maintainer with
+# `workflows` permission can apply it by appending the step below to the
+# end of the `brew-audit-and-install` job's `steps:` list in
+# `.github/workflows/brew-ci.yml`.
+#
+# Why: `validate_formulae.py` (VALIDATE_FORMULAE_SUMMARY) and
+# `verify_release_health.sh` (VERIFY_RELEASE_HEALTH_SUMMARY) already emit a
+# single-line, grep-able JSON summary for CI-log observability. `brew-ci.yml`
+# is the one CI job in this repo without an equivalent structured outcome
+# record — a reader has to scroll `::group::` blocks to see whether/why a
+# given OS's audit+install+test run passed. This step closes that gap with
+# the same bounded, stdout-only pattern: no exporter, no metrics backend, no
+# external data flow, and no unbounded labels (status/os/counts only).
+#
+# --- content below is the step as it should read once applied ---
+#
+#       - name: Emit CI-observability summary
+#         # Bounded, stdout-only JSON summary line for CI-log observability,
+#         # mirroring VALIDATE_FORMULAE_SUMMARY (validate_formulae.py) and
+#         # VERIFY_RELEASE_HEALTH_SUMMARY (verify_release_health.sh): no
+#         # exporter, no metrics backend, no external data flow — just a
+#         # grep-able, fixed-shape record of this job's outcome. Runs even
+#         # when an earlier step failed so the record always appears.
+#         if: always()
+#         run: |
+#           formula_count=0
+#           installed_count=0
+#           for formula in Formula/*.rb; do
+#             name=$(basename "$formula" .rb)
+#             formula_count=$((formula_count + 1))
+#             if brew list --formula 2>/dev/null | grep -qx "$name"; then
+#               installed_count=$((installed_count + 1))
+#             fi
+#           done
+#           echo "BREW_CI_SUMMARY: {\"status\":\"${{ job.status }}\",\"os\":\"${{ matrix.os }}\",\"formula_count\":${formula_count},\"installed_count\":${installed_count}}"

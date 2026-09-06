@@ -84,6 +84,18 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   `0 6 * * 1`) and include `Fuzzing` in the proposed
   [`scheduled-workflow-failure-issue.yml`](../runbooks/proposed-scheduled-workflow-failure-issue.yml)
   alert's watch list, as that spec already assumes.
+- **Formula CI health** is the one SLI above without a grep-able, structured
+  per-run outcome record in the CI log itself: `validate-formulae.yml`'s
+  `validate_formulae.py` already emits a `VALIDATE_FORMULAE_SUMMARY:` JSON
+  line, and `verify_release_health.sh` emits `VERIFY_RELEASE_HEALTH_SUMMARY:`,
+  but `brew-ci.yml` only prints free-text `::group::` blocks, so a reader has
+  to scroll them to see whether/why a given OS's run passed.
+  **Recommendation:** apply the ready-to-apply step in
+  [`runbooks/proposed-brew-ci-observability-summary-step.yml`](../runbooks/proposed-brew-ci-observability-summary-step.yml),
+  which adds a matching `BREW_CI_SUMMARY:` line (bounded to job status, OS,
+  and formula counts — no exporter, no external data flow). Applying it
+  requires the same `workflows` permission gap noted for the scheduled-failure
+  alert above.
 
 ## Recommendations (no backend configured)
 
