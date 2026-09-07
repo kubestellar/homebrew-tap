@@ -23,7 +23,9 @@
 # the assumption the fuzz.yml schedule change above is applied alongside
 # this file; Homebrew CI / Validate Formulae are also watched for
 # main-branch failures, since a red main check is the primary user-facing
-# signal for this tap (see docs/slo.md).
+# signal for this tap (see docs/slo.md). Stale Issues (stale.yml, daily
+# `0 0 * * *`) is watched too — it is a schedule-triggered workflow with the
+# exact same "no alert if the scheduled run itself fails" gap (see #365).
 #
 # Auto-filed issues are labeled `lifecycle/frozen` in addition to
 # `kind/bug` so the stale-bot (`.github/workflows/stale.yml`) cannot
@@ -42,6 +44,7 @@ on:
       - "Fuzzing"
       - "Homebrew CI"
       - "Validate Formulae"
+      - "Stale Issues"
     types:
       - completed
 
