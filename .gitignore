@@ -1,1 +1,6 @@
 __pycache__/
+
+# Scratch PR-description drafts (e.g. from `gh pr create --body-file`) should
+# never be committed — see issue #360.
+pr-body.txt
+*.pr-body.txt

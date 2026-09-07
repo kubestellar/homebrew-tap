@@ -47,3 +47,7 @@ Formula versions, URLs, and checksums are **automatically synchronized** by GoRe
 - Open a PR for review after the tap changes are ready.
 - In the PR body, summarize the upstream release you are packaging and call out any required GoReleaser or release-pipeline coordination.
 - Maintainers listed in `OWNERS` review tap changes.
+- If you draft your PR description in a local scratch file (e.g. for
+  `gh pr create --body-file`), do not commit that file — it is not part of
+  the tap and only clutters the repository root. `.gitignore` excludes the
+  common `pr-body.txt` pattern for this reason.
