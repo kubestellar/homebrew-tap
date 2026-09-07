@@ -23,20 +23,29 @@ actually required before a PR can merge to `main`. Required contexts:
 - `brew audit + install smoke test (macos-latest)`
 - `unit tests + drift check`
 
-**Path-filter caveat:** `brew-ci.yml` and `validate-formulae.yml` both trigger
-only on `paths: ['Formula/**', ...]`. A required status check tied to a
-path-filtered workflow will never report on a PR that doesn't touch a matching
-path (e.g. a docs-only or `runbooks/**` change), leaving GitHub waiting on a
-check that will never run and blocking merge indefinitely. Whoever applies
-this policy must first confirm the target repo/GitHub setting treats
-non-triggered required checks as skipped-and-passing (GitHub does this
-automatically for `pull_request`-triggered required checks when the path
-filter doesn't match), or add a path-filter-safe passthrough job before
-enabling these as required contexts.
+**Path-filter caveat (correction):** `brew-ci.yml` and `validate-formulae.yml`
+both trigger only on `paths: ['Formula/**', ...]`. Per [GitHub's own
+troubleshooting docs](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks),
+GitHub does **not** treat a required status check as skipped-and-passing when
+its workflow's path filter doesn't match — the check stays "Pending" forever
+and **blocks merge indefinitely**. This is the opposite of what an earlier
+draft of this doc assumed. Concretely, most of this operations agent's own
+`runbooks/**`/`docs/**`-only PRs would never trigger `brew-ci.yml` or
+`validate-formulae.yml`, so enabling the three contexts below as required
+**today, as-is, would deadlock every doc-only PR**. Before enabling them,
+whoever applies this policy must first remove the `paths:` filter from these
+workflows' `pull_request` trigger and instead gate the actual work with a
+job/step-level `if:` that checks for changed paths (so the workflow always
+runs and reports a real "success" for non-matching PRs, satisfying the
+required check) — see GitHub's guidance linked above for the pattern.
 
 ## Applying
 
-A repository administrator must apply these settings via the GitHub Settings > Branches UI, or via:
+**Do not enable the three contexts above as required until the path-filter
+fix described above lands** — doing so first would deadlock every PR that
+doesn't touch `Formula/**` (including this repo's own `docs/**`/`runbooks/**`
+operations PRs). A repository administrator must apply these settings via the
+GitHub Settings > Branches UI, or via:
 
 ```bash
 gh api -X PUT "repos/kubestellar/homebrew-tap/branches/main/protection" --input policy.json
