@@ -30,6 +30,7 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
 | **Time to rollback/mitigate** | Time from incident detection to a rollback PR merged or formula pinned per the [Formula Rollback Runbook](../runbooks/formula-rollback.md) | Incident issue timeline |
 | **Weekly security-scan health** | Fraction of scheduled `CodeQL Analysis` (`0 4 * * 1`) and `Scorecard analysis` (`0 6 * * 1`) runs that complete successfully | [codeql.yml](../.github/workflows/codeql.yml) / [scorecard.yml](../.github/workflows/scorecard.yml) run history |
 | **Formula fuzz health** | Fraction of `Fuzzing` (`fuzz.yml`: syntax, structure, URL/checksum checks) runs that succeed | [fuzz.yml](../.github/workflows/fuzz.yml) run history |
+| **Stale-triage health** | Fraction of scheduled `Stale Issues` (`stale.yml`, daily `0 0 * * *`) runs that complete successfully | [stale.yml](../.github/workflows/stale.yml) run history |
 
 ## SLOs (Service Level Objectives)
 
@@ -84,6 +85,16 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   `0 6 * * 1`) and include `Fuzzing` in the proposed
   [`scheduled-workflow-failure-issue.yml`](../runbooks/proposed-scheduled-workflow-failure-issue.yml)
   alert's watch list, as that spec already assumes.
+- **Stale-triage health ≥ 99%** for the scheduled `Stale Issues` run. Like the
+  security scans above, `stale.yml` already runs on a daily `schedule:`
+  trigger, but **no automated alert currently fires** if the scheduled run
+  itself fails (infra/runner failure, reusable-workflow breakage, permissions
+  regression) — a silent failure here means issues/PRs that should be marked
+  stale or auto-closed per policy simply aren't, with no signal until someone
+  notices manually (see [#365](https://github.com/kubestellar/homebrew-tap/issues/365)).
+  The proposed
+  [`runbooks/proposed-scheduled-workflow-failure-issue.yml`](../runbooks/proposed-scheduled-workflow-failure-issue.yml)
+  now also watches `Stale Issues`.
 - **Formula CI health** is the one SLI above without a grep-able, structured
   per-run outcome record in the CI log itself: `validate-formulae.yml`'s
   `validate_formulae.py` already emits a `VALIDATE_FORMULAE_SUMMARY:` JSON
