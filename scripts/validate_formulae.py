@@ -3,6 +3,7 @@
 malformed sha256, missing sha256 after url, and paired formula lockstep."""
 
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -13,6 +14,11 @@ SHA256_RE = re.compile(r'^[0-9a-f]{64}$')
 # Grep this marker in CI logs to get a structured pass/fail count without
 # parsing the free-text OK:/FAIL: lines.
 SUMMARY_PREFIX = "VALIDATE_FORMULAE_SUMMARY:"
+
+# Cap on how many individual errors are rendered in the $GITHUB_STEP_SUMMARY
+# table so a pathological run (e.g. every formula broken) can't blow up the
+# job summary size; the full list is still on stderr/stdout above.
+MAX_STEP_SUMMARY_ERRORS = 20
 
 # Formulae that must share the same version string
 LOCKSTEP_GROUPS = [
@@ -80,12 +86,22 @@ def parse_formula(path: Path) -> dict:
     return {"version": version, "errors": errors, "name": path.stem}
 
 
-def emit_summary(status: str, formula_count: int, error_count: int) -> None:
-    """Print a single-line JSON summary for CI-log observability.
+def emit_summary(
+    status: str,
+    formula_count: int,
+    error_count: int,
+    errors: list[str] | None = None,
+) -> None:
+    """Print a single-line JSON summary for CI-log observability, and also
+    render it as a markdown table to $GITHUB_STEP_SUMMARY when running in
+    GitHub Actions (that env var is set by the runner for every step; no
+    workflow YAML edit is needed to opt in).
 
-    This is stdout-only (no external data flow, no exporter) and exists so
-    CI tooling can grep a structured pass/fail record instead of parsing the
-    free-text OK:/FAIL: lines above it.
+    Both outputs are stdout/file-only (no external data flow, no exporter):
+    the JSON line lets CI tooling grep a structured pass/fail record instead
+    of parsing the free-text OK:/FAIL: lines above it, and the step summary
+    surfaces the same bounded fields in the GitHub Actions checks UI instead
+    of requiring a reviewer to open the raw log.
     """
     summary = {
         "status": status,
@@ -93,14 +109,50 @@ def emit_summary(status: str, formula_count: int, error_count: int) -> None:
         "error_count": error_count,
     }
     print(f"{SUMMARY_PREFIX} {json.dumps(summary, sort_keys=True)}")
+    _write_step_summary(status, formula_count, error_count, errors or [])
+
+
+def _write_step_summary(
+    status: str, formula_count: int, error_count: int, errors: list[str]
+) -> None:
+    """Append a markdown table to $GITHUB_STEP_SUMMARY, if set. No-op
+    outside GitHub Actions (e.g. local runs, unit tests)."""
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if not summary_path:
+        return
+
+    icon = "✅" if status == "pass" else "❌"
+    lines = [
+        "### Formula drift check",
+        "",
+        "| Status | Formulae checked | Errors |",
+        "|--------|-------------------|--------|",
+        f"| {icon} {status} | {formula_count} | {error_count} |",
+    ]
+    if errors:
+        shown = errors[:MAX_STEP_SUMMARY_ERRORS]
+        lines.append("")
+        lines.append("<details><summary>Error details</summary>")
+        lines.append("")
+        for e in shown:
+            lines.append(f"- {e}")
+        if len(errors) > len(shown):
+            lines.append(f"- ...and {len(errors) - len(shown)} more (see step log)")
+        lines.append("")
+        lines.append("</details>")
+    lines.append("")
+
+    with open(summary_path, "a", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
 
 
 def validate(formula_dir: Path) -> int:
     """Run all checks; return exit code (0 = pass, 1 = fail)."""
     rb_files = sorted(formula_dir.glob("*.rb"))
     if not rb_files:
-        print(f"ERROR: no .rb files found in {formula_dir}", file=sys.stderr)
-        emit_summary(status="error", formula_count=0, error_count=1)
+        msg = f"no .rb files found in {formula_dir}"
+        print(f"ERROR: {msg}", file=sys.stderr)
+        emit_summary(status="error", formula_count=0, error_count=1, errors=[msg])
         return 1
 
     all_errors = []
@@ -129,7 +181,12 @@ def validate(formula_dir: Path) -> int:
     if all_errors:
         for e in all_errors:
             print(f"FAIL: {e}", file=sys.stderr)
-        emit_summary(status="fail", formula_count=len(rb_files), error_count=len(all_errors))
+        emit_summary(
+            status="fail",
+            formula_count=len(rb_files),
+            error_count=len(all_errors),
+            errors=all_errors,
+        )
         return 1
 
     names = [p.stem for p in rb_files]
