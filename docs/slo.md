@@ -38,6 +38,18 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   A red `main` check on `brew-ci.yml` or `validate-formulae.yml` means the next
   `brew install`/`brew upgrade` for at least one formula is very likely broken for
   end users — treat every `main` failure as a candidate incident, not routine noise.
+- **Formula CI health is currently 0% on `ubuntu-latest`, not just red-but-informative:**
+  as of the `2026-09-08` daily run window, `brew-ci.yml`'s `Set up Homebrew tap`
+  step itself fails ("`Refusing to load formula ... from untrusted tap`") before
+  `brew audit --strict`/install/test ever execute, on both `main` and pull
+  request runs — see [#373](https://github.com/kubestellar/homebrew-tap/issues/373).
+  This is a more severe escalation of the cleanup-only symptom tracked in
+  [#322](https://github.com/kubestellar/homebrew-tap/issues/322): today there is
+  **no automated Linux signal at all** for `Formula/**` changes, so a real
+  regression landing right now would only be caught by the `macos-latest` leg
+  of the same job or by a user report. Treat this as blocking the ≤15-minute
+  detection SLO below until a maintainer applies the `brew trust` fix proposed
+  in #373 (requires `workflows` permission this agent's credentials lack).
 - **Formula CI health** and **Formula drift health** currently only get a data
   point when a `Formula/**` (or related-path) change triggers `brew-ci.yml` /
   `validate-formulae.yml` on `main`. Neither workflow has a `schedule:` trigger,
