@@ -65,7 +65,10 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
 - **Time to rollback/mitigate ≤ 2 hours** for a confirmed broken release, using the
   [Formula Rollback Runbook](../runbooks/formula-rollback.md). Incidents exceeding
   this budget, or affecting more than a handful of users, should get a
-  [postmortem](postmortem-template.md).
+  [postmortem](postmortem-template.md). See
+  [`docs/severity-levels.md`](severity-levels.md) for how this budget maps to
+  the P1–P4 severity field on the [incident](../.github/ISSUE_TEMPLATE/incident.md)
+  and [postmortem](postmortem-template.md) templates.
 - **Weekly security-scan health ≥ 99%** for the scheduled `CodeQL Analysis` and
   `Scorecard analysis` runs. Both already run on a weekly `schedule:` trigger, but
   — like the CI failure gap above — **no automated alert currently fires** if a
