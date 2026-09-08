@@ -10,7 +10,7 @@ assignees: ""
 
 **Date/Time (UTC):**  
 **Duration:**  
-**Severity:** <!-- P1 / P2 / P3 / P4 -->  
+**Severity:** <!-- P1 / P2 / P3 / P4 — see ../../docs/severity-levels.md for definitions -->
 **Status:** <!-- Investigating / Mitigated / Resolved -->
 
 **Affected formula(e):** <!-- kubestellar-ops / kubestellar-deploy / kc-agent -->
