@@ -1,0 +1,43 @@
+# PROPOSED WORKFLOW STEP — not yet active.
+#
+# This agent's GitHub App installation lacks the `workflows: write`
+# permission GitHub requires to create/update files under
+# `.github/workflows/`, so this ready-to-apply step is checked in here
+# under `runbooks/` instead (see runbooks/proposed-brew-ci-observability-summary-step.yml
+# and runbooks/proposed-scheduled-workflow-failure-issue.yml for the same
+# constraint on other files). A maintainer with `workflows` permission can
+# apply it by replacing the body of the existing "Fuzzing summary" step at
+# the end of `.github/workflows/fuzz.yml`'s `formula-fuzz` job with the
+# step below (or appending it as a new final step).
+#
+# Why: `validate_formulae.py` (VALIDATE_FORMULAE_SUMMARY), verify_release_health.sh
+# (VERIFY_RELEASE_HEALTH_SUMMARY), and scripts/brew_ci_summary.sh
+# (BREW_CI_SUMMARY) already emit a single-line, grep-able JSON summary for
+# CI-log observability. `fuzz.yml`'s existing "Fuzzing summary" step only
+# echoes fixed free text ("Fuzzing completed successfully!" plus a
+# checklist) — it carries no machine-readable outcome record, and (unlike
+# the free text) it never runs at all when an earlier step in the job
+# fails, since it has no `if: always()` guard. This step closes both gaps
+# with the same bounded, stdout-only pattern: no exporter, no metrics
+# backend, no external data flow, and no unbounded labels (status/counts
+# only). It runs even when an earlier step failed so the record always
+# appears.
+#
+# scripts/fuzz_summary.sh (with regression tests in
+# scripts/test_fuzz_summary.sh) already implements and tests the summary
+# logic below; this step just wires it into the job.
+#
+# --- content below is the step as it should read once applied ---
+#
+#       - name: Emit CI-observability summary
+#         # Bounded, stdout-only JSON summary line for CI-log observability,
+#         # mirroring VALIDATE_FORMULAE_SUMMARY (validate_formulae.py),
+#         # VERIFY_RELEASE_HEALTH_SUMMARY (verify_release_health.sh), and
+#         # BREW_CI_SUMMARY (brew_ci_summary.sh): no exporter, no metrics
+#         # backend, no external data flow — just a grep-able, fixed-shape
+#         # record of this job's outcome. Runs even when an earlier step
+#         # failed so the record always appears.
+#         if: always()
+#         env:
+#           JOB_STATUS: ${{ job.status }}
+#         run: scripts/fuzz_summary.sh

@@ -122,6 +122,18 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   and formula counts — no exporter, no external data flow). Applying it
   requires the same `workflows` permission gap noted for the scheduled-failure
   alert above.
+- **Formula fuzz health** has the same structured-summary gap as `brew-ci.yml`
+  above: `fuzz.yml`'s final "Fuzzing summary" step only echoes fixed free text
+  ("Fuzzing completed successfully!" plus a checklist), with no grep-able
+  outcome record, and — unlike the free text — it has no `if: always()` guard,
+  so it does not even run when an earlier step in the job fails.
+  **Recommendation:** apply the ready-to-apply step in
+  [`runbooks/proposed-fuzz-observability-summary-step.yml`](../runbooks/proposed-fuzz-observability-summary-step.yml),
+  which adds a matching `FUZZ_SUMMARY:` line (bounded to job status and
+  formula count — no exporter, no external data flow) and always runs.
+  `scripts/fuzz_summary.sh` (tested in `scripts/test_fuzz_summary.sh`)
+  already implements and tests this logic. Applying it requires the same
+  `workflows` permission gap noted above.
 
 ## Recommendations (no backend configured)
 
