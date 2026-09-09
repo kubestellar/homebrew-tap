@@ -18,6 +18,11 @@
 # the same bounded, stdout-only pattern: no exporter, no metrics backend, no
 # external data flow, and no unbounded labels (status/os/counts only).
 #
+# The BREW_CI_SUMMARY counting logic itself now lives in the tested,
+# standalone scripts/brew_ci_summary.sh (see scripts/test_brew_ci_summary.sh
+# for its regression coverage, homebrew-tap#380) rather than inline bash
+# here, so a maintainer applying this step just invokes the script.
+#
 # --- content below is the step as it should read once applied ---
 #
 #       - name: Emit CI-observability summary
@@ -28,14 +33,7 @@
 #         # grep-able, fixed-shape record of this job's outcome. Runs even
 #         # when an earlier step failed so the record always appears.
 #         if: always()
-#         run: |
-#           formula_count=0
-#           installed_count=0
-#           for formula in Formula/*.rb; do
-#             name=$(basename "$formula" .rb)
-#             formula_count=$((formula_count + 1))
-#             if brew list --formula 2>/dev/null | grep -qx "$name"; then
-#               installed_count=$((installed_count + 1))
-#             fi
-#           done
-#           echo "BREW_CI_SUMMARY: {\"status\":\"${{ job.status }}\",\"os\":\"${{ matrix.os }}\",\"formula_count\":${formula_count},\"installed_count\":${installed_count}}"
+#         env:
+#           JOB_STATUS: ${{ job.status }}
+#           MATRIX_OS: ${{ matrix.os }}
+#         run: scripts/brew_ci_summary.sh
