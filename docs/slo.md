@@ -134,6 +134,22 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   `scripts/fuzz_summary.sh` (tested in `scripts/test_fuzz_summary.sh`)
   already implements and tests this logic. Applying it requires the same
   `workflows` permission gap noted above.
+- **Formula drift health** has the same structured-summary gap for its
+  unit-test step specifically: `validate-formulae.yml`'s "Run all
+  scripts/test_\*.py unit tests" step runs `unittest discover` directly, so
+  the only pass/fail record is unittest's own free-text `OK` / `FAILED
+  (failures=N, errors=M)` tail line — unlike the drift-check script in the
+  very same job, which already emits `VALIDATE_FORMULAE_SUMMARY:`. This also
+  silently folds the distinct "no tests ran" outcome (unittest exit code 5)
+  into an undifferentiated non-zero exit, the same silent-skip failure class
+  as #268. **Recommendation:** apply the ready-to-apply step in
+  [`runbooks/proposed-validate-formulae-unittest-summary-step.yml`](../runbooks/proposed-validate-formulae-unittest-summary-step.yml),
+  which adds a matching `UNITTEST_SUMMARY:` line (bounded to status/counts —
+  no exporter, no external data flow) while preserving the full verbose
+  unittest output unchanged. `scripts/unittest_summary.sh` (tested in
+  `scripts/test_unittest_summary.sh`) already implements and tests this
+  logic. Applying it requires the same `workflows` permission gap noted
+  above.
 
 ## Recommendations (no backend configured)
 

@@ -1,0 +1,38 @@
+# PROPOSED WORKFLOW STEP — not yet active.
+#
+# This agent's GitHub App installation lacks the `workflows: write`
+# permission GitHub requires to create/update files under
+# `.github/workflows/`, so this ready-to-apply step is checked in here
+# under `runbooks/` instead (see runbooks/proposed-brew-ci-observability-summary-step.yml
+# and runbooks/proposed-fuzz-observability-summary-step.yml for the same
+# constraint on other files). A maintainer with `workflows` permission can
+# apply it by replacing the "Run all scripts/test_*.py unit tests" step in
+# `.github/workflows/validate-formulae.yml`'s `validate-formulae` job with
+# the step below.
+#
+# Why: `validate_formulae.py` (VALIDATE_FORMULAE_SUMMARY), verify_release_health.sh
+# (VERIFY_RELEASE_HEALTH_SUMMARY), scripts/brew_ci_summary.sh (BREW_CI_SUMMARY),
+# and scripts/fuzz_summary.sh (FUZZ_SUMMARY) already emit a single-line,
+# grep-able JSON summary for CI-log observability. The unit-test step in
+# this same job is the one remaining CI step without an equivalent
+# machine-readable outcome record — only unittest's own free-text "OK" /
+# "FAILED (failures=N, errors=M)" tail line, which also silently folds the
+# distinct "no tests ran" outcome (unittest exit code 5) into an
+# undifferentiated non-zero exit, the same silent-skip failure class as
+# #268. This step closes that gap with the same bounded, stdout-only
+# pattern: no exporter, no metrics backend, no external data flow, and no
+# unbounded labels (status/counts only). Full unittest verbose output is
+# preserved unchanged ahead of the summary line.
+#
+# scripts/unittest_summary.sh (with regression tests in
+# scripts/test_unittest_summary.sh) already implements and tests the
+# summary logic below; this step just wires it into the job.
+#
+# --- content below is the step as it should read once applied ---
+#
+#       - name: Run all scripts/test_*.py unit tests
+#         # Delegates to scripts/unittest_summary.sh (regression-tested by
+#         # scripts/test_unittest_summary.sh) so the unittest discover
+#         # invocation and its structured UNITTEST_SUMMARY: outcome record
+#         # stay in one tested place instead of inlined bash here.
+#         run: scripts/unittest_summary.sh
