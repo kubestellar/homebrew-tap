@@ -184,6 +184,15 @@ KC_ALLOWED_ORIGINS="https://console1.example.com,https://console2.example.com" k
 - [KubeStellar](https://kubestellar.io)
 - [Claude Plugins Marketplace](https://github.com/kubestellar/claude-plugins)
 
+## Operations
+
+If `brew install`/`brew upgrade` is broken for any formula in this tap, start here:
+
+- [Formula Rollback Runbook](runbooks/formula-rollback.md) — detection, triage, rollback, and user self-service recovery steps
+- [SLOs/SLIs](docs/slo.md) — CI health targets and detection/mitigation time budgets
+- [File an incident report](https://github.com/kubestellar/homebrew-tap/issues/new?template=incident.md)
+- [Postmortem template](docs/postmortem-template.md) — for incidents exceeding the mitigation budget or affecting more than a handful of users
+
 ## License
 
 Apache License 2.0
