@@ -52,3 +52,13 @@ See: [Formula Rollback Runbook](../../runbooks/formula-rollback.md)
 ## Lessons Learned
 
 <!-- What did we learn? What should we do differently? -->
+
+## Postmortem
+
+<!-- Per ../../docs/severity-levels.md: any P1 or P2 incident, or any incident
+that exceeds the ../../docs/slo.md ≤2-hour rollback budget regardless of
+level, should get a postmortem. Copy ../../docs/postmortem-template.md into
+docs/postmortems/YYYY-MM-DD-<short-title>.md and link it here once filed. -->
+
+**Postmortem required (P1/P2 or >2h):** <!-- Yes / No -->
+**Postmortem link:** <!-- link once filed, or N/A -->
