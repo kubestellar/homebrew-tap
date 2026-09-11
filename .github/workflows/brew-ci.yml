@@ -37,6 +37,7 @@ jobs:
           # Rewire to this checkout so brew resolves in-tree formula edits.
           brew untap kubestellar/tap || true
           brew tap kubestellar/tap "$(pwd)"
+          brew trust kubestellar/tap
 
       - name: brew audit --strict (all formulae)
         run: |
