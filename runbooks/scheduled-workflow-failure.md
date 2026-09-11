@@ -1,7 +1,7 @@
 # Scheduled Workflow Failure Runbook
 
 **Repository:** `kubestellar/homebrew-tap`
-**Applies to:** `CodeQL Analysis`, `OpenSSF Scorecard`, `Fuzzing`, `Homebrew CI`, `Validate Formulae`
+**Applies to:** `CodeQL Analysis`, `OpenSSF Scorecard`, `Fuzzing`, `Homebrew CI`, `Validate Formulae`, `Stale Issues`
 
 ---
 
@@ -16,7 +16,7 @@ titled `Workflow failure: <workflow name>` and labeled `workflow-failure`.
 That issue is created whenever:
 
 - A scheduled (`cron`) or manually (`workflow_dispatch`) triggered run of
-  `CodeQL Analysis`, `OpenSSF Scorecard`, or `Fuzzing` fails, or
+  `CodeQL Analysis`, `OpenSSF Scorecard`, `Fuzzing`, or `Stale Issues` fails, or
 - `Homebrew CI` or `Validate Formulae` fails on `main`.
 
 This closes the alert gap described in [`docs/slo.md`](../docs/slo.md#slos-service-level-objectives):
@@ -44,6 +44,12 @@ depending on someone noticing a red check.
 5. For `Fuzzing` failures, check whether a recent `Formula/**` change or an
    unrelated shared-script change (e.g. to `scripts/validate_formulae.py`)
    caused the regression, then fix and re-run.
+6. For `Stale Issues` failures, this is an infra/permissions/reusable-workflow
+   break in the stale-triage automation itself (see
+   [#365](https://github.com/kubestellar/homebrew-tap/issues/365)), not a
+   formula or code regression — issues/PRs due for stale-marking or
+   auto-closing per policy simply won't be, with no other signal until this
+   alert fires. Fix the workflow/permissions issue and re-run.
 
 ## Closing the Loop
 
@@ -59,9 +65,10 @@ depending on someone noticing a red check.
 ## Notes
 
 - The alert workflow only fires for `schedule`/`workflow_dispatch` events (for
-  `CodeQL Analysis`, `OpenSSF Scorecard`, `Fuzzing`) or `main`-branch runs (for
-  `Homebrew CI`, `Validate Formulae`) — pull-request failures are already
-  visible via the PR's own status checks and do not need a duplicate issue.
+  `CodeQL Analysis`, `OpenSSF Scorecard`, `Fuzzing`, `Stale Issues`) or
+  `main`-branch runs (for `Homebrew CI`, `Validate Formulae`) — pull-request
+  failures are already visible via the PR's own status checks and do not need
+  a duplicate issue.
 - No runtime backend or metrics exporter is added by this mechanism; it is a
   GitHub Actions `workflow_run` → `gh issue create`/`comment` job only, per the
   no-backend-configured scope of this repository (see `docs/slo.md`).
