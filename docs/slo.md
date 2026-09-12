@@ -68,8 +68,10 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
 - **Time to detect a broken `main` release ≤ 15 minutes.** CI on `main` normally
   completes well within this window; a failed run should be triaged as soon as it
   is reported. **Recommendation:** no automated alert currently fires on a `main`
-  CI failure here — today, detection relies on someone noticing the red check on
-  `main` or a user filing an issue. A ready-to-apply `workflow_run`-triggered job
+  CI failure here (tracked in
+  [#316](https://github.com/kubestellar/homebrew-tap/issues/316)) — today,
+  detection relies on someone noticing the red check on `main` or a user
+  filing an issue. A ready-to-apply `workflow_run`-triggered job
   that files a `kind/bug` tracking issue on failure (linking this doc and the
   [Scheduled Workflow Failure Runbook](../runbooks/scheduled-workflow-failure.md))
   is checked in at
@@ -88,7 +90,8 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   — like the CI failure gap above — **no automated alert currently fires** if a
   scheduled run itself fails to complete (as opposed to reporting findings); a
   silent failure here means a security regression could go undetected for an
-  entire week. The proposed
+  entire week (tracked in
+  [#337](https://github.com/kubestellar/homebrew-tap/issues/337)). The proposed
   [`runbooks/proposed-scheduled-workflow-failure-issue.yml`](../runbooks/proposed-scheduled-workflow-failure-issue.yml)
   also watches `CodeQL Analysis` and `Scorecard analysis`.
 - **Formula fuzz health ≥ 99%**, and detection latency for a fuzz regression should
