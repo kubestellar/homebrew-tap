@@ -1,0 +1,13 @@
+[run]
+branch = True
+# Only gate on the production validator. The scripts/test_*.py files are
+# tests themselves; measuring them against a 100% floor would fail as
+# soon as any test file gains an unreachable defensive branch. The
+# validator, however, is a single-file supply-chain-critical module —
+# a regression below 100% must fail CI.
+include =
+    scripts/validate_formulae.py
+
+[report]
+show_missing = True
+skip_covered = False
