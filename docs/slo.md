@@ -39,8 +39,8 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   `brew install`/`brew upgrade` for at least one formula is very likely broken for
   end users — treat every `main` failure as a candidate incident, not routine noise.
 - **Formula CI health is currently 0% on `ubuntu-latest`, not just red-but-informative:**
-  as of the `2026-09-11` daily run window (39 consecutive failing `main` runs
-  since the last success on `2026-08-31T05:29:36Z`, ~11 days), `brew-ci.yml`'s
+  as of the `2026-09-12` daily run window (45 consecutive failing `main` runs
+  since the last success on `2026-08-31T05:29:36Z`, ~12 days), `brew-ci.yml`'s
   `Set up Homebrew tap` step itself fails ("`Refusing to load formula ... from
   untrusted tap`") before `brew audit --strict`/install/test ever execute, on
   both `main` and pull request runs — see
