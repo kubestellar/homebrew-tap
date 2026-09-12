@@ -177,12 +177,6 @@ KC_ALLOWED_ORIGINS="https://console1.example.com,https://console2.example.com" k
 - **Optional Token Auth**: Can require a shared secret via `KC_AGENT_TOKEN`
 - **Command Allowlist**: Only permits safe kubectl commands
 
-## Operations
-
-- [SLOs / SLIs](docs/slo.md) — service level objectives for `brew install`/`brew upgrade` and CI health
-- [Formula Rollback Runbook](runbooks/formula-rollback.md) — how to detect and roll back a broken release
-- [Postmortem Template](docs/postmortem-template.md) — template for writing up an incident
-
 ## Links
 
 - [KubeStellar Console](https://github.com/kubestellar/console)
