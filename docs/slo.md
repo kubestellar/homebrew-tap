@@ -101,6 +101,20 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   [#337](https://github.com/kubestellar/homebrew-tap/issues/337)). The proposed
   [`runbooks/proposed-scheduled-workflow-failure-issue.yml`](../runbooks/proposed-scheduled-workflow-failure-issue.yml)
   also watches `CodeQL Analysis` and `Scorecard analysis`.
+- **Weekly security-scan health is currently 0% for `Scorecard analysis`,
+  not just unalerted:** every `scorecard.yml` run since at least
+  `2026-09-10T05:33:06Z` has failed at the `Pull
+  gcr.io/openssf/scorecard-action:v2.4.0` step, before checkout or analysis
+  ever run, with `denied: This API method requires billing to be enabled`
+  — Google's deprecation of legacy `gcr.io` image hosting, not a
+  KubeStellar-side regression. `CodeQL Analysis` is unaffected. The fix
+  (pulling the GHCR-mirrored image via the action's `image:` input) lives
+  in the pinned reusable workflow
+  `kubestellar/infra/.github/workflows/reusable-scorecard.yml`, in a repo
+  outside every operations agent's authorized-repo list, so it cannot be
+  fixed from this repo at all — see
+  [#417](https://github.com/kubestellar/homebrew-tap/issues/417) for the
+  exact one-line change and confirmed failing-run evidence.
 - **Formula fuzz health ≥ 99%**, and detection latency for a fuzz regression should
   match the ≤ 15 minute target above. Unlike `CodeQL Analysis`/`Scorecard analysis`,
   `fuzz.yml` has **no `schedule:` trigger at all** — it only runs on `push`/`pull_request`
