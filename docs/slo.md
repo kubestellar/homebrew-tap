@@ -78,6 +78,18 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   [`runbooks/proposed-scheduled-workflow-failure-issue.yml`](../runbooks/proposed-scheduled-workflow-failure-issue.yml) —
   applying it (moving it under `.github/workflows/`) requires `workflows`
   permission this agent's GitHub App installation does not have.
+- **This detection window does not include a pre-merge gate for most
+  `Formula/**` changes.** `goreleaserbot` pushes formula updates directly to
+  `main` on every upstream release, with no associated PR or review (see
+  [#414](https://github.com/kubestellar/homebrew-tap/issues/414), which also
+  flags that this contradicts `.github/branch-protection-policy.md`'s stated
+  "only maintainers via PR merge" rule). `brew-ci.yml`'s `on: push` run for
+  that commit is the first automated check it receives, and it runs *after*
+  the change is already live to `brew install`/`brew upgrade` — so "Time to
+  detect a broken release" for these bot commits starts from an
+  already-user-facing state, not from a review gate, and has zero signal at
+  all on whichever platform `brew-ci.yml` itself is currently degraded on
+  (see the Linux outage in [#409](https://github.com/kubestellar/homebrew-tap/issues/409)).
 - **Time to rollback/mitigate ≤ 2 hours** for a confirmed broken release, using the
   [Formula Rollback Runbook](../runbooks/formula-rollback.md). Incidents exceeding
   this budget, or affecting more than a handful of users, should get a
