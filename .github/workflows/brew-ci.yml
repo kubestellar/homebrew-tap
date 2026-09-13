@@ -36,7 +36,16 @@ jobs:
           # setup-homebrew on Linux pre-registers kubestellar/tap with the remote URL.
           # Rewire to this checkout so brew resolves in-tree formula edits.
           brew untap kubestellar/tap || true
-          brew tap kubestellar/tap "$(pwd)"
+          # Newer Homebrew enforces a tap-trust model: tapping a local path
+          # exits non-zero ("untrusted tap") until `brew trust` is run, so
+          # tolerate the tap failure and trust the tap when supported.
+          tap_failed=0
+          brew tap kubestellar/tap "$(pwd)" || tap_failed=1
+          if brew trust --help >/dev/null 2>&1; then
+            brew trust kubestellar/tap
+          elif [ "$tap_failed" -ne 0 ]; then
+            exit 1
+          fi
 
       - name: brew audit --strict (all formulae)
         run: |
