@@ -1,26 +1,7 @@
-# PROPOSED WORKFLOW — not yet active.
-#
-# This agent's GitHub App installation lacks the `workflows: write`
-# permission GitHub requires to create/update files under
-# `.github/workflows/`, so this ready-to-apply spec is checked in here
-# under `runbooks/` instead. A maintainer with `workflows` permission can
-# apply it with:
-#
-#   git mv runbooks/proposed-scheduled-workflow-failure-issue.yml \
-#     .github/workflows/scheduled-workflow-failure-issue.yml
-#
-# and, per the companion recommendation in docs/slo.md, add a weekly
-# `schedule:` trigger to `.github/workflows/fuzz.yml` (e.g. `0 8 * * 1`,
-# offset from codeql.yml's `0 4 * * 1` and scorecard.yml's `0 6 * * 1`) so
-# `Fuzzing` is included in the "scheduled run" alert path below rather than
-# only running on `push`/`pull_request`.
-#
-# --- content below is the workflow as it should read once applied ---
-#
 # Closes the alert gap documented in docs/slo.md: CodeQL Analysis and
 # OpenSSF Scorecard already run on a weekly schedule, but nothing alerts if
 # a *scheduled* run itself fails to complete. Fuzzing is included here on
-# the assumption the fuzz.yml schedule change above is applied alongside
+# the assumption the fuzz.yml schedule change is applied alongside
 # this file; Homebrew CI / Validate Formulae are also watched for
 # main-branch failures, since a red main check is the primary user-facing
 # signal for this tap (see docs/slo.md). Stale Issues (stale.yml, daily
