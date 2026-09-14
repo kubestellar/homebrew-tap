@@ -39,3 +39,19 @@ Where `policy.json` contains:
 ## Rationale
 
 Addresses security findings tracked in issue #177 (branch protection) and #178 (mandatory code review).
+
+## Known exception: automated GoReleaser formula updates
+
+`Formula/**` version/URL/checksum updates are pushed directly to `main` by
+`goreleaserbot` on every upstream release, with no associated pull request or
+review (see `CONTRIBUTING.md`'s "Release sync" section). This is a real,
+recurring exception to the "only maintainers via PR merge" rule above, not
+covered by any documented bypass at the time of writing (see
+[#414](https://github.com/kubestellar/homebrew-tap/issues/414)). If this
+automated flow is intended to remain a direct push, it should be scoped as an
+explicit, narrow branch-protection exception for that bot identity; if not,
+the flow should be moved behind a PR. Until a maintainer resolves this, do not
+assume every commit on `main` touching `Formula/**` has had human review —
+`brew-ci.yml`'s post-push run on `main` is the only automated check these
+commits currently receive, and it has no Linux signal at all during outages
+like the one tracked in [#409](https://github.com/kubestellar/homebrew-tap/issues/409).

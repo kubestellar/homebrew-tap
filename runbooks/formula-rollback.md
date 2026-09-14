@@ -53,6 +53,17 @@ brew fetch --formula kubestellar/tap/kubestellar-ops
 
 A fetch failure confirms a broken release. A successful fetch with smoke-test failure confirms a bad binary.
 
+**Note on timing:** most `Formula/**` changes on `main` are pushed directly by
+`goreleaserbot` (see [#414](https://github.com/kubestellar/homebrew-tap/issues/414)),
+not merged via reviewed PR. `brew-ci.yml`'s `on: push` run for that commit is
+the *first* automated check these updates receive — it runs strictly after
+the change is already live to `brew install`/`brew upgrade`, not before. Don't
+treat "CI is still green" as proof a just-published bot commit is safe until
+that push-triggered run has actually completed; and if `brew-ci.yml` itself
+is degraded (e.g. the Linux outage in [#409](https://github.com/kubestellar/homebrew-tap/issues/409)),
+assume a recent bot commit has had **no automated validation on the affected
+platform** until proven otherwise.
+
 **Shortcut:** [`scripts/verify_release_health.sh`](../scripts/verify_release_health.sh)
 runs the fetch above for all three formulae (or specific ones passed as
 arguments) and prints the last commit that touched each formula file, so you
