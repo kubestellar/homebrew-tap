@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
 # workflow_failure_notify.sh — render the markdown bodies used by
-# runbooks/proposed-scheduled-workflow-failure-issue.yml's "Comment on
-# existing issue" and "Open new issue" steps.
+# .github/workflows/scheduled-workflow-failure-issue.yml's "Comment on
+# existing issue" and "Open new issue" steps (applied in #441).
 #
-# That workflow is not yet active (this agent's GitHub App installation
-# lacks the `workflows` permission required to add files under
-# .github/workflows/ — see docs/slo.md), but its inline printf/heredoc
-# body-building logic had zero test coverage, unlike every other CI-log
-# script in this repo (fuzz_summary.sh, brew_ci_summary.sh,
-# verify_release_health.sh all have companion test_*.sh files). This
-# script extracts that formatting so it can be regression-tested here and
-# reused verbatim once a maintainer applies the runbook.
+# Its inline printf/heredoc body-building logic had zero test coverage,
+# unlike every other CI-log script in this repo (fuzz_summary.sh,
+# brew_ci_summary.sh, verify_release_health.sh all have companion
+# test_*.sh files). This script extracts that formatting so it can be
+# regression-tested here and reused verbatim by the applied workflow.
 #
 # Stdout-only: no exporter, metrics backend, or off-box data flow.
 #

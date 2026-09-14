@@ -3,8 +3,9 @@
 # This agent's GitHub App installation lacks the `workflows: write`
 # permission GitHub requires to create/update files under
 # `.github/workflows/`, so this ready-to-apply step is checked in here
-# under `runbooks/` instead (see runbooks/proposed-scheduled-workflow-failure-issue.yml
-# for the same constraint on a different file). A maintainer with
+# under `runbooks/` instead (the same constraint that previously applied to
+# .github/workflows/scheduled-workflow-failure-issue.yml, since applied in
+# #441). A maintainer with
 # `workflows` permission can apply it by appending the step below to the
 # end of the `brew-audit-and-install` job's `steps:` list in
 # `.github/workflows/brew-ci.yml`.

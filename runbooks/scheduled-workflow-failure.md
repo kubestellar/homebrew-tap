@@ -7,13 +7,11 @@
 
 ## When to Use This Runbook
 
-Use this runbook once a maintainer has applied
-[`proposed-scheduled-workflow-failure-issue.yml`](proposed-scheduled-workflow-failure-issue.yml)
-under `.github/workflows/` (this repo's operations-agent GitHub App
-installation lacks the `workflows` permission needed to do so itself — see
-that file's header) and you are assigned, or notice, an auto-filed issue
+Use this runbook when you are assigned, or notice, an auto-filed issue
 titled `Workflow failure: <workflow name>` and labeled `workflow-failure`.
-That issue is created whenever:
+These issues are created by
+[`.github/workflows/scheduled-workflow-failure-issue.yml`](../.github/workflows/scheduled-workflow-failure-issue.yml)
+(applied in #441) whenever:
 
 - A scheduled (`cron`) or manually (`workflow_dispatch`) triggered run of
   `CodeQL Analysis`, `OpenSSF Scorecard`, `Fuzzing`, or `Stale Issues` fails, or
