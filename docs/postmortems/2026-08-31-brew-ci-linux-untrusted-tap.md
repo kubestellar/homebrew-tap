@@ -5,10 +5,19 @@
 **Authors:** operations (automated audit)
 **Severity:** P2 — see [severity-levels.md](../severity-levels.md)
 
-> **Status at time of writing: ONGOING, unresolved.** This postmortem is filed
-> per the `docs/slo.md` / `docs/severity-levels.md` policy that any P1/P2
-> incident — or any incident exceeding the 2-hour rollback SLO — gets a
-> postmortem, regardless of whether mitigation has landed yet. See
+> **Status at time of writing: ONGOING, unresolved — a fix landed but did not
+> restore green CI.** PR
+> [#422](https://github.com/kubestellar/homebrew-tap/pull/422) merged a
+> `brew trust`-based fix for the "untrusted tap" symptom below, but its own
+> pre-merge checks were still red on both legs
+> ([run 34786285984](https://github.com/kubestellar/homebrew-tap/actions/runs/34786285984)),
+> and the first `main` run after merge
+> ([run 34786304650](https://github.com/kubestellar/homebrew-tap/actions/runs/34786304650),
+> `9c97b0a`, 2026-09-13T22:16Z) still failed on **both** OSes, each with a new
+> and different signature — see "Response" and "Timeline" below. This
+> postmortem is filed per the `docs/slo.md` / `docs/severity-levels.md` policy
+> that any P1/P2 incident — or any incident exceeding the 2-hour rollback SLO —
+> gets a postmortem, regardless of whether mitigation has landed yet. See
 > [#409](https://github.com/kubestellar/homebrew-tap/issues/409) (no incident
 > issue or postmortem previously existed despite meeting this threshold) and
 > [#373](https://github.com/kubestellar/homebrew-tap/issues/373) (root cause
@@ -98,12 +107,28 @@ Time from root-cause escalation (`2026-09-08T05:20Z`) to first tracked report
 - 2026-09-12: [#409](https://github.com/kubestellar/homebrew-tap/issues/409)
   filed noting the incident had crossed the repo's own P1/P2 + >2h SLO
   threshold with no incident issue or postmortem on file.
-- 2026-09-13: This postmortem filed to close that documentation gap. **No
-  code fix has landed yet** — the fix itself is a change to
-  `.github/workflows/brew-ci.yml`, which is out of reach for this agent (see
-  [#373](https://github.com/kubestellar/homebrew-tap/issues/373) for the
-  proposed replacement text) and requires a maintainer or an agent with
-  `workflows` permission to apply and merge.
+- 2026-09-13: This postmortem filed to close that documentation gap. At the
+  time of filing, no code fix had landed yet.
+- 2026-09-13 (later): [#422](https://github.com/kubestellar/homebrew-tap/pull/422)
+  merged a `brew trust kubestellar/tap` mitigation for the "untrusted tap"
+  symptom. Its own pre-merge checks were still failing on **both** legs
+  ([run 34786285984](https://github.com/kubestellar/homebrew-tap/actions/runs/34786285984))
+  — this repo's branch-protection policy intentionally does not require
+  status checks to merge (`required_status_checks: null` in
+  [`branch-protection-policy.md`](../../.github/branch-protection-policy.md)),
+  so this was not a policy violation, but it did mean the merge went in
+  without a green signal. The first `main` run after merge
+  ([run 34786304650](https://github.com/kubestellar/homebrew-tap/actions/runs/34786304650),
+  `9c97b0a`) confirmed the "untrusted tap" step itself is fixed, but **both
+  legs still fail with new, different signatures**: `ubuntu-latest` now fails
+  at the audit step itself with `No available formula or cask with the name
+  "kubestellar/tap/kc-agent"`, and `macos-latest` — previously green
+  throughout this entire incident — is now newly red on a real `brew audit
+  --strict` finding on `kc-agent.rb` (`Stable: version 0.3.41 is redundant
+  with version scanned from URL`), unrelated to the tap-trust root cause.
+  **Net effect: Linux CI health is still 0%, and macOS CI health, previously
+  100% throughout this incident, is now also 0%.** The fix changed the
+  failure mode without restoring signal on either OS.
 - No rollback per the [Formula Rollback Runbook](../../runbooks/formula-rollback.md)
   was applicable: the incident is a CI-infrastructure break, not a bad
   formula release, so there is nothing user-facing to roll back.
@@ -121,8 +146,10 @@ Time from root-cause escalation (`2026-09-08T05:20Z`) to first tracked report
 | 2026-09-08T14:42:31Z | [#373](https://github.com/kubestellar/homebrew-tap/issues/373) filed |
 | 2026-09-10T~05:33Z | Re-verified still failing identically, no fix applied |
 | 2026-09-12T05:33:49Z | [#409](https://github.com/kubestellar/homebrew-tap/issues/409) filed (SLO/incident-tracking gap) |
-| 2026-09-13T~05:18Z | Latest confirmed failing run at time of writing; `macos-latest` leg still green |
-| — | **Not yet resolved.** |
+| 2026-09-13T~05:18Z | Last confirmed "untrusted tap" failure before the #422 fix; `macos-latest` leg still green |
+| 2026-09-13T~22:16Z | [#422](https://github.com/kubestellar/homebrew-tap/pull/422) merged (`brew trust` mitigation), despite pre-merge checks failing on both legs |
+| 2026-09-13T22:16:35Z | First post-merge `main` run ([34786304650](https://github.com/kubestellar/homebrew-tap/actions/runs/34786304650), `9c97b0a`): "untrusted tap" resolved, but `ubuntu-latest` now fails with `No available formula or cask with the name "kubestellar/tap/kc-agent"`, and `macos-latest` is newly red on an unrelated `brew audit --strict` finding in `kc-agent.rb` |
+| — | **Not yet resolved — both legs still red, with new failure signatures.** |
 
 ---
 
@@ -150,6 +177,15 @@ Time from root-cause escalation (`2026-09-08T05:20Z`) to first tracked report
   exceeding the repo's own P2 severity + 2-hour SLO thresholds — this
   postmortem is the first artifact tracking the incident as an incident
   rather than as a bare CI-health issue.
+- A mitigation PR ([#422](https://github.com/kubestellar/homebrew-tap/pull/422))
+  was merged with both CI legs still failing at merge time, and turned out not
+  to restore green CI on either OS — it fixed the tap-trust symptom but
+  surfaced two further, previously-masked problems (a formula-resolution
+  failure on Linux, and a real audit finding on macOS that had never been
+  reached before because the tap-trust failure short-circuited the job
+  earlier). Because no automated alert exists on `main` CI failures
+  ([#316](https://github.com/kubestellar/homebrew-tap/issues/316)/[#318](https://github.com/kubestellar/homebrew-tap/issues/318)),
+  this regression would again depend on manual/agent audit to notice.
 
 ---
 
@@ -165,7 +201,8 @@ Time from root-cause escalation (`2026-09-08T05:20Z`) to first tracked report
 
 | Action | Type | Owner | Due | Issue |
 |--------|------|-------|-----|-------|
-| Add `brew trust kubestellar/tap` (or equivalent) to `brew-ci.yml`'s `Set up Homebrew tap` step so `ubuntu-latest` CI resumes validating formulae | mitigate | maintainer / `workflows`-permission agent | ASAP — 13+ days past SLO | [#373](https://github.com/kubestellar/homebrew-tap/issues/373) |
+| Fix Linux formula resolution (`No available formula or cask with the name "kubestellar/tap/kc-agent"`) surfaced after the #422 tap-trust fix | mitigate | maintainer / `workflows`-permission agent | ASAP — still 0% Linux CI health | [#426](https://github.com/kubestellar/homebrew-tap/issues/426) |
+| Fix the `kc-agent.rb` `brew audit --strict` finding (`Stable: version 0.3.41 is redundant with version scanned from URL`) now blocking the previously-green `macos-latest` leg | mitigate | maintainer / formula owner | ASAP — macOS CI health now also 0% | [#426](https://github.com/kubestellar/homebrew-tap/issues/426) |
 | Add a scheduled/`workflow_run` failure alert for `brew-ci.yml` and `validate-formulae.yml` on `main` so future breaks are detected without manual audit | detect | maintainer / `workflows`-permission agent | — | [#316](https://github.com/kubestellar/homebrew-tap/issues/316), [#318](https://github.com/kubestellar/homebrew-tap/issues/318) |
 | Pin the Homebrew version installed by `setup-homebrew`, or add a smoke check that fails loudly (rather than silently degrading) if tap-registration behavior changes | prevent | maintainer | — | [#373](https://github.com/kubestellar/homebrew-tap/issues/373) |
-| Once the fix lands, update this postmortem's Status/Timeline/Impact with the resolution time and close [#409](https://github.com/kubestellar/homebrew-tap/issues/409) | process | maintainer | after fix merges | [#409](https://github.com/kubestellar/homebrew-tap/issues/409) |
+| Once both legs are green, update this postmortem's Status/Timeline/Impact with the resolution time and close [#409](https://github.com/kubestellar/homebrew-tap/issues/409) | process | maintainer | after fix merges | [#409](https://github.com/kubestellar/homebrew-tap/issues/409) |
