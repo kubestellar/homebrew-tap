@@ -8,6 +8,7 @@ on:
       - 'README.md'
       - 'scripts/validate_formulae.py'
       - 'scripts/test_*.py'
+      - 'scripts/*.sh'
       - '.github/workflows/validate-formulae.yml'
   pull_request:
     branches: [main]
@@ -16,6 +17,7 @@ on:
       - 'README.md'
       - 'scripts/validate_formulae.py'
       - 'scripts/test_*.py'
+      - 'scripts/*.sh'
       - '.github/workflows/validate-formulae.yml'
 
 permissions: read-all
@@ -37,6 +39,19 @@ jobs:
         # regression is visible in the job log; --buffer keeps output
         # clean on success.
         run: python3 -u -m unittest discover -v --buffer -s scripts -p 'test_*.py'
+
+      - name: Run all scripts/test_*.sh shell regression tests
+        # The shell suites guard the structured summary contracts
+        # (BREW_CI_SUMMARY / FUZZ_SUMMARY / VERIFY_RELEASE_HEALTH_SUMMARY
+        # JSON lines) that CI jobs parse. Glob-discover them so a new
+        # test_*.sh is picked up automatically (#390).
+        run: |
+          failed=0
+          for t in scripts/test_*.sh; do
+            echo "== $t =="
+            bash "$t" || failed=$((failed + 1))
+          done
+          exit "$failed"
 
       - name: Run Formula drift check
         run: python3 -u scripts/validate_formulae.py Formula
