@@ -11,6 +11,11 @@ on:
     paths:
       - 'Formula/**'
       - '.github/workflows/brew-ci.yml'
+  schedule:
+    # Daily catch-all to detect upstream artifact rot (deleted/rotated release
+    # assets, URL/SHA256 drift) even absent a Formula/** change
+    - cron: '17 6 * * *'
+  workflow_dispatch:
 
 permissions: read-all
 
