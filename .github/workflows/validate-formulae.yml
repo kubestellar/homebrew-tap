@@ -34,13 +34,44 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: Install coverage
+        run: pip install --disable-pip-version-check coverage
+
       - name: Run all scripts/test_*.py unit tests
         # Use unittest discover so every scripts/test_*.py is picked up
         # automatically. Enumerating files by name is a silent-skip trap
         # (see #268). -v surfaces per-test output so a 'Ran 0 tests'
         # regression is visible in the job log; --buffer keeps output
-        # clean on success.
-        run: python3 -u -m unittest discover -v --buffer -s scripts -p 'test_*.py'
+        # clean on success. Running under `coverage run` measures line
+        # coverage of scripts/*.py so a future silent-skip or untested
+        # branch in validate_formulae.py is caught by the gate below
+        # (see #334). PYTHONUNBUFFERED replaces the python3 -u flag,
+        # which `coverage run` does not accept.
+        env:
+          PYTHONUNBUFFERED: "1"
+        run: coverage run --source=scripts -m unittest discover -v --buffer -s scripts -p 'test_*.py'
+
+      - name: Enforce coverage gate on scripts/validate_formulae.py
+        # Scoped to the production drift-check script only: the
+        # test_*.py files themselves contain defensive skipTest guards
+        # (e.g. when Formula/ doesn't exist) whose skip paths are
+        # legitimately uncovered in CI, so gating on total repo coverage
+        # would be noisy. 95% leaves headroom over the current 100%.
+        run: coverage report --fail-under=95 --include='scripts/validate_formulae.py'
+
+      - name: Generate coverage XML report
+        if: always()
+        run: coverage xml -o coverage.xml
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: validate-formulae-coverage
+          path: |
+            .coverage
+            coverage.xml
+          retention-days: 14
 
       - name: Run scripts/test_*.sh shell regression tests
         # Enumerating by glob (not by name) so any new scripts/test_*.sh
