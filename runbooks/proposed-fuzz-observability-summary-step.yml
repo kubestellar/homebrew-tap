@@ -4,8 +4,9 @@
 # permission GitHub requires to create/update files under
 # `.github/workflows/`, so this ready-to-apply step is checked in here
 # under `runbooks/` instead (see runbooks/proposed-brew-ci-observability-summary-step.yml
-# and runbooks/proposed-scheduled-workflow-failure-issue.yml for the same
-# constraint on other files). A maintainer with `workflows` permission can
+# for the same constraint on another file; the analogous
+# .github/workflows/scheduled-workflow-failure-issue.yml gap was since
+# applied in #441). A maintainer with `workflows` permission can
 # apply it by replacing the body of the existing "Fuzzing summary" step at
 # the end of `.github/workflows/fuzz.yml`'s `formula-fuzz` job with the
 # step below (or appending it as a new final step).

@@ -8,12 +8,17 @@ repository. Because `main` is served live to every `brew install` the moment a
 formula change merges, CI health on `main` is the primary user-facing signal
 for this repo. No exporter, metrics backend, or external data flow is added by
 this document — it defines SLIs derived from existing GitHub Actions checks
-and recommends how to interpret them operationally. It also links a
-ready-to-apply, but not yet active, `workflow_run`-based alert spec (see
-[`runbooks/proposed-scheduled-workflow-failure-issue.yml`](../runbooks/proposed-scheduled-workflow-failure-issue.yml)
-and the [Scheduled Workflow Failure Runbook](../runbooks/scheduled-workflow-failure.md))
-that a maintainer with `workflows` permission can apply to close the alert
-gaps described below.
+and recommends how to interpret them operationally. It also links the active
+`workflow_run`-based alert
+([`.github/workflows/scheduled-workflow-failure-issue.yml`](../.github/workflows/scheduled-workflow-failure-issue.yml),
+applied in #441; see the
+[Scheduled Workflow Failure Runbook](../runbooks/scheduled-workflow-failure.md))
+that closes most of the alert gaps described below — it watches `CodeQL
+Analysis`, `OpenSSF Scorecard`, `Fuzzing`, `Homebrew CI`, `Validate Formulae`,
+and `Stale Issues`. The remaining gaps (missing `schedule:` triggers on
+`brew-ci.yml`/`validate-formulae.yml`/`fuzz.yml`, and the structured
+per-run summary lines below) still require a maintainer with `workflows`
+permission to apply.
 
 ## User-facing service
 
@@ -67,17 +72,14 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   live installability is re-verified on a cadence, not only on a Formula push.
 - **Time to detect a broken `main` release ≤ 15 minutes.** CI on `main` normally
   completes well within this window; a failed run should be triaged as soon as it
-  is reported. **Recommendation:** no automated alert currently fires on a `main`
-  CI failure here (tracked in
-  [#316](https://github.com/kubestellar/homebrew-tap/issues/316)) — today,
-  detection relies on someone noticing the red check on `main` or a user
-  filing an issue. A ready-to-apply `workflow_run`-triggered job
-  that files a `kind/bug` tracking issue on failure (linking this doc and the
+  is reported. An automated `workflow_run`-triggered job that files a
+  `kind/bug` tracking issue on a `Homebrew CI`/`Validate Formulae` `main`
+  failure (linking this doc and the
   [Scheduled Workflow Failure Runbook](../runbooks/scheduled-workflow-failure.md))
-  is checked in at
-  [`runbooks/proposed-scheduled-workflow-failure-issue.yml`](../runbooks/proposed-scheduled-workflow-failure-issue.yml) —
-  applying it (moving it under `.github/workflows/`) requires `workflows`
-  permission this agent's GitHub App installation does not have.
+  is now active at
+  [`.github/workflows/scheduled-workflow-failure-issue.yml`](../.github/workflows/scheduled-workflow-failure-issue.yml)
+  (applied in #441, closing the gap previously tracked in
+  [#316](https://github.com/kubestellar/homebrew-tap/issues/316)).
 - **This detection window does not include a pre-merge gate for most
   `Formula/**` changes.** `goreleaserbot` pushes formula updates directly to
   `main` on every upstream release, with no associated PR or review (see
@@ -105,14 +107,15 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   [`docs/postmortems/2026-08-31-brew-ci-linux-untrusted-tap.md`](postmortems/2026-08-31-brew-ci-linux-untrusted-tap.md)
   ([#409](https://github.com/kubestellar/homebrew-tap/issues/409)).
 - **Weekly security-scan health ≥ 99%** for the scheduled `CodeQL Analysis` and
-  `Scorecard analysis` runs. Both already run on a weekly `schedule:` trigger, but
-  — like the CI failure gap above — **no automated alert currently fires** if a
-  scheduled run itself fails to complete (as opposed to reporting findings); a
-  silent failure here means a security regression could go undetected for an
-  entire week (tracked in
-  [#337](https://github.com/kubestellar/homebrew-tap/issues/337)). The proposed
-  [`runbooks/proposed-scheduled-workflow-failure-issue.yml`](../runbooks/proposed-scheduled-workflow-failure-issue.yml)
-  also watches `CodeQL Analysis` and `Scorecard analysis`.
+  `Scorecard analysis` runs. Both already run on a weekly `schedule:` trigger,
+  and — unlike when this gap was first tracked in
+  [#337](https://github.com/kubestellar/homebrew-tap/issues/337) — an
+  automated alert now fires if a scheduled run itself fails to complete (as
+  opposed to reporting findings), via
+  [`.github/workflows/scheduled-workflow-failure-issue.yml`](../.github/workflows/scheduled-workflow-failure-issue.yml)
+  (applied in #441; also watches `Fuzzing`, `Homebrew CI`, `Validate
+  Formulae`, and `Stale Issues` — see the
+  [Scheduled Workflow Failure Runbook](../runbooks/scheduled-workflow-failure.md)).
 - **Weekly security-scan health is currently 0% for `Scorecard analysis`,
   not just unalerted:** every `scorecard.yml` run since at least
   `2026-09-10T05:33:06Z` has failed at the `Pull
@@ -133,21 +136,21 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   that touch `Formula/**`. Between such changes, nothing re-validates formula
   syntax, structure, or URL/checksum format on a cadence, so a regression with no
   matching Formula diff (e.g. from a shared script change) would go undetected
-  indefinitely. **Recommendation:** add a weekly `schedule:` trigger to `fuzz.yml`
-  (e.g. `0 8 * * 1`, offset from `codeql.yml`'s `0 4 * * 1` and `scorecard.yml`'s
-  `0 6 * * 1`) and include `Fuzzing` in the proposed
-  [`scheduled-workflow-failure-issue.yml`](../runbooks/proposed-scheduled-workflow-failure-issue.yml)
-  alert's watch list, as that spec already assumes.
+  indefinitely.
+  [`.github/workflows/scheduled-workflow-failure-issue.yml`](../.github/workflows/scheduled-workflow-failure-issue.yml)
+  already watches `Fuzzing` for failed runs, but that only helps once `fuzz.yml`
+  actually runs on a cadence. **Recommendation:** add a weekly `schedule:` trigger to
+  `fuzz.yml` (e.g. `0 8 * * 1`, offset from `codeql.yml`'s `0 4 * * 1` and
+  `scorecard.yml`'s `0 6 * * 1`) so the existing alert has a scheduled run to
+  watch.
 - **Stale-triage health ≥ 99%** for the scheduled `Stale Issues` run. Like the
   security scans above, `stale.yml` already runs on a daily `schedule:`
-  trigger, but **no automated alert currently fires** if the scheduled run
-  itself fails (infra/runner failure, reusable-workflow breakage, permissions
-  regression) — a silent failure here means issues/PRs that should be marked
-  stale or auto-closed per policy simply aren't, with no signal until someone
-  notices manually (see [#365](https://github.com/kubestellar/homebrew-tap/issues/365)).
-  The proposed
-  [`runbooks/proposed-scheduled-workflow-failure-issue.yml`](../runbooks/proposed-scheduled-workflow-failure-issue.yml)
-  now also watches `Stale Issues`.
+  trigger, and an automated alert now fires if the scheduled run itself fails
+  (infra/runner failure, reusable-workflow breakage, permissions regression)
+  via
+  [`.github/workflows/scheduled-workflow-failure-issue.yml`](../.github/workflows/scheduled-workflow-failure-issue.yml)
+  (applied in #441, closing the gap previously tracked in
+  [#365](https://github.com/kubestellar/homebrew-tap/issues/365)).
 - **Formula CI health** is the one SLI above without a grep-able, structured
   per-run outcome record in the CI log itself: `validate-formulae.yml`'s
   `validate_formulae.py` already emits a `VALIDATE_FORMULAE_SUMMARY:` JSON

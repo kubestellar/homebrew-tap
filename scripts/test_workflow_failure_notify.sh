@@ -3,7 +3,8 @@
 # scripts/workflow_failure_notify.sh.
 #
 # Guards the markdown-rendering contract used by
-# runbooks/proposed-scheduled-workflow-failure-issue.yml: both modes must
+# .github/workflows/scheduled-workflow-failure-issue.yml (applied in #441):
+# both modes must
 # include the workflow name, run link, and timestamp, the issue-body mode
 # must always render the detail table plus the file row, and the optional
 # "Failed jobs" row must appear only when FAILED_JOBS is non-empty in
