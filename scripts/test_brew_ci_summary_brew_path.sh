@@ -42,21 +42,20 @@
 
 set -uo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/test_lib.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/test_lib.sh"
+
+REPO_ROOT="$(repo_root)"
 SCRIPT="$REPO_ROOT/scripts/brew_ci_summary.sh"
 
-fail_count=0
-work_dir="$(mktemp -d)"
-trap 'rm -rf "$work_dir"' EXIT
+make_work_dir
 
 # ---------------------------------------------------------------------
 # Fixture: a 2-formula Formula directory (foo + bar), matching the shape
 # used by test_brew_ci_summary.sh.
 # ---------------------------------------------------------------------
 formula_dir="$work_dir/Formula"
-mkdir -p "$formula_dir"
-printf 'class Foo < Formula\nend\n' > "$formula_dir/foo.rb"
-printf 'class Bar < Formula\nend\n' > "$formula_dir/bar.rb"
+make_fake_formulae "$formula_dir" foo bar
 
 # ---------------------------------------------------------------------
 # Helpers
@@ -101,27 +100,16 @@ run_case() {
   fi
   exit_code=$?
 
-  if ! printf '%s' "$output" | grep -q '^BREW_CI_SUMMARY: {'; then
-    echo "FAIL ($name): missing BREW_CI_SUMMARY: line. Got: $output"
-    fail_count=$((fail_count + 1)); return
-  fi
-  if ! printf '%s' "$output" | grep -q '"formula_count":2'; then
-    echo "FAIL ($name): expected formula_count=2. Got: $output"
-    fail_count=$((fail_count + 1)); return
-  fi
-  if ! printf '%s' "$output" | grep -q "\"installed_count\":$expected_installed_count"; then
-    echo "FAIL ($name): expected installed_count=$expected_installed_count. Got: $output"
-    fail_count=$((fail_count + 1)); return
-  fi
-  if [ "$exit_code" -ne "$expected_exit" ]; then
-    echo "FAIL ($name): expected exit=$expected_exit, got exit=$exit_code"
-    fail_count=$((fail_count + 1)); return
-  fi
+  assert_grep "$name" "$output" '^BREW_CI_SUMMARY: {' "missing BREW_CI_SUMMARY: line. Got: $output" || return
+  assert_grep "$name" "$output" '"formula_count":2' "expected formula_count=2. Got: $output" || return
+  assert_grep "$name" "$output" "\"installed_count\":$expected_installed_count" \
+    "expected installed_count=$expected_installed_count. Got: $output" || return
+  assert_exit "$name" "$exit_code" "$expected_exit" "expected exit=$expected_exit, got exit=$exit_code" || return
   local line_count
   line_count=$(printf '%s' "$output" | grep -c '^BREW_CI_SUMMARY: {')
   if [ "$line_count" -ne 1 ]; then
-    echo "FAIL ($name): expected exactly 1 summary line, got $line_count"
-    fail_count=$((fail_count + 1)); return
+    fail "$name" "expected exactly 1 summary line, got $line_count"
+    return
   fi
   echo "OK ($name)"
 }
@@ -170,10 +158,4 @@ make_stub_brew "$stub6" "$(printf 'foo\nbar')" 0
 run_case "installed-empty-shadows-brew" "" "$stub6" 0 0
 
 # ---------------------------------------------------------------------
-if [ "$fail_count" -eq 0 ]; then
-  echo "All brew_ci_summary.sh brew-PATH branch tests passed."
-  exit 0
-else
-  echo "$fail_count brew_ci_summary.sh brew-PATH branch test(s) failed."
-  exit 1
-fi
+finish "brew_ci_summary.sh brew-PATH branch"

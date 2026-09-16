@@ -27,7 +27,10 @@
 
 set -uo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/test_lib.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/test_lib.sh"
+
+REPO_ROOT="$(repo_root)"
 SCRIPT_SOURCE="$REPO_ROOT/scripts/verify_release_health.sh"
 
 if [ ! -f "$SCRIPT_SOURCE" ]; then
@@ -35,9 +38,8 @@ if [ ! -f "$SCRIPT_SOURCE" ]; then
   exit 1
 fi
 
-fail_count=0
-work_root="$(mktemp -d)"
-trap 'rm -rf "$work_root"' EXIT
+make_work_dir
+work_root="$work_dir"
 
 # ---------------------------------------------------------------------------
 # Helper: build a self-contained tap fixture in $1 with the script copied
@@ -244,10 +246,4 @@ else
   echo "OK (summary-shape)"
 fi
 
-if [ "$fail_count" -eq 0 ]; then
-  echo "All verify_release_health.sh tests passed."
-  exit 0
-else
-  echo "$fail_count verify_release_health.sh test(s) failed."
-  exit 1
-fi
+finish "verify_release_health.sh"
