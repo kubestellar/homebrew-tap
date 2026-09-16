@@ -28,44 +28,30 @@
 
 set -uo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/test_lib.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/test_lib.sh"
+
+REPO_ROOT="$(repo_root)"
 SCRIPT="$REPO_ROOT/scripts/brew_ci_summary.sh"
 
-fail_count=0
-work_dir="$(mktemp -d)"
-trap 'rm -rf "$work_dir"' EXIT
+make_work_dir
 
 check_summary() {
   local name="$1" output="$2" exit_code="$3" \
     expected_exit="$4" expected_formula_count="$5" expected_installed_count="$6"
 
-  if ! printf '%s' "$output" | grep -q '^BREW_CI_SUMMARY: {'; then
-    echo "FAIL ($name): missing BREW_CI_SUMMARY: line. Got: $output"
-    fail_count=$((fail_count + 1))
-    return
-  fi
-  if ! printf '%s' "$output" | grep -q "\"formula_count\":$expected_formula_count"; then
-    echo "FAIL ($name): expected formula_count=$expected_formula_count. Got: $output"
-    fail_count=$((fail_count + 1))
-    return
-  fi
-  if ! printf '%s' "$output" | grep -q "\"installed_count\":$expected_installed_count"; then
-    echo "FAIL ($name): expected installed_count=$expected_installed_count. Got: $output"
-    fail_count=$((fail_count + 1))
-    return
-  fi
-  if [ "$exit_code" -ne "$expected_exit" ]; then
-    echo "FAIL ($name): expected exit=$expected_exit, got exit=$exit_code"
-    fail_count=$((fail_count + 1))
-    return
-  fi
+  assert_grep "$name" "$output" '^BREW_CI_SUMMARY: {' "missing BREW_CI_SUMMARY: line. Got: $output" || return
+  assert_grep "$name" "$output" "\"formula_count\":$expected_formula_count" \
+    "expected formula_count=$expected_formula_count. Got: $output" || return
+  assert_grep "$name" "$output" "\"installed_count\":$expected_installed_count" \
+    "expected installed_count=$expected_installed_count. Got: $output" || return
+  assert_exit "$name" "$exit_code" "$expected_exit" "expected exit=$expected_exit, got exit=$exit_code" || return
   # A well-formed run must emit exactly ONE BREW_CI_SUMMARY line, never
   # multiple, regardless of which branches were taken.
   local line_count
   line_count=$(printf '%s' "$output" | grep -c '^BREW_CI_SUMMARY: {')
   if [ "$line_count" -ne 1 ]; then
-    echo "FAIL ($name): expected exactly 1 summary line, got $line_count. Full output: $output"
-    fail_count=$((fail_count + 1))
+    fail "$name" "expected exactly 1 summary line, got $line_count. Full output: $output"
     return
   fi
   echo "OK ($name)"
@@ -90,8 +76,7 @@ check_summary "empty-FORMULA_DIR" "$output" "$exit_code" 0 0 0
 # NOT set INSTALLED_FORMULAE at all so the `[ -n "${INSTALLED_FORMULAE+x}" ]`
 # guard is false; we shrink PATH to exclude any real brew.
 one_dir="$work_dir/one-formula"
-mkdir -p "$one_dir"
-printf 'class Foo < Formula\nend\n' > "$one_dir/foo.rb"
+make_fake_formulae "$one_dir" foo
 output=$(env -i PATH="/usr/bin:/bin" FORMULA_DIR="$one_dir" \
   JOB_STATUS="failure" MATRIX_OS="ubuntu-latest" bash "$SCRIPT" 2>&1)
 exit_code=$?
@@ -105,10 +90,4 @@ output=$(FORMULA_DIR="$one_dir" JOB_STATUS="success" MATRIX_OS="macos-latest" \
 exit_code=$?
 check_summary "installed-name-mismatch" "$output" "$exit_code" 0 1 0
 
-if [ "$fail_count" -eq 0 ]; then
-  echo "All brew_ci_summary.sh branch tests passed."
-  exit 0
-else
-  echo "$fail_count brew_ci_summary.sh branch test(s) failed."
-  exit 1
-fi
+finish "brew_ci_summary.sh branch"

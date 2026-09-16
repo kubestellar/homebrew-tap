@@ -12,16 +12,14 @@
 
 set -uo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/test_lib.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/test_lib.sh"
+
+REPO_ROOT="$(repo_root)"
 SCRIPT="$REPO_ROOT/scripts/brew_ci_summary.sh"
 
-fail_count=0
-work_dir="$(mktemp -d)"
-trap 'rm -rf "$work_dir"' EXIT
-
-mkdir -p "$work_dir/Formula"
-printf 'class Foo < Formula\nend\n' > "$work_dir/Formula/foo.rb"
-printf 'class Bar < Formula\nend\n' > "$work_dir/Formula/bar.rb"
+make_work_dir
+make_fake_formulae "$work_dir/Formula" foo bar
 
 assert_case() {
   local name="$1" job_status="$2" matrix_os="$3" installed="$4" expected_exit="$5" expected_installed_count="$6"
@@ -31,36 +29,13 @@ assert_case() {
     INSTALLED_FORMULAE="$installed" "$SCRIPT" 2>&1)
   exit_code=$?
 
-  if ! printf '%s' "$output" | grep -q '^BREW_CI_SUMMARY: {'; then
-    echo "FAIL ($name): missing BREW_CI_SUMMARY: line. Got: $output"
-    fail_count=$((fail_count + 1))
-    return
-  fi
-  if ! printf '%s' "$output" | grep -q "\"status\":\"$job_status\""; then
-    echo "FAIL ($name): expected status=$job_status. Got: $output"
-    fail_count=$((fail_count + 1))
-    return
-  fi
-  if ! printf '%s' "$output" | grep -q "\"os\":\"$matrix_os\""; then
-    echo "FAIL ($name): expected os=$matrix_os. Got: $output"
-    fail_count=$((fail_count + 1))
-    return
-  fi
-  if ! printf '%s' "$output" | grep -q '"formula_count":2'; then
-    echo "FAIL ($name): expected formula_count=2. Got: $output"
-    fail_count=$((fail_count + 1))
-    return
-  fi
-  if ! printf '%s' "$output" | grep -q "\"installed_count\":$expected_installed_count"; then
-    echo "FAIL ($name): expected installed_count=$expected_installed_count. Got: $output"
-    fail_count=$((fail_count + 1))
-    return
-  fi
-  if [ "$exit_code" -ne "$expected_exit" ]; then
-    echo "FAIL ($name): expected exit=$expected_exit, got exit=$exit_code"
-    fail_count=$((fail_count + 1))
-    return
-  fi
+  assert_grep "$name" "$output" '^BREW_CI_SUMMARY: {' "missing BREW_CI_SUMMARY: line. Got: $output" || return
+  assert_grep "$name" "$output" "\"status\":\"$job_status\"" "expected status=$job_status. Got: $output" || return
+  assert_grep "$name" "$output" "\"os\":\"$matrix_os\"" "expected os=$matrix_os. Got: $output" || return
+  assert_grep "$name" "$output" '"formula_count":2' "expected formula_count=2. Got: $output" || return
+  assert_grep "$name" "$output" "\"installed_count\":$expected_installed_count" \
+    "expected installed_count=$expected_installed_count. Got: $output" || return
+  assert_exit "$name" "$exit_code" "$expected_exit" "expected exit=$expected_exit, got exit=$exit_code" || return
   echo "OK ($name)"
 }
 
@@ -79,10 +54,4 @@ else
   fail_count=$((fail_count + 1))
 fi
 
-if [ "$fail_count" -eq 0 ]; then
-  echo "All brew_ci_summary.sh tests passed."
-  exit 0
-else
-  echo "$fail_count brew_ci_summary.sh test(s) failed."
-  exit 1
-fi
+finish "brew_ci_summary.sh"

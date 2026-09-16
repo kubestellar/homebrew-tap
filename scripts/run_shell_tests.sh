@@ -52,10 +52,13 @@ mapfile -d '' -t test_files < <(
 )
 
 # Guard against a runner accidentally executing itself if someone
-# renames it to match the discovery pattern (e.g. test_runner.sh).
+# renames it to match the discovery pattern (e.g. test_runner.sh), and
+# against executing scripts/test_lib.sh — the shared scaffolding library
+# sourced by the other test_*.sh files, not a test in its own right.
 filtered=()
 for f in "${test_files[@]}"; do
-  if [ "$(basename "$f")" = "$self_basename" ]; then
+  fbasename="$(basename "$f")"
+  if [ "$fbasename" = "$self_basename" ] || [ "$fbasename" = "test_lib.sh" ]; then
     continue
   fi
   filtered+=("$f")

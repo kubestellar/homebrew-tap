@@ -28,12 +28,13 @@
 
 set -uo pipefail
 
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/test_lib.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/test_lib.sh"
+
+REPO_ROOT="$(repo_root)"
 SCRIPT="$REPO_ROOT/scripts/fuzz_summary.sh"
 
-fail_count=0
-work_dir="$(mktemp -d)"
-trap 'rm -rf "$work_dir"' EXIT
+make_work_dir
 
 mkdir -p "$work_dir/Formula"
 # Deliberately do NOT create any .rb file — this is the whole point of
@@ -98,10 +99,4 @@ else
   echo "OK (non-rb-only)"
 fi
 
-if [ "$fail_count" -eq 0 ]; then
-  echo "All fuzz_summary.sh empty-dir tests passed."
-  exit 0
-else
-  echo "$fail_count fuzz_summary.sh empty-dir test(s) failed."
-  exit 1
-fi
+finish "fuzz_summary.sh empty-dir"
