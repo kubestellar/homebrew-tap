@@ -19,6 +19,10 @@ on:
 
 permissions: read-all
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   brew-audit-and-install:
     name: brew audit + install smoke test
@@ -27,6 +31,7 @@ jobs:
       matrix:
         os: [macos-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
     permissions:
       contents: read  # needed: checkout repository
     steps:
