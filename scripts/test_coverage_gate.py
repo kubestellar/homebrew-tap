@@ -135,6 +135,47 @@ class MainGuardTests(unittest.TestCase):
         self.assertEqual(rc, 2)
 
 
+class RunTestsUnderCoverageTests(unittest.TestCase):
+    def test_command_shape_matches_ci_invocation(self):
+        # `_run_tests_under_coverage` must mirror the CI-side invocation in
+        # .github/workflows/validate-formulae.yml exactly, otherwise "runs
+        # green locally" no longer implies "runs green in CI". Capture the
+        # exact argv coverage_gate builds and pin the flags that matter.
+        captured: dict = {}
+
+        def fake_call(cmd, cwd=None):
+            captured["cmd"] = cmd
+            captured["cwd"] = cwd
+            return 0
+
+        with mock.patch.object(coverage_gate.subprocess, "call", side_effect=fake_call):
+            rc = coverage_gate._run_tests_under_coverage()
+        self.assertEqual(rc, 0)
+        cmd = captured["cmd"]
+        self.assertEqual(cmd[0], sys.executable)
+        # coverage-driven unittest discovery with the CI-side flags.
+        self.assertIn("coverage", cmd)
+        self.assertIn("run", cmd)
+        self.assertIn("--source=scripts", cmd)
+        self.assertIn("unittest", cmd)
+        self.assertIn("discover", cmd)
+        self.assertIn("--buffer", cmd)
+        # -p test_*.py and -s scripts must both be present in that shape.
+        self.assertIn("-s", cmd)
+        self.assertIn("scripts", cmd)
+        self.assertIn("-p", cmd)
+        self.assertIn("test_*.py", cmd)
+        # cwd pins execution to the repo root so unittest discovery finds scripts/.
+        self.assertEqual(captured["cwd"], str(coverage_gate.REPO_ROOT))
+
+    def test_propagates_nonzero_exit_from_subprocess(self):
+        # A unittest failure surfaces here as a non-zero subprocess exit;
+        # the helper must return that code unchanged so main() can map it
+        # to its own exit 1 without ambiguity.
+        with mock.patch.object(coverage_gate.subprocess, "call", return_value=7):
+            self.assertEqual(coverage_gate._run_tests_under_coverage(), 7)
+
+
 class ReportTests(unittest.TestCase):
     def test_report_builds_include_args_from_comma_separated_list(self):
         captured: dict = {}
@@ -177,6 +218,41 @@ class ReportTests(unittest.TestCase):
     def test_report_other_nonzero_exit_propagates_as_is(self):
         with mock.patch.object(coverage_gate.subprocess, "call", return_value=7):
             self.assertEqual(coverage_gate._report(95, "scripts/x.py", False), 7)
+
+    def test_report_skips_empty_include_patterns(self):
+        # A comma-separated --include value with empty segments (e.g. from
+        # a trailing comma or double comma) must not emit a bare `--include`
+        # with an empty argument — coverage.py rejects that. The loop skips
+        # empty patterns after strip(), exercising the 111->109 branch.
+        captured: dict = {}
+
+        def fake_call(cmd, cwd=None):
+            captured.setdefault("cmds", []).append(cmd)
+            return 0
+
+        with mock.patch.object(coverage_gate.subprocess, "call", side_effect=fake_call):
+            rc = coverage_gate._report(95, "scripts/a.py,,  ,scripts/b.py", want_xml=False)
+        self.assertEqual(rc, 0)
+        cmd = captured["cmds"][0]
+        includes = [cmd[i + 1] for i, arg in enumerate(cmd) if arg == "--include"]
+        # Empty and whitespace-only patterns dropped; real patterns retained in order.
+        self.assertEqual(includes, ["scripts/a.py", "scripts/b.py"])
+        self.assertNotIn("", includes)
+
+    def test_report_all_empty_patterns_produces_no_include_flag(self):
+        # When every segment is empty/whitespace, no --include flag is passed
+        # at all — coverage.py then falls back to its own defaults instead of
+        # being handed an invalid empty include arg.
+        captured: dict = {}
+
+        def fake_call(cmd, cwd=None):
+            captured.setdefault("cmds", []).append(cmd)
+            return 0
+
+        with mock.patch.object(coverage_gate.subprocess, "call", side_effect=fake_call):
+            coverage_gate._report(95, " , ,   ,", want_xml=False)
+        cmd = captured["cmds"][0]
+        self.assertNotIn("--include", cmd)
 
 
 if __name__ == "__main__":
