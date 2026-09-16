@@ -41,10 +41,13 @@ offending formula individually.
 """
 
 import re
+import sys
 import unittest
 from pathlib import Path
 
-FORMULA_DIR = Path(__file__).resolve().parent.parent / "Formula"
+sys.path.insert(0, str(Path(__file__).parent))
+
+from formula_test_fixtures import FORMULA_DIR
 
 
 CONFLICTS_WITH_RE = re.compile(r'^\s*conflicts_with\b', re.MULTILINE)

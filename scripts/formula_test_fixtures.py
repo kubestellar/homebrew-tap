@@ -9,6 +9,23 @@ from pathlib import Path
 
 FORMULA_DIR = Path(__file__).resolve().parent.parent / "Formula"
 
+
+def load_formulae() -> dict[str, str]:
+    """Return every Formula/*.rb file as {stem: text}.
+
+    Shared loader for the test_*.py invariant modules (see kubestellar/
+    homebrew-tap#328 and #329): they used to each re-implement this glob
+    + non-empty assertion independently, with several slightly divergent
+    variants (some encoded reads, some didn't; some raised, some didn't
+    check at all). Behavior here matches the strictest of those variants
+    unchanged: sorted glob of "*.rb", UTF-8 text, raise if none found.
+    """
+    files = sorted(FORMULA_DIR.glob("*.rb"))
+    if not files:
+        raise AssertionError(f"no formulae found under {FORMULA_DIR}")
+    return {p.stem: p.read_text(encoding="utf-8") for p in files}
+
+
 # Homebrew formulae in this tap may pull artifacts only from these hosts.
 # Extend this set with a code change (reviewed) when a new upstream lands.
 ALLOWED_URL_HOSTS = {

@@ -42,10 +42,13 @@ Runnable the same way as the sibling test modules::
 """
 
 import re
+import sys
 import unittest
 from pathlib import Path
 
-FORMULA_DIR = Path(__file__).resolve().parent.parent / "Formula"
+sys.path.insert(0, str(Path(__file__).parent))
+
+from formula_test_fixtures import FORMULA_DIR
 
 # The canonical top-level declaration order emitted by GoReleaser. Each
 # entry is (label, regex-that-matches-the-first-occurrence-in-file).

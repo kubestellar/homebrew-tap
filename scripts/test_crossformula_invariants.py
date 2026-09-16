@@ -31,23 +31,19 @@ Runnable the same way as the sibling test modules:
 """
 
 import re
+import sys
 import unittest
 from collections import Counter
 from datetime import date, timedelta
 from pathlib import Path
 
-FORMULA_DIR = Path(__file__).resolve().parent.parent / "Formula"
+sys.path.insert(0, str(Path(__file__).parent))
+
+from formula_test_fixtures import FORMULA_DIR, load_formulae as _load_formulae
 
 URL_RE = re.compile(r'url\s+"([^"]+)"')
 SHA256_RE = re.compile(r'sha256\s+"([^"]+)"')
 VERSION_RE = re.compile(r'^\s*version\s+"([^"]+)"', re.MULTILINE)
-
-
-def _load_formulae():
-    files = sorted(FORMULA_DIR.glob("*.rb"))
-    if not files:
-        raise AssertionError(f"no formulae found under {FORMULA_DIR}")
-    return {p.stem: p.read_text() for p in files}
 
 
 def _platform_slots(text):

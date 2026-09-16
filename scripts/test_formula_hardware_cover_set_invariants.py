@@ -26,10 +26,13 @@ statement of "the tap supports amd64 + arm64 on both macOS and Linux."
 """
 
 import re
+import sys
 import unittest
 from pathlib import Path
 
-FORMULA_DIR = Path(__file__).resolve().parent.parent / "Formula"
+sys.path.insert(0, str(Path(__file__).parent))
+
+from formula_test_fixtures import FORMULA_DIR
 
 # Same regex shape as the sibling structural tests use (see
 # test_formula_structural_further_invariants.py) so both files agree on

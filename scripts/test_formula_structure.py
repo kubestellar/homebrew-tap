@@ -25,10 +25,13 @@ so it can be invoked from CI the same way as test_validate_formulae.py:
 """
 
 import re
+import sys
 import unittest
 from pathlib import Path
 
-FORMULA_DIR = Path(__file__).resolve().parent.parent / "Formula"
+sys.path.insert(0, str(Path(__file__).parent))
+
+from formula_test_fixtures import FORMULA_DIR, load_formulae as _load_formulae
 
 REQUIRED_PLATFORMS = {
     ("darwin", "amd64"),
@@ -42,13 +45,6 @@ URL_PLATFORM_RE = re.compile(
     r'url\s+"[^"]*_(darwin|linux)_(amd64|arm64)\.tar\.gz"'
 )
 SHA256_LINE_RE = re.compile(r'sha256\s+"([0-9a-f]{64})"')
-
-
-def _load_formulae():
-    files = sorted(FORMULA_DIR.glob("*.rb"))
-    if not files:
-        raise AssertionError(f"no formulae found under {FORMULA_DIR}")
-    return {p.stem: p.read_text() for p in files}
 
 
 class FormulaStructureTests(unittest.TestCase):

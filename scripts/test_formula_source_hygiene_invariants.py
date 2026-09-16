@@ -44,10 +44,12 @@ silent regression from codegen template changes or editor churn.
 from __future__ import annotations
 
 import pathlib
+import sys
 import unittest
 
-REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent
-FORMULA_DIR = REPO_ROOT / "Formula"
+sys.path.insert(0, str(pathlib.Path(__file__).parent))
+
+from formula_test_fixtures import FORMULA_DIR
 
 # Tokens that indicate an unrendered template or an in-progress edit.
 # Match the whole word only (case-insensitive) so it does not fire on
