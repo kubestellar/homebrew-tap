@@ -24,11 +24,14 @@ Runnable the same way as the sibling test modules:
 """
 
 import re
+import sys
 import unittest
 from pathlib import Path
 from urllib.parse import urlparse
 
-FORMULA_DIR = Path(__file__).resolve().parent.parent / "Formula"
+sys.path.insert(0, str(Path(__file__).parent))
+
+from formula_test_fixtures import FORMULA_DIR, load_formulae as _load_formulae
 
 URL_RE = re.compile(r'^\s*url\s+"([^"]+)"', re.MULTILINE)
 HOMEPAGE_RE = re.compile(r'^\s*homepage\s+"([^"]+)"', re.MULTILINE)
@@ -38,13 +41,6 @@ HOMEPAGE_RE = re.compile(r'^\s*homepage\s+"([^"]+)"', re.MULTILINE)
 # with test_ops_and_deploy_share_a_single_version in
 # test_crossformula_invariants.py.
 LOCKSTEP_PARTNERS = ("kubestellar-ops", "kubestellar-deploy")
-
-
-def _load_formulae():
-    files = sorted(FORMULA_DIR.glob("*.rb"))
-    if not files:
-        raise AssertionError(f"no formulae found under {FORMULA_DIR}")
-    return {p.stem: p.read_text() for p in files}
 
 
 def _github_repo_from_url(url: str) -> str:

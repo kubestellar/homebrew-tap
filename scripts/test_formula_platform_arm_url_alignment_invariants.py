@@ -56,10 +56,13 @@ Run:
 """
 
 import re
+import sys
 import unittest
 from pathlib import Path
 
-FORMULA_DIR = Path(__file__).resolve().parent.parent / "Formula"
+sys.path.insert(0, str(Path(__file__).parent))
+
+from formula_test_fixtures import FORMULA_DIR, load_formulae as _load_formulae
 
 ON_MACOS_START_RE = re.compile(r"^\s*on_macos\s+do\b")
 ON_LINUX_START_RE = re.compile(r"^\s*on_linux\s+do\b")
@@ -74,13 +77,6 @@ CPU_ARM_RE = re.compile(
 
 URL_RE = re.compile(r'url\s+"[^"]*_(?P<os>darwin|linux)_(?P<arch>amd64|arm64)\.tar\.gz"')
 SHA256_RE = re.compile(r'sha256\s+"[0-9a-f]{64}"')
-
-
-def _load_formulae():
-    files = sorted(FORMULA_DIR.glob("*.rb"))
-    if not files:
-        raise AssertionError(f"no formulae under {FORMULA_DIR}")
-    return {p.stem: p.read_text(encoding="utf-8") for p in files}
 
 
 class PlatformArmAlignmentTests(unittest.TestCase):

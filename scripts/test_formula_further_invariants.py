@@ -25,11 +25,14 @@ Standalone `unittest` module for parity with the sibling test files.
 """
 
 import re
+import sys
 import unittest
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-FORMULA_DIR = Path(__file__).resolve().parent.parent / "Formula"
+sys.path.insert(0, str(Path(__file__).parent))
+
+from formula_test_fixtures import FORMULA_DIR
 
 VERSION_LINE_RE = re.compile(r'^\s*version\s+"([^"]+)"', re.MULTILINE)
 NIGHTLY_RE = re.compile(r"^\d+\.\d+\.\d+-nightly\.(?P<stamp>\d{8})$")

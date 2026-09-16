@@ -30,12 +30,13 @@ stanza in place, fails the unit-test job directly.
 """
 
 import re
+import sys
 import unittest
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent))
 
-REPO_ROOT = Path(__file__).resolve().parent.parent
-FORMULA_DIR = REPO_ROOT / "Formula"
+from formula_test_fixtures import FORMULA_DIR
 
 DESC_LINE_RE = re.compile(r'^\s*desc\s+"[^"]+"', re.MULTILINE)
 HOMEPAGE_LINE_RE = re.compile(r'^\s*homepage\s+"[^"]+"', re.MULTILINE)

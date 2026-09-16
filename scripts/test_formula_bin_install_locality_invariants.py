@@ -45,11 +45,12 @@ from __future__ import annotations
 
 import pathlib
 import re
+import sys
 import unittest
 
+sys.path.insert(0, str(pathlib.Path(__file__).parent))
 
-REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
-FORMULA_DIR = REPO_ROOT / "Formula"
+from formula_test_fixtures import FORMULA_DIR, load_formulae as _load_formulae
 
 # `bin.install "<name>"` — capture the binary-name argument. A GoReleaser
 # emit is always the double-quoted single-string form; we deliberately do
@@ -74,12 +75,6 @@ TEST_BLOCK_RE = re.compile(
     r"^\s*test\s+do\s*\n(?P<body>.*?)\n\s*end\s*$",
     re.DOTALL | re.MULTILINE,
 )
-
-
-def _load_formulae():
-    files = sorted(FORMULA_DIR.glob("*.rb"))
-    assert files, f"no formulae found under {FORMULA_DIR}"
-    return {p.stem: p.read_text(encoding="utf-8") for p in files}
 
 
 class BinInstallLocalityInvariants(unittest.TestCase):

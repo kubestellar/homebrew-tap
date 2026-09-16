@@ -33,10 +33,13 @@ Runnable the same way as the sibling test module:
 """
 
 import re
+import sys
 import unittest
 from pathlib import Path
 
-FORMULA_DIR = Path(__file__).resolve().parent.parent / "Formula"
+sys.path.insert(0, str(Path(__file__).parent))
+
+from formula_test_fixtures import FORMULA_DIR, load_formulae as _load_formulae
 
 MAGIC_COMMENTS = (
     "# typed: false",
@@ -47,13 +50,6 @@ URL_LINE_RE = re.compile(r'url\s+"([^"]+)"')
 SHA256_LINE_RE = re.compile(r'sha256\s+"([^"]+)"')
 CLASS_LINE_RE = re.compile(r'^\s*class\s+(\w+)\s*<\s*(\w+)', re.MULTILINE)
 VERSION_LINE_RE = re.compile(r'^\s*version\s+"([^"]+)"', re.MULTILINE)
-
-
-def _load_formulae():
-    files = sorted(FORMULA_DIR.glob("*.rb"))
-    if not files:
-        raise AssertionError(f"no formulae found under {FORMULA_DIR}")
-    return {p.stem: p.read_text() for p in files}
 
 
 def _to_camel(stem: str) -> str:

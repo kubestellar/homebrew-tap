@@ -27,20 +27,18 @@ tarball-suffix checks and only surface as a broken ``brew install``.
 """
 
 import re
+import sys
 import unittest
 from pathlib import Path
 
-FORMULA_DIR = Path(__file__).resolve().parent.parent / "Formula"
+sys.path.insert(0, str(Path(__file__).parent))
+
+from formula_test_fixtures import FORMULA_DIR, load_formulae as _load_formulae
 
 ON_MACOS_RE = re.compile(r"^\s*on_macos\s+do\b")
 ON_LINUX_RE = re.compile(r"^\s*on_linux\s+do\b")
 END_RE = re.compile(r"^\s*end\s*$")
 HARDWARE_IF_RE = re.compile(r"^\s*if\s+Hardware::CPU\.(intel|arm)\?")
-
-
-def _load_formulae():
-    files = sorted(FORMULA_DIR.glob("*.rb"))
-    return {p.stem: p.read_text() for p in files}
 
 
 def _guard_lines_by_os(text):

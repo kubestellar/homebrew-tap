@@ -24,10 +24,13 @@ Standalone `unittest` module for parity with the sibling test files.
 """
 
 import re
+import sys
 import unittest
 from pathlib import Path
 
-FORMULA_DIR = Path(__file__).resolve().parent.parent / "Formula"
+sys.path.insert(0, str(Path(__file__).parent))
+
+from formula_test_fixtures import FORMULA_DIR
 
 VERSION_RE = re.compile(r"^(?P<sem>\d+\.\d+\.\d+)(?:-nightly\.\d{8})?$")
 URL_RE = re.compile(r'url\s+"([^"]+)"')

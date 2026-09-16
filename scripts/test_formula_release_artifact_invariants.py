@@ -22,10 +22,13 @@ Currently asserted here:
 """
 
 import re
+import sys
 import unittest
 from pathlib import Path
 
-FORMULA_DIR = Path(__file__).resolve().parent.parent / "Formula"
+sys.path.insert(0, str(Path(__file__).parent))
+
+from formula_test_fixtures import FORMULA_DIR
 
 URL_LINE_RE = re.compile(r'^\s*url\s+"([^"]+)"', re.MULTILINE)
 VERSION_LINE_RE = re.compile(r'^\s*version\s+"([^"]+)"', re.MULTILINE)

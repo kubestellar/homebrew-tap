@@ -39,11 +39,12 @@ from __future__ import annotations
 
 import pathlib
 import re
+import sys
 import unittest
 
+sys.path.insert(0, str(pathlib.Path(__file__).parent))
 
-REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
-FORMULA_DIR = REPO_ROOT / "Formula"
+from formula_test_fixtures import FORMULA_DIR
 
 DESC_LINE_RE = re.compile(r'^\s*desc\s+"([^"]+)"', re.MULTILINE)
 LICENSE_LINE_RE = re.compile(r'^\s*license\s+"([^"]+)"', re.MULTILINE)
