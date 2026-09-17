@@ -32,11 +32,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR
+from formula_test_fixtures import FORMULA_DIR, HOMEPAGE_LINE_RE, VERSION_LINE_RE
 
-VERSION_LINE_RE = re.compile(r'^\s*version\s+"([^"]+)"', re.MULTILINE)
 NIGHTLY_RE = re.compile(r"^\d+\.\d+\.\d+-nightly\.(?P<stamp>\d{8})$")
-HOMEPAGE_LINE_RE = re.compile(r'^\s*homepage\s+"([^"]+)"', re.MULTILINE)
 ON_MACOS_RE = re.compile(r"^\s*on_macos\s+do\b", re.MULTILINE)
 ON_LINUX_RE = re.compile(r"^\s*on_linux\s+do\b", re.MULTILINE)
 TEST_BLOCK_RE = re.compile(r"^\s*test\s+do\b", re.MULTILINE)

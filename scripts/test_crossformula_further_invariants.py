@@ -23,7 +23,6 @@ Runnable the same way as the sibling test modules:
     python3 scripts/test_crossformula_further_invariants.py
 """
 
-import re
 import sys
 import unittest
 from pathlib import Path
@@ -31,10 +30,12 @@ from urllib.parse import urlparse
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR, load_formulae as _load_formulae
-
-URL_RE = re.compile(r'^\s*url\s+"([^"]+)"', re.MULTILINE)
-HOMEPAGE_RE = re.compile(r'^\s*homepage\s+"([^"]+)"', re.MULTILINE)
+from formula_test_fixtures import (
+    FORMULA_DIR,
+    HOMEPAGE_LINE_RE as HOMEPAGE_RE,
+    URL_LINE_RE as URL_RE,
+    load_formulae as _load_formulae,
+)
 
 # The lockstep pair that this tap treats as a single upstream release.
 # Kept in sync with LOCKSTEP_GROUPS in scripts/validate_formulae.py and

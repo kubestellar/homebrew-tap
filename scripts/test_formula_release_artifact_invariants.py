@@ -28,16 +28,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR
-
-URL_LINE_RE = re.compile(r'^\s*url\s+"([^"]+)"', re.MULTILINE)
-VERSION_LINE_RE = re.compile(r'^\s*version\s+"([^"]+)"', re.MULTILINE)
-DESC_LINE_RE = re.compile(r'^\s*desc\s+"([^"]+)"', re.MULTILINE)
-HOMEPAGE_LINE_RE = re.compile(r'^\s*homepage\s+"([^"]+)"', re.MULTILINE)
-
-# .../releases/download/<TAG>/<FILENAME>
-RELEASE_URL_RE = re.compile(
-    r"/releases/download/(?P<tag>[^/]+)/(?P<file>[^/]+)$"
+from formula_test_fixtures import (
+    FORMULA_DIR,
+    DESC_LINE_RE,
+    HOMEPAGE_LINE_RE,
+    RELEASE_URL_RE,
+    URL_LINE_RE,
+    VERSION_LINE_RE,
 )
 
 # <name>_<version>_<os>_<arch>.tar.gz

@@ -34,15 +34,12 @@ Run:
 from __future__ import annotations
 
 import pathlib
-import re
 import sys
 import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR
-
-URL_RE = re.compile(r'^\s*url\s+"([^"]+)"', re.MULTILINE)
+from formula_test_fixtures import FORMULA_DIR, URL_LINE_RE as URL_RE
 
 
 class TestFormulaURLUniqueness(unittest.TestCase):

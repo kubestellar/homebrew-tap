@@ -39,17 +39,20 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR, load_formulae as _load_formulae
+from formula_test_fixtures import (
+    FORMULA_DIR,
+    SHA256_LINE_RE,
+    URL_INLINE_RE as URL_LINE_RE,
+    VERSION_LINE_RE,
+    load_formulae as _load_formulae,
+)
 
 MAGIC_COMMENTS = (
     "# typed: false",
     "# frozen_string_literal: true",
 )
 
-URL_LINE_RE = re.compile(r'url\s+"([^"]+)"')
-SHA256_LINE_RE = re.compile(r'sha256\s+"([^"]+)"')
 CLASS_LINE_RE = re.compile(r'^\s*class\s+(\w+)\s*<\s*(\w+)', re.MULTILINE)
-VERSION_LINE_RE = re.compile(r'^\s*version\s+"([^"]+)"', re.MULTILINE)
 
 
 def _to_camel(stem: str) -> str:
