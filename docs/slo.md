@@ -15,10 +15,12 @@ applied in #441; see the
 [Scheduled Workflow Failure Runbook](../runbooks/scheduled-workflow-failure.md))
 that closes most of the alert gaps described below — it watches `CodeQL
 Analysis`, `OpenSSF Scorecard`, `Fuzzing`, `Homebrew CI`, `Validate Formulae`,
-and `Stale Issues`. The remaining gaps (missing `schedule:` triggers on
-`brew-ci.yml`/`validate-formulae.yml`/`fuzz.yml`, and the structured
-per-run summary lines below) still require a maintainer with `workflows`
-permission to apply.
+and `Stale Issues`. The structured per-run summary lines described below are
+now applied for all three of `brew-ci.yml`, `fuzz.yml`, and
+`validate-formulae.yml` (see [#479](https://github.com/kubestellar/homebrew-tap/pull/479)).
+The one remaining gap is a missing `schedule:` trigger on
+`validate-formulae.yml` (`brew-ci.yml` and `fuzz.yml` already have one),
+which still requires a maintainer with `workflows` permission to apply.
 
 ## User-facing service
 
@@ -43,33 +45,32 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   A red `main` check on `brew-ci.yml` or `validate-formulae.yml` means the next
   `brew install`/`brew upgrade` for at least one formula is very likely broken for
   end users — treat every `main` failure as a candidate incident, not routine noise.
-- **Formula CI health is currently 0% on `ubuntu-latest`, not just red-but-informative:**
-  as of the `2026-09-12` daily run window (45 consecutive failing `main` runs
-  since the last success on `2026-08-31T05:29:36Z`, ~12 days), `brew-ci.yml`'s
-  `Set up Homebrew tap` step itself fails ("`Refusing to load formula ... from
-  untrusted tap`") before `brew audit --strict`/install/test ever execute, on
-  both `main` and pull request runs — see
-  [#373](https://github.com/kubestellar/homebrew-tap/issues/373).
-  This is a more severe escalation of the cleanup-only symptom tracked in
-  [#322](https://github.com/kubestellar/homebrew-tap/issues/322): today there is
-  **no automated Linux signal at all** for `Formula/**` changes, so a real
-  regression landing right now would only be caught by the `macos-latest` leg
-  of the same job or by a user report. Treat this as blocking the ≤15-minute
-  detection SLO below until a maintainer applies the `brew trust` fix proposed
-  in #373 (requires `workflows` permission this agent's credentials lack).
-- **Formula CI health** and **Formula drift health** currently only get a data
-  point when a `Formula/**` (or related-path) change triggers `brew-ci.yml` /
-  `validate-formulae.yml` on `main`. Neither workflow has a `schedule:` trigger,
-  so a break with **no matching Formula diff** — e.g. an upstream
+- **Formula CI health on `ubuntu-latest` is resolved, not currently 0%:** the
+  `brew-ci.yml` "untrusted tap" Linux outage described here previously
+  ([#373](https://github.com/kubestellar/homebrew-tap/issues/373), escalating
+  [#322](https://github.com/kubestellar/homebrew-tap/issues/322)) was fixed by
+  [#487](https://github.com/kubestellar/homebrew-tap/pull/487) and confirmed
+  green through [#490](https://github.com/kubestellar/homebrew-tap/pull/490)
+  (both `ubuntu-latest` and `macos-latest` legs green on `main`). All three
+  referenced issues are closed.
+- **Formula drift health** currently only gets a data point when a
+  `Formula/**` (or related-path) change triggers `validate-formulae.yml` on
+  `main`. `brew-ci.yml` closed this gap for itself with a daily `schedule:`
+  trigger (`17 6 * * *`, added in
+  [#464](https://github.com/kubestellar/homebrew-tap/pull/464), closing
+  [#318](https://github.com/kubestellar/homebrew-tap/issues/318)), but
+  `validate-formulae.yml` still has none, so a break with **no matching
+  Formula diff** — e.g. an upstream
   [`kubestellar-mcp`](https://github.com/kubestellar/kubestellar-mcp) release
   being deleted/re-tagged/pruned, a transient CDN/host 404 on the pinned
-  release URL, or a yanked binary after its `sha256` was already pinned — goes
-  undetected indefinitely between merges, with the ≤15-minute detection SLO
-  below having no mechanism behind it for this failure class. **Recommendation:**
-  add a daily `schedule:` trigger to `brew-ci.yml` and/or `validate-formulae.yml`
-  (see the proposed diff on
-  [#318](https://github.com/kubestellar/homebrew-tap/issues/318)) so the tap's
-  live installability is re-verified on a cadence, not only on a Formula push.
+  release URL, or a yanked binary after its `sha256` was already pinned — can
+  still go undetected indefinitely between merges for the drift-check side,
+  with the ≤15-minute detection SLO below having no mechanism behind it for
+  this failure class on `validate-formulae.yml`. **Recommendation:** add a
+  daily `schedule:` trigger to `validate-formulae.yml`, mirroring
+  `brew-ci.yml`'s and `fuzz.yml`'s existing cadence, so the tap's live
+  installability is re-verified on the drift-check side too, not only on a
+  Formula push.
 - **Time to detect a broken `main` release ≤ 15 minutes.** CI on `main` normally
   completes well within this window; a failed run should be triaged as soon as it
   is reported. An automated `workflow_run`-triggered job that files a
@@ -152,46 +153,38 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   [`.github/workflows/scheduled-workflow-failure-issue.yml`](../.github/workflows/scheduled-workflow-failure-issue.yml)
   (applied in #441, closing the gap previously tracked in
   [#365](https://github.com/kubestellar/homebrew-tap/issues/365)).
-- **Formula CI health** is the one SLI above without a grep-able, structured
-  per-run outcome record in the CI log itself: `validate-formulae.yml`'s
-  `validate_formulae.py` already emits a `VALIDATE_FORMULAE_SUMMARY:` JSON
-  line, and `verify_release_health.sh` emits `VERIFY_RELEASE_HEALTH_SUMMARY:`,
-  but `brew-ci.yml` only prints free-text `::group::` blocks, so a reader has
-  to scroll them to see whether/why a given OS's run passed.
-  **Recommendation:** apply the ready-to-apply step in
-  [`runbooks/proposed-brew-ci-observability-summary-step.yml`](../runbooks/proposed-brew-ci-observability-summary-step.yml),
-  which adds a matching `BREW_CI_SUMMARY:` line (bounded to job status, OS,
-  and formula counts — no exporter, no external data flow). Applying it
-  requires the same `workflows` permission gap noted for the scheduled-failure
-  alert above.
-- **Formula fuzz health** has the same structured-summary gap as `brew-ci.yml`
-  above: `fuzz.yml`'s final "Fuzzing summary" step only echoes fixed free text
-  ("Fuzzing completed successfully!" plus a checklist), with no grep-able
-  outcome record, and — unlike the free text — it has no `if: always()` guard,
-  so it does not even run when an earlier step in the job fails.
-  **Recommendation:** apply the ready-to-apply step in
-  [`runbooks/proposed-fuzz-observability-summary-step.yml`](../runbooks/proposed-fuzz-observability-summary-step.yml),
-  which adds a matching `FUZZ_SUMMARY:` line (bounded to job status and
-  formula count — no exporter, no external data flow) and always runs.
-  `scripts/fuzz_summary.sh` (tested in `scripts/test_fuzz_summary.sh`)
-  already implements and tests this logic. Applying it requires the same
-  `workflows` permission gap noted above.
-- **Formula drift health** has the same structured-summary gap for its
-  unit-test step specifically: `validate-formulae.yml`'s "Run all
-  scripts/test_\*.py unit tests" step runs `unittest discover` directly, so
-  the only pass/fail record is unittest's own free-text `OK` / `FAILED
-  (failures=N, errors=M)` tail line — unlike the drift-check script in the
-  very same job, which already emits `VALIDATE_FORMULAE_SUMMARY:`. This also
-  silently folds the distinct "no tests ran" outcome (unittest exit code 5)
-  into an undifferentiated non-zero exit, the same silent-skip failure class
-  as #268. **Recommendation:** apply the ready-to-apply step in
-  [`runbooks/proposed-validate-formulae-unittest-summary-step.yml`](../runbooks/proposed-validate-formulae-unittest-summary-step.yml),
-  which adds a matching `UNITTEST_SUMMARY:` line (bounded to status/counts —
-  no exporter, no external data flow) while preserving the full verbose
-  unittest output unchanged. `scripts/unittest_summary.sh` (tested in
-  `scripts/test_unittest_summary.sh`) already implements and tests this
-  logic. Applying it requires the same `workflows` permission gap noted
-  above.
+- **Formula CI health** now has a grep-able, structured per-run outcome
+  record: `brew-ci.yml`'s "Emit CI-observability summary" step (`if:
+  always()`) runs `scripts/brew_ci_summary.sh` and emits a bounded
+  `BREW_CI_SUMMARY:` line (job status, OS, formula counts — no exporter, no
+  external data flow) per matrix OS, matching `validate_formulae.py`'s
+  `VALIDATE_FORMULAE_SUMMARY:` and `verify_release_health.sh`'s
+  `VERIFY_RELEASE_HEALTH_SUMMARY:`. This was applied in
+  [#479](https://github.com/kubestellar/homebrew-tap/pull/479), closing the
+  `workflows` permission gap previously tracked here and in
+  [#425](https://github.com/kubestellar/homebrew-tap/issues/425).
+- **Formula fuzz health** has the matching structured-summary record:
+  `fuzz.yml`'s "Emit CI-observability summary" step (`if: always()`, so it
+  now runs even when an earlier step in the job fails) runs
+  `scripts/fuzz_summary.sh` (tested in `scripts/test_fuzz_summary.sh`) and
+  emits a bounded `FUZZ_SUMMARY:` line (job status and formula count — no
+  exporter, no external data flow), replacing the old fixed free-text
+  "Fuzzing summary" step. This was applied in
+  [#479](https://github.com/kubestellar/homebrew-tap/pull/479), closing the
+  gap previously tracked in
+  [#413](https://github.com/kubestellar/homebrew-tap/issues/413).
+- **Formula drift health** has the matching structured-summary record for
+  its unit-test step: `validate-formulae.yml`'s "Run all scripts/test_\*.py
+  unit tests" step now delegates to `scripts/unittest_summary.sh` (tested in
+  `scripts/test_unittest_summary.sh`), which emits a bounded
+  `UNITTEST_SUMMARY:` line (status/counts only — no exporter, no external
+  data flow) while preserving the full verbose `unittest` output, and
+  distinguishes the "no tests ran" outcome (`unittest` exit code 5) from an
+  undifferentiated non-zero exit — closing the silent-skip failure class
+  tracked in #268. This was applied in
+  [#479](https://github.com/kubestellar/homebrew-tap/pull/479), closing the
+  gap previously tracked in
+  [#425](https://github.com/kubestellar/homebrew-tap/issues/425).
 
 ## Recommendations (no backend configured)
 
