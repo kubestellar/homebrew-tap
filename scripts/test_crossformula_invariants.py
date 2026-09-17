@@ -39,11 +39,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR, load_formulae as _load_formulae
-
-URL_RE = re.compile(r'url\s+"([^"]+)"')
-SHA256_RE = re.compile(r'sha256\s+"([^"]+)"')
-VERSION_RE = re.compile(r'^\s*version\s+"([^"]+)"', re.MULTILINE)
+from formula_test_fixtures import (
+    FORMULA_DIR,
+    SHA256_LINE_RE as SHA256_RE,
+    URL_INLINE_RE as URL_RE,
+    VERSION_LINE_RE as VERSION_RE,
+    load_formulae as _load_formulae,
+)
 
 
 def _platform_slots(text):

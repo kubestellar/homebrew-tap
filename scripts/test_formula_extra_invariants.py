@@ -30,12 +30,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR
+from formula_test_fixtures import (
+    FORMULA_DIR,
+    DESC_LINE_RE,
+    URL_INLINE_RE as URL_RE,
+    VERSION_LINE_RE,
+)
 
 VERSION_RE = re.compile(r"^(?P<sem>\d+\.\d+\.\d+)(?:-nightly\.\d{8})?$")
-URL_RE = re.compile(r'url\s+"([^"]+)"')
-VERSION_LINE_RE = re.compile(r'^\s*version\s+"([^"]+)"', re.MULTILINE)
-DESC_LINE_RE = re.compile(r'^\s*desc\s+"([^"]+)"', re.MULTILINE)
 
 
 class TestFormulaExtraInvariants(unittest.TestCase):

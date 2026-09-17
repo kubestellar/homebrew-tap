@@ -9,6 +9,36 @@ from pathlib import Path
 
 FORMULA_DIR = Path(__file__).resolve().parent.parent / "Formula"
 
+# Canonical stanza regexes shared by the test_formula_*_invariants.py /
+# test_crossformula_*_invariants.py modules (see kubestellar/homebrew-
+# tap#450). These used to be re-declared independently in ~16 files —
+# most copies were character-for-character identical, but `url`/`version`
+# had two divergent forms in the wild:
+#
+#   * anchored, multiline: r'^\s*url\s+"([^"]+)"' with re.MULTILINE —
+#     only matches a `url "..."` that starts its own line (e.g. does not
+#     match inside a commented-out line unless the `#` itself is
+#     stripped by the caller).
+#   * inline/unanchored: r'url\s+"([^"]+)"' with no re.MULTILINE — also
+#     matches `url "..."` embedded mid-line (e.g. after a `#` comment
+#     marker), which the anchored form does not.
+#
+# Both forms are kept here, named distinctly, so callers keep whichever
+# behavior they previously relied on instead of silently changing which
+# lines match (a real behavior change, not just deduplication).
+VERSION_LINE_RE = re.compile(r'^\s*version\s+"([^"]+)"', re.MULTILINE)
+URL_LINE_RE = re.compile(r'^\s*url\s+"([^"]+)"', re.MULTILINE)
+HOMEPAGE_LINE_RE = re.compile(r'^\s*homepage\s+"([^"]+)"', re.MULTILINE)
+DESC_LINE_RE = re.compile(r'^\s*desc\s+"([^"]+)"', re.MULTILINE)
+SHA256_LINE_RE = re.compile(r'sha256\s+"([^"]+)"')
+
+# Unanchored/inline variants — intentionally distinct from the anchored
+# forms above (see note above); do not merge them.
+URL_INLINE_RE = re.compile(r'url\s+"([^"]+)"')
+
+# .../releases/download/<TAG>/<FILENAME>
+RELEASE_URL_RE = re.compile(r"/releases/download/(?P<tag>[^/]+)/(?P<file>[^/]+)$")
+
 
 def load_formulae() -> dict[str, str]:
     """Return every Formula/*.rb file as {stem: text}.
