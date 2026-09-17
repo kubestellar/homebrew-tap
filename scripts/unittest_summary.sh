@@ -25,8 +25,15 @@
 #
 # Usage: scripts/unittest_summary.sh
 #   Optional:
-#     SCRIPTS_DIR - override the scripts/ directory searched for
-#                   test_*.py files (used by tests).
+#     SCRIPTS_DIR      - override the scripts/ directory searched for
+#                         test_*.py files (used by tests).
+#     COVERAGE_SOURCE   - if set, run the discovery under
+#                         `coverage run --source="$COVERAGE_SOURCE"` instead
+#                         of a plain `python3 -u`, so validate-formulae.yml's
+#                         coverage measurement (and its downstream
+#                         `coverage report --fail-under` gate) keeps working
+#                         unchanged when this script replaces the inline
+#                         `coverage run -m unittest discover` invocation.
 #
 # Exit status: 0 if the summary status is "pass", 1 otherwise (matching
 # unittest's own convention that "no tests ran" is not a pass).
@@ -39,7 +46,11 @@ SCRIPTS_DIR="${SCRIPTS_DIR:-$REPO_ROOT/scripts}"
 output_file="$(mktemp)"
 trap 'rm -f "$output_file"' EXIT
 
-python3 -u -m unittest discover -v --buffer -s "$SCRIPTS_DIR" -p 'test_*.py' 2>&1 | tee "$output_file"
+if [ -n "${COVERAGE_SOURCE:-}" ]; then
+  coverage run --source="$COVERAGE_SOURCE" -m unittest discover -v --buffer -s "$SCRIPTS_DIR" -p 'test_*.py' 2>&1 | tee "$output_file"
+else
+  python3 -u -m unittest discover -v --buffer -s "$SCRIPTS_DIR" -p 'test_*.py' 2>&1 | tee "$output_file"
+fi
 unittest_exit=${PIPESTATUS[0]}
 
 tests_run=0

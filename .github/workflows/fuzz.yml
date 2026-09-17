@@ -125,14 +125,15 @@ jobs:
           fi
           echo "✅ URL and checksum fuzzing passed"
       
-      - name: Fuzzing summary
-        run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "Fuzzing completed successfully!"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "Tests performed:"
-          echo "  ✅ Ruby syntax validation"
-          echo "  ✅ Formula structure validation"
-          echo "  ✅ URL format fuzzing"
-          echo "  ✅ Checksum presence validation"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+      - name: Emit CI-observability summary
+        # Bounded, stdout-only JSON summary line for CI-log observability,
+        # mirroring VALIDATE_FORMULAE_SUMMARY (validate_formulae.py),
+        # VERIFY_RELEASE_HEALTH_SUMMARY (verify_release_health.sh), and
+        # BREW_CI_SUMMARY (brew_ci_summary.sh): no exporter, no metrics
+        # backend, no external data flow — just a grep-able, fixed-shape
+        # record of this job's outcome. Runs even when an earlier step
+        # failed so the record always appears.
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+        run: scripts/fuzz_summary.sh
