@@ -25,6 +25,21 @@ LOCKSTEP_GROUPS = [
     {"kubestellar-ops", "kubestellar-deploy"},
 ]
 
+# Formulae published from a single upstream goreleaser `brews` target with
+# no dedicated nightly counterpart (unlike kubestellar-ops/kubestellar-deploy,
+# which always move in lockstep with each other). For these, a nightly
+# goreleaser run and a stable release both publish to the *same* .rb file,
+# so whichever ran most recently silently wins and the tap can serve a
+# nightly build under the stable channel for the rest of the day. See
+# kubestellar/homebrew-tap#423. This is a WARN, not a FAIL: the actual fix
+# (publish nightlies to a separate formula, or skip brew publish for
+# nightlies) must land in the upstream repo's goreleaser config, which this
+# repo cannot enforce; the check only surfaces the current channel state so
+# it isn't a silent surprise.
+SINGLE_CHANNEL_FORMULAE = {"kc-agent"}
+
+NIGHTLY_VERSION_RE = re.compile(r'-nightly\.\d+$')
+
 
 def parse_formula(path: Path) -> dict:
     """Return parsed metadata for a single .rb file."""
@@ -84,6 +99,35 @@ def parse_formula(path: Path) -> dict:
             )
 
     return {"version": version, "errors": errors, "name": path.stem}
+
+
+def find_nightly_channel_warnings(parsed: dict) -> list[str]:
+    """Return a warning for every formula in SINGLE_CHANNEL_FORMULAE whose
+    version currently looks like a nightly build (e.g. "0.3.42-nightly.20260916").
+
+    These formulae have no dedicated nightly counterpart, so a nightly
+    goreleaser run overwrites the same .rb file a stable release publishes
+    to; `brew install`/`brew upgrade` then serves nightly builds under the
+    stable channel until the next stable release happens to run. This is a
+    warning, not a validation error, because the fix belongs in the
+    upstream repo's goreleaser `brews` config (kubestellar/homebrew-tap#423),
+    not in this tap; it only makes the current channel state visible
+    instead of a silent surprise.
+    """
+    warnings = []
+    for name in sorted(SINGLE_CHANNEL_FORMULAE):
+        data = parsed.get(name)
+        if data is None:
+            continue
+        version = data["version"]
+        if NIGHTLY_VERSION_RE.search(version):
+            warnings.append(
+                f"{name}.rb is currently serving a nightly build ({version}) "
+                "on its stable channel; the upstream goreleaser config must "
+                "publish nightlies to a separate formula instead of "
+                "overwriting this one (see kubestellar/homebrew-tap#423)"
+            )
+    return warnings
 
 
 def emit_summary(
@@ -146,6 +190,26 @@ def _write_step_summary(
         f.write("\n".join(lines) + "\n")
 
 
+def _write_step_summary_warnings(warnings: list[str]) -> None:
+    """Append a markdown callout of non-fatal channel warnings (see
+    find_nightly_channel_warnings()) to $GITHUB_STEP_SUMMARY, if set.
+    No-op outside GitHub Actions, or when there are no warnings, so a
+    clean run's summary is unchanged."""
+    if not warnings:
+        return
+    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
+    if not summary_path:
+        return
+
+    lines = ["### ⚠️ Nightly channel warnings", ""]
+    for w in warnings:
+        lines.append(f"- {w}")
+    lines.append("")
+
+    with open(summary_path, "a", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+
 def validate(formula_dir: Path) -> int:
     """Run all checks; return exit code (0 = pass, 1 = fail)."""
     rb_files = sorted(formula_dir.glob("*.rb"))
@@ -177,6 +241,14 @@ def validate(formula_dir: Path) -> int:
             all_errors.append(
                 f"lockstep version mismatch in group {sorted(group)}: {detail}"
             )
+
+    # non-fatal nightly-channel warnings (kubestellar/homebrew-tap#423):
+    # printed and surfaced in the step summary regardless of pass/fail,
+    # but never affect the exit code.
+    channel_warnings = find_nightly_channel_warnings(parsed)
+    for w in channel_warnings:
+        print(f"WARN: {w}", file=sys.stderr)
+    _write_step_summary_warnings(channel_warnings)
 
     if all_errors:
         for e in all_errors:
