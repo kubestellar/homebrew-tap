@@ -38,98 +38,13 @@ jobs:
         with:
           ruby-version: '3.2'
       
-      - name: Syntax validation (basic fuzzing)
-        run: |
-          echo "Validating Ruby syntax for all formula files..."
-          FAILED=0
-          for formula in Formula/*.rb; do
-            echo "Checking $formula..."
-            if ! ruby -c "$formula" > /dev/null 2>&1; then
-              echo "❌ Syntax error in $formula"
-              ruby -c "$formula"
-              FAILED=1
-            else
-              echo "✅ $formula is valid"
-            fi
-          done
-          
-          if [ $FAILED -eq 1 ]; then
-            echo "Formula validation failed"
-            exit 1
-          fi
-          echo "All formulas passed syntax validation"
-      
-      - name: Formula structure fuzzing
-        run: |
-          echo "Fuzzing formula structure..."
-          FAILED=0
-          for formula in Formula/*.rb; do
-            echo "Testing $formula..."
-            
-            # Check for required Formula class definition
-            if ! grep -q "class.*< Formula" "$formula"; then
-              echo "❌ Missing Formula class in $formula"
-              FAILED=1
-              continue
-            fi
-            
-            # Check for required metadata
-            if ! grep -E -q "desc|homepage|url" "$formula"; then
-              echo "❌ Missing metadata in $formula"
-              FAILED=1
-            fi
-            
-            # Check for required install method
-            if ! grep -q "def install\|define_method(:install)" "$formula"; then
-              echo "❌ Missing install method in $formula"
-              FAILED=1
-            fi
-            
-            echo "✅ $formula passed structure checks"
-          done
-          
-          if [ $FAILED -eq 1 ]; then
-            echo "Formula structure fuzzing failed"
-            exit 1
-          fi
-          echo "✅ Formula structure fuzzing passed"
-      
-      - name: URL and checksum fuzzing
-        run: |
-          echo "Fuzzing URLs and checksums..."
-          FAILED=0
-          for formula in Formula/*.rb; do
-            echo "Testing URLs in $formula..."
-            
-            # Extract URLs and validate format (process substitution keeps
-            # exit status in this shell, not a subshell)
-            while read -r line; do
-              url=$(echo "$line" | sed -n 's/.*url\s*"\([^"]*\)".*/\1/p')
-              if [ -n "$url" ]; then
-                # Validate URL format (basic fuzzing)
-                if [[ ! "$url" =~ ^https?:// ]]; then
-                  echo "❌ Invalid URL format: $url"
-                  FAILED=1
-                else
-                  echo "✅ Valid URL format: $url"
-                fi
-              fi
-            done < <(grep -E 'url\s+"[^"]+"' "$formula")
-            
-            # Check for sha256 checksums
-            if grep -q "url\s*\"" "$formula"; then
-              if ! grep -q "sha256" "$formula"; then
-                echo "❌ Missing sha256 checksum in $formula"
-                FAILED=1
-              fi
-            fi
-          done
-          
-          if [ $FAILED -eq 1 ]; then
-            echo "URL and checksum fuzzing failed"
-            exit 1
-          fi
-          echo "✅ URL and checksum fuzzing passed"
+      - name: Formula fuzzing (syntax + structure + URL/checksum)
+        # Delegates to scripts/formula_fuzz.sh (regression-tested by
+        # scripts/test_formula_fuzz.sh) so the three-phase fuzzing logic
+        # stays in one tested place instead of ~60 lines of inline bash
+        # here. See #465 / #479 for the same pattern applied to the
+        # shell-test discovery loop and the summary emitters.
+        run: scripts/formula_fuzz.sh Formula
       
       - name: Emit CI-observability summary
         # Bounded, stdout-only JSON summary line for CI-log observability,

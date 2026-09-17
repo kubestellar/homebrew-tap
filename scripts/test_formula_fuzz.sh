@@ -166,6 +166,26 @@ exit_code=$?
 assert_exit "bad-url-scheme-fails" "$exit_code" 1 "expected exit=1 when a url uses a non-http(s) scheme. Got exit=$exit_code, output: $output"
 assert_grep "bad-url-scheme-fails" "$output" "Invalid URL format" "expected 'Invalid URL format' log. Got: $output"
 
+# plain http:// (unencrypted downgrade) must also fail — see #493
+http_dir="$work_dir/http-scheme"
+mkdir -p "$http_dir"
+cat > "$http_dir/plainhttp.rb" <<'RUBY'
+class Plainhttp < Formula
+  desc "x"
+  homepage "https://example.invalid"
+  url "http://example.invalid/x.tar.gz"
+  sha256 "0000000000000000000000000000000000000000000000000000000000000000"
+  def install
+    bin.install "x"
+  end
+end
+RUBY
+
+output=$("$SCRIPT" "$http_dir" 2>&1)
+exit_code=$?
+assert_exit "plain-http-url-fails" "$exit_code" 1 "expected exit=1 when a url uses plain http:// (see #493). Got exit=$exit_code, output: $output"
+assert_grep "plain-http-url-fails" "$output" "Invalid URL format" "expected 'Invalid URL format' log. Got: $output"
+
 # url declared but no sha256 must fail
 sha_dir="$work_dir/nosha"
 mkdir -p "$sha_dir"

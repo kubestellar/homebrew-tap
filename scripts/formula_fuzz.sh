@@ -14,11 +14,15 @@
 # unittest_summary.sh, and the summary emitters — this closes the last
 # fuzz-workflow instance of that pattern.
 #
-# Behavior is byte-equivalent to the current inline steps:
+# Behavior matches the current inline steps, with one hardening fix
+# (see kubestellar/homebrew-tap#493): the URL guard now requires
+# `https://` instead of accepting plain `http://` — a formula source
+# downgraded to unencrypted http would previously slip past this
+# defense-in-depth check.
 #   1. Every Formula/*.rb must pass `ruby -c` (syntax fuzzing).
 #   2. Every Formula/*.rb must define a Formula subclass, contain at
 #      least one of `desc|homepage|url`, and declare an install method.
-#   3. Every `url "…"` must match `^https?://`, and any file declaring
+#   3. Every `url "…"` must match `^https://`, and any file declaring
 #      a `url "…"` must also declare at least one `sha256` line.
 # Any failure across the three phases exits 1; all-pass exits 0. Errors
 # are logged to stderr with the same ❌/✅ markers the workflow used so
@@ -85,7 +89,7 @@ for formula in "$formula_dir"/*.rb; do
   while read -r line; do
     url=$(echo "$line" | sed -n 's/.*url\s*"\([^"]*\)".*/\1/p')
     if [ -n "$url" ]; then
-      if [[ ! "$url" =~ ^https?:// ]]; then
+      if [[ ! "$url" =~ ^https:// ]]; then
         echo "❌ Invalid URL format: $url"
         failed=1
       else
