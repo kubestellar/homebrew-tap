@@ -43,18 +43,17 @@ jobs:
         run: pip install --disable-pip-version-check coverage
 
       - name: Run all scripts/test_*.py unit tests
-        # Use unittest discover so every scripts/test_*.py is picked up
-        # automatically. Enumerating files by name is a silent-skip trap
-        # (see #268). -v surfaces per-test output so a 'Ran 0 tests'
-        # regression is visible in the job log; --buffer keeps output
-        # clean on success. Running under `coverage run` measures line
-        # coverage of scripts/*.py so a future silent-skip or untested
-        # branch in validate_formulae.py is caught by the gate below
-        # (see #334). PYTHONUNBUFFERED replaces the python3 -u flag,
-        # which `coverage run` does not accept.
+        # Delegates to scripts/unittest_summary.sh (regression-tested by
+        # scripts/test_unittest_summary.sh) so the unittest discover
+        # invocation and its structured UNITTEST_SUMMARY: outcome record
+        # stay in one tested place instead of inlined bash here.
+        # COVERAGE_SOURCE keeps this step's `coverage run --source=scripts`
+        # instrumentation (added after unittest_summary.sh was written) so
+        # the "Enforce coverage gate" step below keeps working unchanged.
         env:
           PYTHONUNBUFFERED: "1"
-        run: coverage run --source=scripts -m unittest discover -v --buffer -s scripts -p 'test_*.py'
+          COVERAGE_SOURCE: scripts
+        run: scripts/unittest_summary.sh
 
       - name: Enforce coverage gate on scripts/validate_formulae.py
         # Scoped to the production drift-check script only: the
