@@ -99,13 +99,17 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   [`docs/severity-levels.md`](severity-levels.md) for how this budget maps to
   the P1–P4 severity field on the [incident](../.github/ISSUE_TEMPLATE/incident.md)
   and [postmortem](postmortem-template.md) templates.
-  **This budget is currently being missed:** the ongoing `brew-ci.yml`
+  **This budget was missed:** the `brew-ci.yml`
   Linux "untrusted tap" outage (see above, and
-  [#373](https://github.com/kubestellar/homebrew-tap/issues/373)) has run
-  13+ days past this 2-hour threshold with no incident issue or postmortem
-  filed until
+  [#373](https://github.com/kubestellar/homebrew-tap/issues/373)) ran
+  ~16.6 days past this 2-hour threshold — no incident issue or postmortem
+  was filed until
   [`docs/postmortems/2026-08-31-brew-ci-linux-untrusted-tap.md`](postmortems/2026-08-31-brew-ci-linux-untrusted-tap.md)
-  ([#409](https://github.com/kubestellar/homebrew-tap/issues/409)).
+  ([#409](https://github.com/kubestellar/homebrew-tap/issues/409)) — but the
+  outage itself is now resolved as of
+  [PR #487](https://github.com/kubestellar/homebrew-tap/pull/487) (both
+  `ubuntu-latest` and `macos-latest` green on `main` as of
+  [run 35210250200](https://github.com/kubestellar/homebrew-tap/actions/runs/35210250200)).
 - **Weekly security-scan health ≥ 99%** for the scheduled `CodeQL Analysis` and
   `Scorecard analysis` runs. Both already run on a weekly `schedule:` trigger,
   and — unlike when this gap was first tracked in
