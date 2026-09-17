@@ -9,6 +9,12 @@ on:
     branches: [ "main" ]
     paths:
       - "Formula/**"
+  schedule:
+    # Weekly catch-all so formula syntax/structure/URL-checksum fuzzing runs
+    # independent of a Formula/** diff, mirroring codeql.yml's `0 4 * * 1`
+    # weekly cadence (offset by 4h to avoid piling onto the same slot). See
+    # #337 for the gap this closes.
+    - cron: '0 8 * * 1'
   workflow_dispatch:
 
 permissions:
