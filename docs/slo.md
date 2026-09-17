@@ -116,33 +116,30 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   (applied in #441; also watches `Fuzzing`, `Homebrew CI`, `Validate
   Formulae`, and `Stale Issues` — see the
   [Scheduled Workflow Failure Runbook](../runbooks/scheduled-workflow-failure.md)).
-- **Weekly security-scan health is currently 0% for `Scorecard analysis`,
-  not just unalerted:** every `scorecard.yml` run since at least
-  `2026-09-10T05:33:06Z` has failed at the `Pull
+- **Weekly security-scan health for `Scorecard analysis` was 0% between
+  `2026-09-10T05:33:06Z` and 2026-09-17**, not just unalerted: every
+  `scorecard.yml` run in that window failed at the `Pull
   gcr.io/openssf/scorecard-action:v2.4.0` step, before checkout or analysis
-  ever run, with `denied: This API method requires billing to be enabled`
+  ever ran, with `denied: This API method requires billing to be enabled`
   — Google's deprecation of legacy `gcr.io` image hosting, not a
-  KubeStellar-side regression. `CodeQL Analysis` is unaffected. The fix
-  (pulling the GHCR-mirrored image via the action's `image:` input) lives
-  in the pinned reusable workflow
-  `kubestellar/infra/.github/workflows/reusable-scorecard.yml`, in a repo
-  outside every operations agent's authorized-repo list, so it cannot be
-  fixed from this repo at all — see
+  KubeStellar-side regression. `CodeQL Analysis` was unaffected. The fix
+  (pulling the GHCR-mirrored image) landed in the pinned reusable workflow
+  `kubestellar/infra/.github/workflows/reusable-scorecard.yml`, which this
+  repo now consumes via an updated pin
+  (`cfe3dcacb317e67ccf3701c98bc0416a7712cfbf`); `scorecard.yml` runs on
+  `main` have been green since the pin bump — see
   [#417](https://github.com/kubestellar/homebrew-tap/issues/417) for the
-  exact one-line change and confirmed failing-run evidence.
+  failing-run evidence and fix confirmation.
 - **Formula fuzz health ≥ 99%**, and detection latency for a fuzz regression should
-  match the ≤ 15 minute target above. Unlike `CodeQL Analysis`/`Scorecard analysis`,
-  `fuzz.yml` has **no `schedule:` trigger at all** — it only runs on `push`/`pull_request`
-  that touch `Formula/**`. Between such changes, nothing re-validates formula
-  syntax, structure, or URL/checksum format on a cadence, so a regression with no
-  matching Formula diff (e.g. from a shared script change) would go undetected
-  indefinitely.
+  match the ≤ 15 minute target above. `fuzz.yml` now has a weekly `schedule:`
+  trigger (`0 8 * * 1`, offset from `codeql.yml`'s `0 4 * * 1` and
+  `scorecard.yml`'s `0 6 * * 1`), closing the gap tracked in
+  [#337](https://github.com/kubestellar/homebrew-tap/issues/337) where nothing
+  re-validated formula syntax, structure, or URL/checksum format between
+  `Formula/**` diffs.
   [`.github/workflows/scheduled-workflow-failure-issue.yml`](../.github/workflows/scheduled-workflow-failure-issue.yml)
-  already watches `Fuzzing` for failed runs, but that only helps once `fuzz.yml`
-  actually runs on a cadence. **Recommendation:** add a weekly `schedule:` trigger to
-  `fuzz.yml` (e.g. `0 8 * * 1`, offset from `codeql.yml`'s `0 4 * * 1` and
-  `scorecard.yml`'s `0 6 * * 1`) so the existing alert has a scheduled run to
-  watch.
+  already watches `Fuzzing` for failed runs, so the existing alert now has a
+  scheduled run to watch.
 - **Stale-triage health ≥ 99%** for the scheduled `Stale Issues` run. Like the
   security scans above, `stale.yml` already runs on a daily `schedule:`
   trigger, and an automated alert now fires if the scheduled run itself fails
