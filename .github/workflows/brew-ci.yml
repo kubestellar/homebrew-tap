@@ -120,6 +120,16 @@ jobs:
         # installed from this tap first, then untap, then fall back to
         # removing the tap directory directly as a belt-and-suspenders
         # measure in case `brew untap` still didn't fully clean up. See #426.
+        #
+        # setup-homebrew's own `main.sh` originally left a *symlink* at this
+        # path (`Taps/kubestellar/homebrew-tap` -> `$GITHUB_WORKSPACE`), and
+        # its `post.sh` cleanup unconditionally does
+        # `rm "$STATE_TAP_SYMLINK"; mkdir "$STATE_TAP_SYMLINK"; mv ... into it`,
+        # expecting that symlink to still be there. Removing the directory
+        # outright (previous fix for #426) makes that plain `rm` fail with
+        # "No such file or directory", which fails the whole job even though
+        # every audit/install/test step above passed. Recreate the symlink
+        # setup-homebrew expects instead of leaving the path empty. See #486.
         if: ${{ always() && matrix.os == 'ubuntu-latest' }}
         run: |
           for formula in Formula/*.rb; do
@@ -128,8 +138,12 @@ jobs:
           done
           brew untap kubestellar/tap || true
           tap_dir="$(brew --repo kubestellar/tap 2>/dev/null || true)"
-          if [ -n "$tap_dir" ] && [ -d "$tap_dir" ]; then
-            rm -rf "$tap_dir"
+          if [ -n "$tap_dir" ]; then
+            if [ -e "$tap_dir" ] || [ -L "$tap_dir" ]; then
+              rm -rf "$tap_dir"
+            fi
+            mkdir -p "$(dirname "$tap_dir")"
+            ln -s "$GITHUB_WORKSPACE" "$tap_dir"
           fi
 
       - name: Emit CI-observability summary
