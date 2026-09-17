@@ -101,6 +101,19 @@ jobs:
             echo "::endgroup::"
           done
 
+      - name: Untap self before post-cleanup
+        # setup-homebrew's post-job cleanup on Linux does a plain `rm` (not
+        # `rm -rf`) on its pre-registered tap directory. Because we retap
+        # kubestellar/tap to this checkout earlier in the job, that directory
+        # still exists (non-empty) at post-job time and the plain `rm` fails
+        # with "Is a directory", failing the whole job even though every
+        # audit/install/test step above passed. Untapping here removes the
+        # directory before Post-"Set up Homebrew on Linux" runs, since GitHub
+        # Actions runs post steps only after all regular steps (including
+        # this one) complete. See #322.
+        if: ${{ always() && matrix.os == 'ubuntu-latest' }}
+        run: brew untap kubestellar/tap || true
+
       - name: Emit CI-observability summary
         # Bounded, stdout-only JSON summary line for CI-log observability,
         # mirroring VALIDATE_FORMULAE_SUMMARY (validate_formulae.py) and
