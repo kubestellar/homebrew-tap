@@ -39,8 +39,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Install coverage
-        run: pip install --disable-pip-version-check coverage
+      - name: Install pinned test dependencies
+        # requirements-dev.txt pins pytest, pytest-cov, and coverage so a
+        # newly-published (potentially malicious) PyPI release cannot be
+        # pulled into CI silently. See #5883 / #5884 for rationale.
+        run: pip install --disable-pip-version-check -r requirements-dev.txt
 
       - name: Run all scripts/test_*.py unit tests
         # Delegates to scripts/unittest_summary.sh (regression-tested by
@@ -78,18 +81,15 @@ jobs:
           retention-days: 14
 
       - name: Run scripts/test_*.sh shell regression tests
-        # Enumerating by glob (not by name) so any new scripts/test_*.sh
-        # file is picked up automatically. See #390: these suites existed
-        # but were never wired into CI, so a regression to the scripts
-        # they guard (brew_ci_summary.sh, fuzz_summary.sh, etc.) could
-        # land silently.
-        run: |
-          failed=0
-          for t in scripts/test_*.sh; do
-            echo "== $t =="
-            bash "$t" || failed=$((failed + 1))
-          done
-          exit "$failed"
+        # Delegates to scripts/run_shell_tests.sh (regression-tested by
+        # scripts/test_run_shell_tests.sh) so the discover-and-run logic
+        # for scripts/test_*.sh stays in one tested place instead of
+        # inlined bash here. See #390 (shell tests never wired into CI)
+        # and #465 (this step used to re-implement the wrapper's
+        # discovery loop untested). Discovery includes
+        # test_run_shell_tests.sh itself, so wrapper regressions still
+        # fail CI; the wrapper's self-exclusion guard prevents recursion.
+        run: bash scripts/run_shell_tests.sh
 
       - name: Run Formula drift check
         run: python3 -u scripts/validate_formulae.py Formula
