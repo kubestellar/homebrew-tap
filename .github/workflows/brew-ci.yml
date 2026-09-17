@@ -111,8 +111,26 @@ jobs:
         # directory before Post-"Set up Homebrew on Linux" runs, since GitHub
         # Actions runs post steps only after all regular steps (including
         # this one) complete. See #322.
+        #
+        # `brew untap` refuses to untap a tap that still has formulae
+        # installed from it ("Refusing to untap ... because it contains the
+        # following installed formulae"), and that refusal is silently
+        # swallowed by `|| true`, leaving the tap directory in place for the
+        # post-cleanup `rm` to choke on again. Uninstall anything we
+        # installed from this tap first, then untap, then fall back to
+        # removing the tap directory directly as a belt-and-suspenders
+        # measure in case `brew untap` still didn't fully clean up. See #426.
         if: ${{ always() && matrix.os == 'ubuntu-latest' }}
-        run: brew untap kubestellar/tap || true
+        run: |
+          for formula in Formula/*.rb; do
+            name=$(basename "$formula" .rb)
+            brew uninstall --force --ignore-dependencies "kubestellar/tap/$name" 2>/dev/null || true
+          done
+          brew untap kubestellar/tap || true
+          tap_dir="$(brew --repo kubestellar/tap 2>/dev/null || true)"
+          if [ -n "$tap_dir" ] && [ -d "$tap_dir" ]; then
+            rm -rf "$tap_dir"
+          fi
 
       - name: Emit CI-observability summary
         # Bounded, stdout-only JSON summary line for CI-log observability,
