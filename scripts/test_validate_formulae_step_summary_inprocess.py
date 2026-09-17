@@ -15,8 +15,19 @@ These tests import validate_formulae directly and call the helper (and
 emit_summary() as a thin wrapper) so the branches are attributed to the
 module. No production code changes.
 
+This module absorbed the two non-duplicate assertions from three
+sibling in-process modules that all covered the same helper
+(kubestellar/homebrew-tap#424): the empty-string-env no-op case and
+the exactly-at-cap boundary case. Those sibling modules
+(test_write_step_summary.py,
+test_validate_formulae_step_summary_in_process.py,
+test_validate_formulae_write_step_summary_inprocess.py) have been
+deleted; test_validate_formulae_step_summary.py remains as the
+subprocess end-to-end counterpart.
+
 Branches guarded:
-  1. GITHUB_STEP_SUMMARY unset -> early return, no file created.
+  1. GITHUB_STEP_SUMMARY unset, or set to an empty string -> early
+     return, no file created.
   2. status='pass' with no errors -> writes ✅ icon and header row only
      (no <details> block).
   3. status='fail' with a short error list -> writes ❌ icon and full
@@ -24,7 +35,8 @@ Branches guarded:
   4. status='error' with a formula_count of 0 (the "no .rb files" path
      in validate()) -> also uses ❌ icon.
   5. errors longer than MAX_STEP_SUMMARY_ERRORS -> truncates the list
-     AND appends the "...and N more" footer.
+     AND appends the "...and N more" footer; exactly at the cap ->
+     no footer at all.
   6. emit_summary() forwards its errors kwarg to _write_step_summary
      (defaulting to []) so callers that omit errors on success don't
      crash the helper.
@@ -63,6 +75,18 @@ class WriteStepSummaryBranches(unittest.TestCase):
         vf._write_step_summary("pass", 3, 0, [])
         # Nothing to assert beyond "did not raise"; the guard is the
         # early return itself.
+
+    def test_empty_string_env_is_a_no_op(self):
+        # GITHUB_STEP_SUMMARY="" (set but empty) must be treated the
+        # same as unset, since `os.environ.get(...)` returns "" which
+        # is falsy. Merged from the now-deleted test_write_step_summary.py
+        # (kubestellar/homebrew-tap#424).
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            probe = Path(td) / "should-not-exist"
+            os.environ["GITHUB_STEP_SUMMARY"] = ""
+            vf._write_step_summary("fail", 3, 5, ["boom"])
+            self.assertFalse(probe.exists())
 
     def test_pass_writes_icon_and_header_only(self):
         # Success path with no errors must produce the header table but
@@ -147,6 +171,29 @@ class WriteStepSummaryBranches(unittest.TestCase):
             self.assertIn(f"- formula-{cap - 1}.rb: err {cap - 1}", content)
             self.assertNotIn(f"- formula-{cap}.rb", content)
             self.assertIn(f"...and 5 more (see step log)", content)
+        finally:
+            os.unlink(tmp_path)
+
+    def test_errors_at_exactly_cap_no_overflow_notice(self):
+        # Exactly MAX_STEP_SUMMARY_ERRORS entries: every one is shown
+        # and the "...and N more" footer must NOT appear. Complements
+        # test_many_errors_are_capped_and_footer_added (which is over
+        # the cap). Merged from the now-deleted
+        # test_validate_formulae_step_summary_in_process.py
+        # (kubestellar/homebrew-tap#424).
+        import tempfile
+        cap = vf.MAX_STEP_SUMMARY_ERRORS
+        errors = [f"err-{i}" for i in range(cap)]
+        with tempfile.NamedTemporaryFile(
+            "w+", delete=False, suffix=".md"
+        ) as tmp:
+            tmp_path = tmp.name
+        try:
+            os.environ["GITHUB_STEP_SUMMARY"] = tmp_path
+            vf._write_step_summary("fail", 10, len(errors), errors)
+            content = Path(tmp_path).read_text(encoding="utf-8")
+            self.assertIn(f"- err-{cap - 1}", content)
+            self.assertNotIn("more (see step log)", content)
         finally:
             os.unlink(tmp_path)
 

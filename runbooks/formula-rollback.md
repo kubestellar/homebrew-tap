@@ -92,6 +92,28 @@ check *which step* failed:
 Skipping this check risks an unnecessary rollback (and user-facing pin/unpin
 churn) for a problem that isn't actually in the formula.
 
+### Known issue: nightly builds can clobber the `kc-agent` stable channel
+
+`Formula/kc-agent.rb` has no dedicated nightly formula, unlike
+`kubestellar-ops`/`kubestellar-deploy` (which always publish in lockstep
+with each other). A nightly goreleaser run in `kubestellar/console` and a
+stable release both publish to this same file, so whichever ran most
+recently wins — `brew install kubestellar/tap/kc-agent` can silently serve
+a nightly build under the stable channel for the rest of the day until the
+next stable release happens to run. See
+[#423](https://github.com/kubestellar/homebrew-tap/issues/423).
+
+`scripts/validate_formulae.py` prints a `WARN:` line (and a "Nightly channel
+warnings" section in the job step summary) whenever `kc-agent.rb`'s version
+looks like a nightly build, so this is visible in `validate-formulae.yml`
+runs instead of a silent surprise — but it is a **warning, not a failure**:
+the actual fix must land in `kubestellar/console`'s goreleaser `brews`
+config (publish nightlies to a separate formula, e.g. `kc-agent-nightly`,
+or skip brew publishing for nightlies entirely), which is outside this
+repo. If you see this warning, it does not by itself mean the current
+`kc-agent.rb` is broken — check the version to see whether it happens to be
+a working nightly build or a genuinely bad one before triaging as above.
+
 ---
 
 ## Immediate Triage
