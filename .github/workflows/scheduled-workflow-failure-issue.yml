@@ -41,6 +41,7 @@ permissions: read-all  # default read; writes scoped to job below
 jobs:
   open-issue:
     permissions:
+      contents: read  # needed: checkout repository for scripts/workflow_failure_notify.sh
       issues: write
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -52,6 +53,8 @@ jobs:
         (github.event.workflow_run.name == 'Homebrew CI' ||
          github.event.workflow_run.name == 'Validate Formulae')))
     steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Check for existing open issue
         id: check
         env:
