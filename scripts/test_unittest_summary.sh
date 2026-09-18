@@ -17,23 +17,18 @@ set -uo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPT="$REPO_ROOT/scripts/unittest_summary.sh"
 
-fail_count=0
+# shellcheck source=scripts/test_lib.sh
+. "$REPO_ROOT/scripts/test_lib.sh"
+
+# fail_count and assert_contains are provided by test_lib.sh so this file
+# and test_unittest_summary_edge_cases.sh share one implementation.
+
 work_dir="$(mktemp -d)"
 trap 'rm -rf "$work_dir"' EXIT
 
 write_case_dir() {
   local dir="$1"
   mkdir -p "$dir"
-}
-
-assert_contains() {
-  local name="$1" haystack="$2" needle="$3"
-  if printf '%s' "$haystack" | grep -qF "$needle"; then
-    echo "OK ($name)"
-  else
-    echo "FAIL ($name): expected to find '$needle'. Got: $haystack"
-    fail_count=$((fail_count + 1))
-  fi
 }
 
 assert_exit() {
