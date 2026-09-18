@@ -20,34 +20,12 @@ set -uo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPT="$REPO_ROOT/scripts/workflow_failure_notify.sh"
 
-fail_count=0
+# shellcheck source=scripts/test_lib.sh
+. "$REPO_ROOT/scripts/test_lib.sh"
 
-assert_contains() {
-  local name="$1" haystack="$2" needle="$3"
-  if ! printf '%s' "$haystack" | grep -qF "$needle"; then
-    echo "FAIL ($name): expected output to contain: $needle"
-    echo "--- output ---"
-    printf '%s\n' "$haystack"
-    echo "--------------"
-    fail_count=$((fail_count + 1))
-  fi
-}
-
-assert_not_contains() {
-  local name="$1" haystack="$2" needle="$3"
-  if printf '%s' "$haystack" | grep -qF "$needle"; then
-    echo "FAIL ($name): expected output to NOT contain: $needle"
-    fail_count=$((fail_count + 1))
-  fi
-}
-
-assert_exit_code() {
-  local name="$1" expected="$2" actual="$3"
-  if [ "$actual" -ne "$expected" ]; then
-    echo "FAIL ($name): expected exit $expected, got $actual"
-    fail_count=$((fail_count + 1))
-  fi
-}
+# fail_count, assert_contains, assert_not_contains, and assert_exit_code
+# are provided by test_lib.sh so this file and
+# test_workflow_failure_notify_edge_cases.sh share one implementation.
 
 # --- comment-body: base case, no failed jobs ---
 output=$(NOW="2026-09-10 12:00 UTC" WORKFLOW_NAME="Fuzzing" RUN_ID="111" \

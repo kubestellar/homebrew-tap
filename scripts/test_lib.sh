@@ -16,6 +16,9 @@
 #   fail <name> <message>         — record and print a failure
 #   assert_grep <name> <haystack> <pattern> <message>
 #   assert_exit <name> <actual> <expected> <message>
+#   assert_contains <name> <haystack> <needle>
+#   assert_not_contains <name> <haystack> <needle>
+#   assert_exit_code <name> <expected> <actual>
 #   finish <label>                — print the pass/fail summary and exit
 #
 # This file is meant to be sourced, not executed directly.
@@ -61,6 +64,52 @@ assert_grep() {
   local name="$1" haystack="$2" pattern="$3" message="$4"
   if ! printf '%s' "$haystack" | grep -q "$pattern"; then
     fail "$name" "$message"
+    return 1
+  fi
+  return 0
+}
+
+# assert_contains <name> <haystack> <needle> — fail unless <haystack>
+# contains the literal substring <needle> (grep -qF). Dumps <haystack>
+# on failure so the diagnostic includes the actual rendered output.
+assert_contains() {
+  local name="$1" haystack="$2" needle="$3"
+  if ! printf '%s' "$haystack" | grep -qF "$needle"; then
+    echo "FAIL ($name): expected output to contain: $needle"
+    echo "--- output ---"
+    printf '%s\n' "$haystack"
+    echo "--------------"
+    fail_count=$((fail_count + 1))
+    return 1
+  fi
+  return 0
+}
+
+# assert_not_contains <name> <haystack> <needle> — fail if <haystack>
+# contains the literal substring <needle>. Dumps <haystack> on failure
+# so the diagnostic shows what leaked in.
+assert_not_contains() {
+  local name="$1" haystack="$2" needle="$3"
+  if printf '%s' "$haystack" | grep -qF "$needle"; then
+    echo "FAIL ($name): expected output to NOT contain: $needle"
+    echo "--- output ---"
+    printf '%s\n' "$haystack"
+    echo "--------------"
+    fail_count=$((fail_count + 1))
+    return 1
+  fi
+  return 0
+}
+
+# assert_exit_code <name> <expected> <actual> — fail unless <actual>
+# equals <expected>. Note the argument order (expected before actual)
+# matches the existing call sites in scripts/test_workflow_failure_notify*.sh
+# and is the inverse of assert_exit above, which predates it.
+assert_exit_code() {
+  local name="$1" expected="$2" actual="$3"
+  if [ "$actual" -ne "$expected" ]; then
+    echo "FAIL ($name): expected exit $expected, got $actual"
+    fail_count=$((fail_count + 1))
     return 1
   fi
   return 0
