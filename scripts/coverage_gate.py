@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """
-Local coverage gate for scripts/validate_formulae.py and the scripts/test_*.py
-unittest discovery suite.
+Local coverage gate for the tap's production helper modules
+(scripts/validate_formulae.py and scripts/formula_test_fixtures.py)
+and the scripts/test_*.py unittest discovery suite.
 
 Wraps the CI-side invocation from .github/workflows/validate-formulae.yml
 (`python3 -u -m unittest discover -v --buffer -s scripts -p 'test_*.py'`)
@@ -59,8 +60,11 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     )
     p.add_argument(
         "--include",
-        default="scripts/validate_formulae.py",
-        help="Comma-separated glob(s) to include in the coverage report (default: scripts/validate_formulae.py).",
+        default="scripts/validate_formulae.py,scripts/formula_test_fixtures.py",
+        help=(
+            "Comma-separated glob(s) to include in the coverage report "
+            "(default: scripts/validate_formulae.py,scripts/formula_test_fixtures.py)."
+        ),
     )
     return p.parse_args(argv)
 
@@ -105,11 +109,16 @@ def _run_tests_under_coverage() -> int:
 def _report(threshold: int, include: str, want_xml: bool) -> int:
     # `coverage report --fail-under=N` returns 2 when coverage < N. We
     # translate that to our own exit code (also 2) for a clean CLI contract.
+    #
+    # `coverage report` only honors the LAST `--include` flag (later ones
+    # silently override earlier ones), so we join the patterns into a
+    # single comma-separated value and emit exactly one `--include` arg.
+    # See coverage.py CoverageConfig.include semantics — the CLI parser
+    # assigns rather than appends.
+    patterns = [p.strip() for p in include.split(",") if p.strip()]
     include_args: list[str] = []
-    for pattern in include.split(","):
-        pattern = pattern.strip()
-        if pattern:
-            include_args.extend(["--include", pattern])
+    if patterns:
+        include_args = ["--include", ",".join(patterns)]
 
     report_rc = subprocess.call(
         [

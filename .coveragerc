@@ -1,12 +1,22 @@
 [run]
 branch = True
-# Only gate on the production validator. The scripts/test_*.py files are
-# tests themselves; measuring them against a 100% floor would fail as
-# soon as any test file gains an unreachable defensive branch. The
-# validator, however, is a single-file supply-chain-critical module —
-# a regression below 100% must fail CI.
+# Only gate on production (non-test) modules. The scripts/test_*.py
+# files are tests themselves; measuring them against a 100% floor
+# would fail as soon as any test file gains an unreachable defensive
+# branch. The modules listed below, however, are single-file
+# supply-chain-critical helpers — a regression below 100% must fail CI.
+#
+#   * validate_formulae.py — the tap-side formula validator invoked by
+#     .github/workflows/validate-formulae.yml (see #334).
+#   * formula_test_fixtures.py — shared fixtures / regex definitions
+#     imported by ~16 scripts/test_formula_*_invariants.py modules
+#     (see #328, #329, #450). A weakening here silently weakens every
+#     downstream invariant test that depends on the same regex or the
+#     shared load_formulae() loader, so it needs the same 100% ratchet
+#     as validate_formulae.py itself.
 include =
     scripts/validate_formulae.py
+    scripts/formula_test_fixtures.py
 
 [report]
 show_missing = True

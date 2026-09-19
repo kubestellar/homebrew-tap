@@ -66,7 +66,10 @@ class ParseArgsTests(unittest.TestCase):
 
     def test_include_default_targets_validate_formulae(self):
         args = coverage_gate._parse_args([])
-        self.assertEqual(args.include, "scripts/validate_formulae.py")
+        self.assertEqual(
+            args.include,
+            "scripts/validate_formulae.py,scripts/formula_test_fixtures.py",
+        )
 
     def test_include_flag_overrides_default(self):
         args = coverage_gate._parse_args(["--include", "scripts/*.py"])
@@ -125,7 +128,9 @@ class MainGuardTests(unittest.TestCase):
              mock.patch.object(coverage_gate, "_report", return_value=0) as report:
             rc = coverage_gate.main(["--min", "90", "--xml"])
         self.assertEqual(rc, 0)
-        report.assert_called_once_with(90, "scripts/validate_formulae.py", True)
+        report.assert_called_once_with(
+            90, "scripts/validate_formulae.py,scripts/formula_test_fixtures.py", True
+        )
 
     def test_coverage_below_threshold_propagates_exit_code_2(self):
         with mock.patch.object(coverage_gate, "_import_coverage", return_value=True), \
@@ -190,11 +195,12 @@ class ReportTests(unittest.TestCase):
         # Only one call (report); xml was False.
         self.assertEqual(len(captured["cmds"]), 1)
         cmd = captured["cmds"][0]
-        # Each include glob must be preceded by its own --include flag —
-        # coverage.py accepts this form and mis-joining them silently
-        # collapses to a single glob that matches nothing.
-        includes = [cmd[i + 1] for i, arg in enumerate(cmd) if arg == "--include"]
-        self.assertEqual(includes, ["scripts/a.py", "scripts/b.py"])
+        # `coverage report` only honors the LAST `--include` flag (later
+        # ones silently override earlier ones), so the patterns must be
+        # collapsed into a single comma-joined value under one `--include`.
+        include_flags = [i for i, arg in enumerate(cmd) if arg == "--include"]
+        self.assertEqual(len(include_flags), 1)
+        self.assertEqual(cmd[include_flags[0] + 1], "scripts/a.py,scripts/b.py")
         self.assertIn("--fail-under=95", cmd)
 
     def test_report_emits_xml_when_requested(self):
@@ -221,9 +227,10 @@ class ReportTests(unittest.TestCase):
 
     def test_report_skips_empty_include_patterns(self):
         # A comma-separated --include value with empty segments (e.g. from
-        # a trailing comma or double comma) must not emit a bare `--include`
-        # with an empty argument — coverage.py rejects that. The loop skips
-        # empty patterns after strip(), exercising the 111->109 branch.
+        # a trailing comma or double comma) must be filtered before joining
+        # — an empty pattern inside the joined value would match nothing
+        # and quietly zero the report. The whitespace-trim + drop-empty
+        # step exercises the pattern-filter branch.
         captured: dict = {}
 
         def fake_call(cmd, cwd=None):
@@ -234,10 +241,10 @@ class ReportTests(unittest.TestCase):
             rc = coverage_gate._report(95, "scripts/a.py,,  ,scripts/b.py", want_xml=False)
         self.assertEqual(rc, 0)
         cmd = captured["cmds"][0]
-        includes = [cmd[i + 1] for i, arg in enumerate(cmd) if arg == "--include"]
-        # Empty and whitespace-only patterns dropped; real patterns retained in order.
-        self.assertEqual(includes, ["scripts/a.py", "scripts/b.py"])
-        self.assertNotIn("", includes)
+        include_flags = [i for i, arg in enumerate(cmd) if arg == "--include"]
+        # Exactly one --include, joining only the real patterns.
+        self.assertEqual(len(include_flags), 1)
+        self.assertEqual(cmd[include_flags[0] + 1], "scripts/a.py,scripts/b.py")
 
     def test_report_all_empty_patterns_produces_no_include_flag(self):
         # When every segment is empty/whitespace, no --include flag is passed
