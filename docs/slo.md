@@ -20,7 +20,9 @@ now applied for all three of `brew-ci.yml`, `fuzz.yml`, and
 `validate-formulae.yml` (see [#479](https://github.com/kubestellar/homebrew-tap/pull/479)).
 The one remaining gap is a missing `schedule:` trigger on
 `validate-formulae.yml` (`brew-ci.yml` and `fuzz.yml` already have one),
-which still requires a maintainer with `workflows` permission to apply.
+which still requires a maintainer with `workflows` permission to apply —
+tracked with the exact replacement diff in
+[#508](https://github.com/kubestellar/homebrew-tap/issues/508).
 
 ## User-facing service
 
@@ -70,7 +72,10 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   daily `schedule:` trigger to `validate-formulae.yml`, mirroring
   `brew-ci.yml`'s and `fuzz.yml`'s existing cadence, so the tap's live
   installability is re-verified on the drift-check side too, not only on a
-  Formula push.
+  Formula push. Tracked, with the exact ready-to-apply diff, in
+  [#508](https://github.com/kubestellar/homebrew-tap/issues/508) — filed
+  issue-only because it requires a `.github/workflows/**` change and this
+  agent's token lacks the `workflows` permission GitHub requires to push one.
 - **Time to detect a broken `main` release ≤ 15 minutes.** CI on `main` normally
   completes well within this window; a failed run should be triaged as soon as it
   is reported. An automated `workflow_run`-triggered job that files a
