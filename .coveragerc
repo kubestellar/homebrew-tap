@@ -14,10 +14,25 @@ branch = True
 #     downstream invariant test that depends on the same regex or the
 #     shared load_formulae() loader, so it needs the same 100% ratchet
 #     as validate_formulae.py itself.
+#   * coverage_gate.py — the coverage gate helper itself, invoked by
+#     .github/workflows/validate-formulae.yml. If this file silently
+#     drops below 100%, a regression in the gate could allow the two
+#     modules above to drift below their ratchet without CI catching
+#     it. Guard the guard.
 include =
     scripts/validate_formulae.py
     scripts/formula_test_fixtures.py
+    scripts/coverage_gate.py
 
 [report]
 show_missing = True
 skip_covered = False
+# The `if __name__ == "__main__":` guard at the bottom of each helper
+# is a standard entry-point shim exercised only by subprocess-level
+# invocation (e.g. the CI step that runs the module directly). Unit
+# tests invoke `main()` in-process, so these two lines are structurally
+# unreachable from unittest discovery. Excluding them keeps the 100%
+# ratchet honest instead of forcing a synthetic subprocess test whose
+# only purpose is to touch the shim.
+exclude_also =
+    if __name__ == .__main__.:

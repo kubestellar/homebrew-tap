@@ -60,10 +60,15 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
     )
     p.add_argument(
         "--include",
-        default="scripts/validate_formulae.py,scripts/formula_test_fixtures.py",
+        default=(
+            "scripts/validate_formulae.py,"
+            "scripts/formula_test_fixtures.py,"
+            "scripts/coverage_gate.py"
+        ),
         help=(
             "Comma-separated glob(s) to include in the coverage report "
-            "(default: scripts/validate_formulae.py,scripts/formula_test_fixtures.py)."
+            "(default: scripts/validate_formulae.py,"
+            "scripts/formula_test_fixtures.py,scripts/coverage_gate.py)."
         ),
     )
     return p.parse_args(argv)
