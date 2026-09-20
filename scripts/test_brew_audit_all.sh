@@ -23,18 +23,21 @@ SCRIPT="$REPO_ROOT/scripts/brew_audit_all.sh"
 
 make_work_dir
 
-# make_stub_brew <dir> <failing_formula_or_empty> <exit_code>
+# make_stub_brew <dir> <failing_formula_or_empty> <exit_code> [<output>]
 # Creates a `brew audit --strict <tap>/<name>` stub that fails with
 # <exit_code> only when <name> == <failing_formula_or_empty>; every other
-# formula (and an empty <failing_formula_or_empty>) always succeeds.
+# formula (and an empty <failing_formula_or_empty>) always succeeds. When
+# given, <output> is printed to stdout (as brew audit's problem report)
+# before the stub exits with <exit_code> for the failing formula.
 make_stub_brew() {
-  local dir="$1" failing="$2" exit_code="$3"
+  local dir="$1" failing="$2" exit_code="$3" formula_output="${4:-}"
   mkdir -p "$dir"
   cat > "$dir/brew" <<STUB
 #!/usr/bin/env bash
 if [ "\$1" = "audit" ]; then
   name="\${3##*/}"
   if [ "\$name" = "$failing" ]; then
+    printf '%s\n' "$formula_output"
     exit $exit_code
   fi
   exit 0
@@ -80,6 +83,33 @@ code=$?
 assert_exit_code "tap-name-override exit" 0 "$code"
 assert_contains "tap-name-override used in output" "$output" "other/tap/alpha"
 assert_not_contains "tap-name-override default tap absent" "$output" "kubestellar/tap/alpha"
+
+# --- Case 4: sole redundant_version finding is a non-fatal known false
+# positive (issue #513) -> exit 0, warning emitted, all formulae audited ---
+stub4="$work_dir/stub4"
+redundant_output='kubestellar/tap/beta
+  * Stable: `version 1.2.3` is redundant with version scanned from URL'
+make_stub_brew "$stub4" "beta" 1 "$redundant_output"
+output=$(env -i PATH="$stub4:/usr/bin:/bin" FORMULA_DIR="$formula_dir" bash "$SCRIPT" 2>&1)
+code=$?
+assert_exit_code "redundant-version-only exit" 0 "$code"
+assert_contains "redundant-version-only warns" "$output" "::warning::"
+assert_contains "redundant-version-only mentions issue" "$output" "#513"
+assert_contains "redundant-version-only still reaches gamma" "$output" "kubestellar/tap/gamma"
+endgroup_count=$(printf '%s\n' "$output" | grep -c '^::endgroup::$')
+assert_exit_code "redundant-version-only all three endgroups printed" 3 "$endgroup_count"
+
+# --- Case 5: redundant_version finding alongside another problem line
+# still fails loudly (only a *sole* redundant_version finding is absorbed) ---
+stub5="$work_dir/stub5"
+mixed_output='kubestellar/tap/beta
+  * Stable: `version 1.2.3` is redundant with version scanned from URL
+  * some other real audit problem'
+make_stub_brew "$stub5" "beta" 3 "$mixed_output"
+output=$(env -i PATH="$stub5:/usr/bin:/bin" FORMULA_DIR="$formula_dir" bash "$SCRIPT" 2>&1)
+code=$?
+assert_exit_code "redundant-version-plus-other propagates exit code" 3 "$code"
+assert_not_contains "redundant-version-plus-other does not reach gamma" "$output" "kubestellar/tap/gamma"
 
 if [ "$fail_count" -gt 0 ]; then
   echo "$fail_count assertion(s) failed"
