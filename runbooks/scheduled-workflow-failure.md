@@ -29,6 +29,9 @@ depending on someone noticing a red check.
    - **Infrastructure/transient** (runner outage, network timeout, upstream
      rate limit) — re-run the workflow (`gh run rerun <run-id> --repo
      kubestellar/homebrew-tap`) and comment the outcome on the issue.
+   - **Known recurring signature** — check the
+     [Known Recurring Failure Signatures](#known-recurring-failure-signatures)
+     table below before investigating from scratch.
    - **Real regression** (formula syntax/structure break, dependency scan
      finding, drift check failure) — proceed to step 3.
 3. For `Homebrew CI` / `Validate Formulae` failures on `main`, treat as a
@@ -48,6 +51,15 @@ depending on someone noticing a red check.
    formula or code regression — issues/PRs due for stale-marking or
    auto-closing per policy simply won't be, with no other signal until this
    alert fires. Fix the workflow/permissions issue and re-run.
+
+## Known Recurring Failure Signatures
+
+These `Homebrew CI` failures have a confirmed root cause and a known outcome —
+check here before re-investigating from scratch.
+
+| Signature | Root cause | Expected outcome |
+|-----------|------------|-------------------|
+| `brew audit --strict` fails on exactly one formula with `` Stable: `version X.Y.Z` is redundant with version scanned from URL `` (no other finding) | `goreleaserbot`'s formula-bump commits always emit an explicit `version "X.Y.Z"` line. Homebrew's `redundant_version` strict-audit rule flags this whenever the tag is a plain semver (a stable release, e.g. `v0.9.15`) because the version is then also inferable from the download URL. It does **not** fire for nightly tags (e.g. `v0.9.15-nightly.20260920`), whose suffix isn't trivially URL-inferable — so this is specific to stable-version bump commits, confirmed recurring at [#426](https://github.com/kubestellar/homebrew-tap/issues/426) (`kc-agent` v0.3.41, 2026-09-13) and [#511](https://github.com/kubestellar/homebrew-tap/issues/511) (`kubestellar-deploy`, v0.9.15, 2026-09-20). | `brew audit --strict` is a lint, not an install check — `brew install`/`brew upgrade` are unaffected. In every observed case, main went green again within minutes once the next commit (usually a same-day nightly bump) superseded the flagged stable-version commit. **Confirm `main`'s current `Homebrew CI` run is green before closing** the auto-filed issue as resolved-by-supersession; do not treat it as a live incident once confirmed. A permanent fix (accepting this specific audit finding as non-fatal in `scripts/brew_audit_all.sh`) is out of `operations`' scope — filed for `quality`/`ci-maintainer` or a maintainer to pick up. |
 
 ## Closing the Loop
 
