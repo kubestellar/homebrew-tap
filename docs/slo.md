@@ -47,6 +47,14 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   A red `main` check on `brew-ci.yml` or `validate-formulae.yml` means the next
   `brew install`/`brew upgrade` for at least one formula is very likely broken for
   end users — treat every `main` failure as a candidate incident, not routine noise.
+  **One confirmed exception:** a `brew audit --strict` failure whose only
+  finding is `` `version X.Y.Z` is redundant with version scanned from URL ``
+  is a cosmetic lint finding tied to `goreleaserbot`'s stable-version-tag
+  formula bumps, not a broken install — see the
+  [Known Recurring Failure Signatures](../runbooks/scheduled-workflow-failure.md#known-recurring-failure-signatures)
+  table in the Scheduled Workflow Failure Runbook (confirmed at
+  [#426](https://github.com/kubestellar/homebrew-tap/issues/426) and
+  [#511](https://github.com/kubestellar/homebrew-tap/issues/511)).
 - **Formula CI health on `ubuntu-latest` is resolved, not currently 0%:** the
   `brew-ci.yml` "untrusted tap" Linux outage described here previously
   ([#373](https://github.com/kubestellar/homebrew-tap/issues/373), escalating
