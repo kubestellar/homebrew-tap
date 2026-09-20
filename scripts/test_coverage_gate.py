@@ -68,7 +68,8 @@ class ParseArgsTests(unittest.TestCase):
         args = coverage_gate._parse_args([])
         self.assertEqual(
             args.include,
-            "scripts/validate_formulae.py,scripts/formula_test_fixtures.py",
+            "scripts/validate_formulae.py,scripts/formula_test_fixtures.py,"
+            "scripts/coverage_gate.py",
         )
 
     def test_include_flag_overrides_default(self):
@@ -129,7 +130,10 @@ class MainGuardTests(unittest.TestCase):
             rc = coverage_gate.main(["--min", "90", "--xml"])
         self.assertEqual(rc, 0)
         report.assert_called_once_with(
-            90, "scripts/validate_formulae.py,scripts/formula_test_fixtures.py", True
+            90,
+            "scripts/validate_formulae.py,scripts/formula_test_fixtures.py,"
+            "scripts/coverage_gate.py",
+            True,
         )
 
     def test_coverage_below_threshold_propagates_exit_code_2(self):
