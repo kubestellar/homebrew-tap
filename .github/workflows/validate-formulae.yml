@@ -58,13 +58,12 @@ jobs:
           COVERAGE_SOURCE: scripts
         run: scripts/unittest_summary.sh
 
-      - name: Enforce coverage gate on scripts/validate_formulae.py
-        # Scoped to the production drift-check script only: the
-        # test_*.py files themselves contain defensive skipTest guards
-        # (e.g. when Formula/ doesn't exist) whose skip paths are
-        # legitimately uncovered in CI, so gating on total repo coverage
-        # would be noisy. 95% leaves headroom over the current 100%.
-        run: coverage report --fail-under=95 --include='scripts/validate_formulae.py'
+      - name: Enforce 100% coverage gate
+        env:
+          COVERAGE_MIN: "100"
+        # Keep the CI gate aligned with .coveragerc so every
+        # supply-chain-critical helper stays at the 100% ratchet.
+        run: python3 scripts/coverage_gate.py --min 100
 
       - name: Generate coverage XML report
         if: always()
