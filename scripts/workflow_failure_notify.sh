@@ -14,6 +14,7 @@
 # Usage:
 #   workflow_failure_notify.sh comment-body
 #   workflow_failure_notify.sh issue-body
+#   workflow_failure_notify.sh failed-jobs
 #
 # Required env vars (mirroring the workflow_run event context):
 #   WORKFLOW_NAME   - e.g. "Fuzzing"
@@ -21,12 +22,23 @@
 #   RUN_URL         - e.g. "https://github.com/.../actions/runs/123456789"
 # issue-body also uses:
 #   WORKFLOW_FILE   - e.g. ".github/workflows/fuzz.yml"
-# Optional for both modes:
+# Optional for comment-body / issue-body:
 #   FAILED_JOBS     - comma-joined failed job names; omitted row if unset/empty.
 #   NOW             - override the timestamp line (used by tests); defaults
 #                     to the current UTC time.
 #
-# Exit status: 0 on success, 1 on missing mode or required env var.
+# failed-jobs mode uses (see the `Fetch failed jobs` steps in
+# .github/workflows/scheduled-workflow-failure-issue.yml, which today
+# inline the same `gh run view … --jq …` snippet twice):
+#   REPOSITORY      - e.g. "kubestellar/homebrew-tap"
+#   RUN_ID          - e.g. "123456789"
+# failed-jobs prints the comma-joined names of jobs whose conclusion is
+# "failure" for that run, or the empty string if `gh run view` errors
+# (matching the `2>/dev/null || echo ""` swallow-on-error contract the
+# workflow already relies on so the follow-up step is not blocked).
+#
+# Exit status: 0 on success (including failed-jobs' swallow-on-error
+# case), 1 on missing mode or missing required env var.
 
 set -uo pipefail
 
@@ -77,8 +89,22 @@ case "$mode" in
     printf -- '---\n'
     printf '*This issue was automatically created by the scheduled workflow failure monitor.*\n'
     ;;
+  failed-jobs)
+    require REPOSITORY
+    require RUN_ID
+    # Match the inline snippet in scheduled-workflow-failure-issue.yml's
+    # `Fetch failed jobs for comment` / `Fetch failed job details` steps
+    # (which appear twice, byte-identically): swallow any `gh run view`
+    # failure to an empty string so the surrounding workflow step keeps
+    # its exit-0 contract and downstream steps still run.
+    gh run view "$RUN_ID" \
+      --repo "$REPOSITORY" \
+      --json jobs \
+      --jq '[.jobs[] | select(.conclusion == "failure") | .name] | join(", ")' \
+      2>/dev/null || echo ""
+    ;;
   *)
-    echo "workflow_failure_notify.sh: unknown mode '$mode' (expected comment-body|issue-body)" >&2
+    echo "workflow_failure_notify.sh: unknown mode '$mode' (expected comment-body|issue-body|failed-jobs)" >&2
     exit 1
     ;;
 esac
