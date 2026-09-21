@@ -21,6 +21,7 @@
 # Usage: scripts/test_workflow_failure_notify_edge_cases.sh
 # Exit status: 0 if all assertions pass, 1 otherwise.
 
+# shellcheck disable=SC2016  # literal backtick/markdown strings in single quotes, not variable expansion
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"

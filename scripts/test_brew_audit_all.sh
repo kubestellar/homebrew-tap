@@ -13,6 +13,7 @@
 # Usage: scripts/test_brew_audit_all.sh
 # Exit status: 0 if all assertions pass, 1 otherwise.
 
+# shellcheck disable=SC2016  # literal backtick/markdown strings in single quotes, not variable expansion
 set -uo pipefail
 
 # shellcheck source=scripts/test_lib.sh

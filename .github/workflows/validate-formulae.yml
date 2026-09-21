@@ -21,6 +21,15 @@ on:
       - 'scripts/*.sh'
       - 'scripts/test_*.sh'
       - '.github/workflows/validate-formulae.yml'
+  schedule:
+    # Daily catch-all so the drift check (unit tests + upstream artifact
+    # verification) re-runs even absent a Formula/** diff — e.g. an upstream
+    # kubestellar-mcp release deleted/re-tagged/pruned, a transient CDN 404 on
+    # a pinned release URL, or a yanked binary after its sha256 was already
+    # pinned. Mirrors brew-ci.yml's `17 6 * * *` and fuzz.yml's `0 8 * * 1`
+    # cadences, offset to avoid piling onto the same slot.
+    - cron: '43 7 * * *'
+  workflow_dispatch:
 
 permissions: read-all
 
