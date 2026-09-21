@@ -6,11 +6,13 @@ on:
     paths:
       - '.github/workflows/**'
       - '.github/actions/**'
+      - 'scripts/**.sh'
   pull_request:
     branches: [main]
     paths:
       - '.github/workflows/**'
       - '.github/actions/**'
+      - 'scripts/**.sh'
   schedule:
     # Weekly catch-all so a floating-tag or shellcheck regression is
     # caught even absent a workflow-file diff. Matches codeql.yml's
@@ -38,7 +40,36 @@ jobs:
 
       - name: Download actionlint
         id: get_actionlint
-        run: bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash) 1.7.7
+        env:
+          # actionlint v1.7.7 = rhysd/actionlint@03d0035246f3e81f36aed592ffb4bebf33a03106
+          ACTIONLINT_REF: '03d0035246f3e81f36aed592ffb4bebf33a03106'
+          ACTIONLINT_VERSION: '1.7.7'
+        run: |
+          set -euo pipefail
+          curl -fsSL -o download-actionlint.bash \
+            "https://raw.githubusercontent.com/rhysd/actionlint/${ACTIONLINT_REF}/scripts/download-actionlint.bash"
+          bash download-actionlint.bash "${ACTIONLINT_VERSION}"
+          rm -f download-actionlint.bash
 
       - name: Run actionlint
         run: ${{ steps.get_actionlint.outputs.executable }} -color
+
+  shellcheck:
+    name: lint shell scripts
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read  # needed: checkout repository
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+
+      - name: Run shellcheck on scripts/*.sh
+        # -x: follow `# shellcheck source=...` directives contributors already
+        # rely on (see scripts/test_lib.sh and every scripts/test_*.sh).
+        # -P scripts: resolve source paths relative to scripts/ so absolute-
+        # from-repo-root and relative directives both resolve.
+        run: shellcheck -x -P scripts scripts/*.sh

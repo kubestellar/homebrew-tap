@@ -116,6 +116,7 @@ fi
 # script exits 0 without touching any path ---
 stub4="$work_dir/stub4"
 make_stub_brew "$stub4" "" 0 1
+# shellcheck disable=SC2034  # captured for parity with other cases; only the exit code matters here
 output=$(env -i PATH="$stub4:/usr/bin:/bin" FORMULA_DIR="$formula_dir" GITHUB_WORKSPACE="$workspace" \
   bash "$SCRIPT" 2>&1)
 code=$?

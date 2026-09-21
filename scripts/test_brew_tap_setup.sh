@@ -88,6 +88,7 @@ assert_exit_code "tap-failed trust-unsupported exit" 1 "$code"
 # --- Case 5: tap succeeds, trust supported, trust itself fails -> propagate ---
 stub5="$work_dir/stub5"
 make_stub_brew "$stub5" 0 0 3
+# shellcheck disable=SC2034  # captured for parity with other cases; only the exit code matters here
 output=$(env -i PATH="$stub5:/usr/bin:/bin" TAP_DIR="$work_dir/checkout5" \
   bash "$SCRIPT" 2>&1)
 code=$?

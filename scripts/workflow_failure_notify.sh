@@ -40,6 +40,7 @@
 # Exit status: 0 on success (including failed-jobs' swallow-on-error
 # case), 1 on missing mode or missing required env var.
 
+# shellcheck disable=SC2016  # literal backtick/markdown strings in single quotes, not variable expansion
 set -uo pipefail
 
 mode="${1:-}"
