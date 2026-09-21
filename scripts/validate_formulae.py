@@ -8,7 +8,15 @@ import re
 import sys
 from pathlib import Path
 
-SHA256_RE = re.compile(r'^[0-9a-f]{64}$')
+from formula_test_fixtures import (
+    SHA256_LINE_RE,
+    URL_INLINE_RE,
+    VERSION_LINE_RE,
+)
+
+# Validates the *value* captured by SHA256_LINE_RE (64 lowercase hex chars),
+# not the sha256 stanza itself; kept local because it has no fixtures peer.
+SHA256_VALUE_RE = re.compile(r'^[0-9a-f]{64}$')
 
 # Prefix for the machine-readable CI summary line (see emit_summary()).
 # Grep this marker in CI logs to get a structured pass/fail count without
@@ -47,7 +55,7 @@ def parse_formula(path: Path) -> dict:
     lines = text.splitlines()
 
     # version
-    version_matches = re.findall(r'^\s*version\s+"([^"]+)"', text, re.MULTILINE)
+    version_matches = VERSION_LINE_RE.findall(text)
     if len(version_matches) == 0:
         return {"error": f"{path.name}: no version line found"}
     if len(version_matches) > 1:
@@ -62,7 +70,7 @@ def parse_formula(path: Path) -> dict:
         if re.match(r'^\s*url\s+"', l)
     ]
     for idx in url_line_indices:
-        url_match = re.search(r'url\s+"([^"]+)"', lines[idx])
+        url_match = URL_INLINE_RE.search(lines[idx])
         if not url_match:
             continue
         url = url_match.group(1)
@@ -84,7 +92,7 @@ def parse_formula(path: Path) -> dict:
             errors.append(f"{path.name}: no line after url at line {idx + 1}")
             continue
 
-        sha_match = re.search(r'sha256\s+"([^"]+)"', lines[sha_idx])
+        sha_match = SHA256_LINE_RE.search(lines[sha_idx])
         if not sha_match:
             errors.append(
                 f"{path.name}: expected sha256 after url (line {idx + 1}), "
@@ -93,7 +101,7 @@ def parse_formula(path: Path) -> dict:
             continue
 
         sha = sha_match.group(1)
-        if not SHA256_RE.match(sha):
+        if not SHA256_VALUE_RE.match(sha):
             errors.append(
                 f"{path.name}: malformed sha256 '{sha}' (must be 64 lowercase hex chars)"
             )
