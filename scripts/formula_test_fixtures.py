@@ -67,7 +67,7 @@ ALLOWED_URL_HOSTS = {
 def _extract_url_hosts(text: str) -> list[str]:
     """Return hosts of every `url "..."` in a formula body, in order."""
     hosts = []
-    for m in re.finditer(r'^\s*url\s+"([^"]+)"', text, re.MULTILINE):
+    for m in URL_LINE_RE.finditer(text):
         url = m.group(1)
         # crude but sufficient: strip scheme, take everything before the
         # next `/`. Formulae never use userinfo or non-default ports.

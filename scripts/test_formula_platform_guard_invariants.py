@@ -15,7 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR
+from formula_test_fixtures import FORMULA_DIR, URL_INLINE_RE, URL_LINE_RE
 
 class TestFormulaPlatformURLPolicy(unittest.TestCase):
     """Cross-formula copy-paste guards on every Formula/*.rb.
@@ -145,7 +145,7 @@ class TestFormulaPlatformURLPolicy(unittest.TestCase):
             # Accept either the exact stem or its `_`-normalized form
             # in the URL's tarball basename (last path segment).
             variants = {stem, stem.replace("-", "_"), stem.replace("_", "-")}
-            for m in re.finditer(r'^\s*url\s+"([^"]+)"', body, re.MULTILINE):
+            for m in URL_LINE_RE.finditer(body):
                 url = m.group(1)
                 basename = url.rsplit("/", 1)[-1]
                 if not any(v in basename for v in variants):
@@ -366,7 +366,7 @@ class TestFormulaVersionTokenBoundaryGuards(unittest.TestCase):
         return m.group(1) if m else None
 
     def _iter_urls(self, body: str):
-        for m in re.finditer(r'url\s+"([^"]+)"', body):
+        for m in URL_INLINE_RE.finditer(body):
             yield m.group(1)
 
     def test_url_contains_version_path_segment(self):
@@ -424,7 +424,7 @@ class TestFormulaVersionTokenBoundaryGuards(unittest.TestCase):
         self.assertIn(f"v{v}", mutated,
                       "prefix substring must still be present in mutant")
         # The boundary check MUST catch it.
-        urls_in_mutant = list(re.finditer(r'url\s+"([^"]+)"', mutated))
+        urls_in_mutant = list(URL_INLINE_RE.finditer(mutated))
         offenders = [u.group(1) for u in urls_in_mutant if good_seg not in u.group(1)]
         self.assertTrue(
             offenders,
