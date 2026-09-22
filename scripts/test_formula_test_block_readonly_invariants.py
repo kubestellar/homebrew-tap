@@ -24,12 +24,16 @@ machine.  That failure mode is invisible to ``brew audit`` — it only
 checks that a ``test do`` block exists and that ``system`` is called;
 it does not inspect what ``system`` is being asked to run.
 
-We also lock the block to a **single** ``system`` invocation.  All three
-formulae today are one-liners of the form
-``system bin/"<name>", "<readonly-verb>"``.  A second ``system`` call
-appearing after a nightly release bump would be a strong signal that
-someone hand-edited the generated file, and next release the extra line
-will silently vanish.
+We also require **at least one** ``system`` invocation, and every
+``system`` call inside the block must reference the formula's own
+binary with a read-only introspection token (see kubestellar/homebrew-tap#531:
+a version-only test exercises nothing beyond "the binary printed a
+string", so each formula now chains a second ``system`` call — e.g.
+``--help`` — to exercise a distinct, real code path while staying
+read-only).  Every call is still checked against ``READONLY_ARGS`` and
+``DANGEROUS_ARG_SUBSTRINGS`` below, so a hand-edit that smuggled in a
+mutating verb on the second line would be caught exactly like it would
+on the first.
 """
 from __future__ import annotations
 
@@ -106,54 +110,58 @@ class TestBlockReadonlyInvariants(unittest.TestCase):
     # Real formulae
     # ------------------------------------------------------------------
 
-    def test_test_block_contains_exactly_one_system_invocation(self):
-        # A second ``system`` line is a red flag for hand-editing.
-        # Codegen emits exactly one; the next nightly bump would
-        # silently drop the extra line and leave a broken PR diff.
+    def test_test_block_contains_at_least_one_system_invocation(self):
+        # `brew audit --strict` already requires a `test do` block to
+        # exist; this narrows it further — the block must actually do
+        # something, not just be present.
         for name, text in self.formulae.items():
             with self.subTest(formula=name):
                 body = self._test_body(text)
                 count = len(ANY_SYSTEM_RE.findall(body))
-                self.assertEqual(
+                self.assertGreaterEqual(
                     count, 1,
                     f"{name}.rb: test do body has {count} `system` "
-                    f"invocations, want exactly 1. Body: {body!r}",
+                    f"invocations, want at least 1. Body: {body!r}",
                 )
 
     def test_test_block_invokes_binary_with_readonly_argument(self):
-        # The single ``system bin/"<name>", "<arg>"`` call must pass a
-        # read-only introspection token.  Anything mutating would turn
-        # ``brew test`` into a live-cluster operation on every user's
-        # machine — invisible to ``brew audit``.
+        # Every `system bin/"<name>", "<arg>"` call in the block must
+        # pass a read-only introspection token. Anything mutating would
+        # turn `brew test` into a live-cluster operation on every user's
+        # machine — invisible to `brew audit`. A formula may chain
+        # multiple such calls (e.g. `--version` then `--help`) to
+        # exercise more than one read-only code path; each one is
+        # checked here.
         for name, text in self.formulae.items():
             with self.subTest(formula=name):
                 body = self._test_body(text)
-                m = SYSTEM_CALL_RE.search(body)
-                self.assertIsNotNone(
-                    m,
+                calls = list(SYSTEM_CALL_RE.finditer(body))
+                self.assertTrue(
+                    calls,
                     f"{name}.rb: test body has no "
                     f'`system bin/"...", "..."` invocation. '
                     f"Body: {body!r}",
                 )
-                self.assertEqual(
-                    m.group("binary"), name,
-                    f"{name}.rb: test invokes bin/{m.group('binary')!r}, "
-                    f"expected bin/{name!r}",
-                )
-                arg = m.group("arg")
-                self.assertIsNotNone(
-                    arg,
-                    f"{name}.rb: test invokes bin/{name!r} with no "
-                    f"argument — cannot verify it is read-only",
-                )
-                self.assertIn(
-                    arg, READONLY_ARGS,
-                    f"{name}.rb: test invokes bin/{name!r} with "
-                    f"{arg!r}, which is not a read-only introspection "
-                    f"token. Allowed: {sorted(READONLY_ARGS)}. A "
-                    f"mutating argument here would run on every "
-                    f"downstream `brew test`.",
-                )
+                for m in calls:
+                    self.assertEqual(
+                        m.group("binary"), name,
+                        f"{name}.rb: test invokes bin/{m.group('binary')!r}, "
+                        f"expected bin/{name!r}",
+                    )
+                    arg = m.group("arg")
+                    self.assertIsNotNone(
+                        arg,
+                        f"{name}.rb: test invokes bin/{name!r} with no "
+                        f"argument — cannot verify it is read-only",
+                    )
+                    self.assertIn(
+                        arg, READONLY_ARGS,
+                        f"{name}.rb: test invokes bin/{name!r} with "
+                        f"{arg!r}, which is not a read-only introspection "
+                        f"token. Allowed: {sorted(READONLY_ARGS)}. A "
+                        f"mutating argument here would run on every "
+                        f"downstream `brew test`.",
+                    )
 
     def test_test_block_body_contains_no_dangerous_verbs(self):
         # Belt-and-braces layer on top of the allowlist above: even if a
@@ -195,7 +203,10 @@ class TestBlockReadonlyInvariants(unittest.TestCase):
         self.assertEqual(call.group("binary"), "foo")
         self.assertEqual(call.group("arg"), "--version")
 
-    def test_regex_flags_a_two_system_body(self):
+    def test_regex_matches_both_calls_in_a_two_system_body(self):
+        # Two read-only calls (e.g. `--version` then `--help`) is the
+        # supported pattern for exercising more than one code path —
+        # both must be discoverable via SYSTEM_CALL_RE.finditer.
         two_calls = (
             '  test do\n'
             '    system bin/"foo", "--version"\n'
@@ -204,9 +215,10 @@ class TestBlockReadonlyInvariants(unittest.TestCase):
         )
         m = TEST_BLOCK_RE.search(two_calls)
         self.assertIsNotNone(m)
-        # Two system calls — this is exactly the state the invariant
-        # above is meant to catch.
         self.assertEqual(len(ANY_SYSTEM_RE.findall(m.group("body"))), 2)
+        calls = list(SYSTEM_CALL_RE.finditer(m.group("body")))
+        self.assertEqual(len(calls), 2)
+        self.assertEqual([c.group("arg") for c in calls], ["--version", "--help"])
 
     def test_dangerous_arg_substrings_cover_common_mutating_verbs(self):
         # Regression check on the allowlist itself: verbs that would be
