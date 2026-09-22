@@ -124,6 +124,39 @@ class TestBlockReadonlyInvariants(unittest.TestCase):
                     f"invocations, want at least 1. Body: {body!r}",
                 )
 
+    def test_test_block_chains_at_least_two_readonly_system_calls(self):
+        # See #531 (rationale) and #532 (initial fix): a single
+        # ``system bin/"foo", "--version"`` call only asserts "the
+        # binary printed a string", so each formula must chain a second
+        # read-only call (e.g. ``--help``) to exercise a distinct real
+        # code path. #532 added this line to every formula, but the
+        # follow-up goreleaser-driven regeneration of Formula/kc-agent.rb
+        # (commit 3bf2246, "Brew formula update for kubestellar-console
+        # version v0.3.43-nightly.20260922", ~90 minutes after #532
+        # merged) dropped the second call — silently, because the
+        # existing invariants only enforced ``>= 1`` read-only call.
+        # Ratcheting to ``>= 2`` here means the *next* goreleaser sync
+        # PR that regenerates a formula with a thinned test block will
+        # fail this test in CI instead of landing on main, giving the
+        # upstream template a review pressure point.
+        for name, text in self.formulae.items():
+            with self.subTest(formula=name):
+                body = self._test_body(text)
+                calls = [
+                    m for m in SYSTEM_CALL_RE.finditer(body)
+                    if m.group("binary") == name and m.group("arg") in READONLY_ARGS
+                ]
+                self.assertGreaterEqual(
+                    len(calls), 2,
+                    f"{name}.rb: test do body has {len(calls)} read-only "
+                    f'`system bin/"{name}", "<arg>"` invocations, want at '
+                    f"least 2 (e.g. `--version` then `--help`) so `brew "
+                    f"test` exercises more than one code path. If this "
+                    f"fails on an auto-generated formula, fix the "
+                    f"upstream release template (see kubestellar/homebrew-tap "
+                    f"#531, #532) — do not weaken the invariant. Body: {body!r}",
+                )
+
     def test_test_block_invokes_binary_with_readonly_argument(self):
         # Every `system bin/"<name>", "<arg>"` call in the block must
         # pass a read-only introspection token. Anything mutating would
