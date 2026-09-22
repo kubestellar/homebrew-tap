@@ -17,7 +17,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import ALLOWED_URL_HOSTS, FORMULA_DIR, _extract_url_hosts
+from formula_test_fixtures import (
+    ALLOWED_URL_HOSTS,
+    FORMULA_DIR,
+    HOMEPAGE_LINE_RE,
+    URL_LINE_RE,
+    _extract_url_hosts,
+)
 
 class TestFormulaPolicy(unittest.TestCase):
     """Whole-repo policy checks on Formula/*.rb — run against real files."""
@@ -151,7 +157,7 @@ class TestFormulaSupplyChainPolicy(unittest.TestCase):
         offenders = []
         for f in self.formula_files:
             text = f.read_text()
-            urls = [m.group(1) for m in re.finditer(r'^\s*url\s+"([^"]+)"', text, re.MULTILINE)]
+            urls = [m.group(1) for m in URL_LINE_RE.finditer(text)]
             shas = [m.group(1) for m in re.finditer(r'^\s*sha256\s+"([^"]+)"', text, re.MULTILINE)]
             if len(urls) < 2 or len(urls) != len(shas):
                 # Structural mismatches are the drift checker's job.
@@ -179,7 +185,7 @@ class TestFormulaSupplyChainPolicy(unittest.TestCase):
         # GitHub taps directory — same downgrade concern as `url`.
         offenders = []
         for f in self.formula_files:
-            for m in re.finditer(r'^\s*homepage\s+"([^"]+)"', f.read_text(), re.MULTILINE):
+            for m in HOMEPAGE_LINE_RE.finditer(f.read_text()):
                 homepage = m.group(1)
                 scheme = homepage.partition("://")[0]
                 if scheme != "https":
