@@ -46,5 +46,6 @@ class KcAgent < Formula
 
   test do
     system bin/"kc-agent", "--version"
+    system bin/"kc-agent", "--help"
   end
 end
