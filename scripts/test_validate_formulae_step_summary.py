@@ -11,19 +11,10 @@ import textwrap
 import unittest
 from pathlib import Path
 
-SCRIPT = Path(__file__).parent / "validate_formulae.py"
+sys.path.insert(0, str(Path(__file__).parent))
+from formula_test_fixtures import VALID_OPS
 
-VALID_OPS = textwrap.dedent("""\
-    # typed: false
-    # frozen_string_literal: true
-    class KubestellarOps < Formula
-      version "1.2.3"
-      on_linux do
-        url "https://example.com/releases/v1.2.3/ops_1.2.3_linux_amd64.tar.gz"
-        sha256 "aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899"
-      end
-    end
-""")
+SCRIPT = Path(__file__).parent / "validate_formulae.py"
 
 BROKEN_SHA = textwrap.dedent("""\
     # typed: false
