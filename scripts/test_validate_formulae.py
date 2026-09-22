@@ -10,31 +10,8 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
+from formula_test_fixtures import VALID_DEPLOY, VALID_OPS
 from validate_formulae import parse_formula, validate
-
-VALID_OPS = textwrap.dedent("""\
-    # typed: false
-    # frozen_string_literal: true
-    class KubestellarOps < Formula
-      version "1.2.3"
-      on_linux do
-        url "https://example.com/releases/v1.2.3/ops_1.2.3_linux_amd64.tar.gz"
-        sha256 "aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899"
-      end
-    end
-""")
-
-VALID_DEPLOY = textwrap.dedent("""\
-    # typed: false
-    # frozen_string_literal: true
-    class KubestellarDeploy < Formula
-      version "1.2.3"
-      on_linux do
-        url "https://example.com/releases/v1.2.3/deploy_1.2.3_linux_amd64.tar.gz"
-        sha256 "aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899"
-      end
-    end
-""")
 
 MULTI_URL_OPS = textwrap.dedent("""\
     # typed: false

@@ -5,9 +5,44 @@ tap#324). Not itself a test module (does not match the `test_*.py`
 discovery pattern), so `unittest discover` never picks it up directly."""
 
 import re
+import textwrap
 from pathlib import Path
 
 FORMULA_DIR = Path(__file__).resolve().parent.parent / "Formula"
+
+
+# Synthetic Formula/*.rb bodies shared by scripts/test_validate_formulae.py
+# and its split-off sibling scripts/test_validate_formulae_step_summary.py
+# (see kubestellar/homebrew-tap#541). The step-summary sibling was carved
+# out of test_validate_formulae.py to keep that file's size manageable
+# (see homebrew-tap#324 / #367); the fixture itself belongs in the shared
+# module so both suites keep asserting against the same synthetic ops
+# formula. Do not inline these back into the test modules — the whole
+# point of the split is to prevent silent drift of "what a valid ops
+# formula looks like" between the two suites.
+VALID_OPS = textwrap.dedent("""\
+    # typed: false
+    # frozen_string_literal: true
+    class KubestellarOps < Formula
+      version "1.2.3"
+      on_linux do
+        url "https://example.com/releases/v1.2.3/ops_1.2.3_linux_amd64.tar.gz"
+        sha256 "aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899"
+      end
+    end
+""")
+
+VALID_DEPLOY = textwrap.dedent("""\
+    # typed: false
+    # frozen_string_literal: true
+    class KubestellarDeploy < Formula
+      version "1.2.3"
+      on_linux do
+        url "https://example.com/releases/v1.2.3/deploy_1.2.3_linux_amd64.tar.gz"
+        sha256 "aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899"
+      end
+    end
+""")
 
 # Canonical stanza regexes shared by the test_formula_*_invariants.py /
 # test_crossformula_*_invariants.py modules (see kubestellar/homebrew-
