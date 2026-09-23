@@ -52,15 +52,16 @@ for name in "${formulae[@]}"; do
   last_commit="$(git -C "$REPO_ROOT" log -1 --format='%h %ad %s' --date=short -- "$path" 2>/dev/null)"
   echo "  last commit: ${last_commit:-<unknown>}"
 
-  if brew fetch --formula "$path" >/tmp/verify_release_health.$$.log 2>&1; then
+  fetch_output="$(brew fetch --formula "$path" 2>&1)"
+  fetch_rc=$?
+  if [ "$fetch_rc" -eq 0 ]; then
     echo "  fetch: OK"
   else
     echo "  fetch: FAILED (see below)"
-    sed 's/^/    /' /tmp/verify_release_health.$$.log
+    printf '%s\n' "$fetch_output" | sed 's/^/    /'
     overall_status=1
     failed_count=$((failed_count + 1))
   fi
-  rm -f /tmp/verify_release_health.$$.log
 done
 
 # Single-line JSON summary for CI-log observability, mirroring the
