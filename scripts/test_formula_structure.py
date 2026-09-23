@@ -31,7 +31,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR, load_formulae as _load_formulae
+from formula_test_fixtures import FORMULA_DIR, LICENSE_LINE_RE, load_formulae as _load_formulae
 
 REQUIRED_PLATFORMS = {
     ("darwin", "amd64"),
@@ -259,10 +259,9 @@ class FormulaStructureTests(unittest.TestCase):
         # drift; if we ever intentionally take on a formula with a
         # different license, this test is the reminder to review the
         # change.
-        license_re = re.compile(r'^\s*license\s+"([^"]+)"', re.MULTILINE)
         seen = {}
         for name, text in self.formulae.items():
-            m = license_re.search(text)
+            m = LICENSE_LINE_RE.search(text)
             self.assertIsNotNone(m, f"{name}.rb missing license line")
             seen[name] = m.group(1)
         self.assertEqual(

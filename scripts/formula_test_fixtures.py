@@ -65,6 +65,7 @@ VERSION_LINE_RE = re.compile(r'^\s*version\s+"([^"]+)"', re.MULTILINE)
 URL_LINE_RE = re.compile(r'^\s*url\s+"([^"]+)"', re.MULTILINE)
 HOMEPAGE_LINE_RE = re.compile(r'^\s*homepage\s+"([^"]+)"', re.MULTILINE)
 DESC_LINE_RE = re.compile(r'^\s*desc\s+"([^"]+)"', re.MULTILINE)
+LICENSE_LINE_RE = re.compile(r'^\s*license\s+"([^"]+)"', re.MULTILINE)
 SHA256_LINE_RE = re.compile(r'sha256\s+"([^"]+)"')
 
 # Unanchored/inline variants — intentionally distinct from the anchored

@@ -36,12 +36,14 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR
+from formula_test_fixtures import (
+    FORMULA_DIR,
+    DESC_LINE_RE,
+    HOMEPAGE_LINE_RE,
+    LICENSE_LINE_RE,
+    VERSION_LINE_RE,
+)
 
-DESC_LINE_RE = re.compile(r'^\s*desc\s+"[^"]+"', re.MULTILINE)
-HOMEPAGE_LINE_RE = re.compile(r'^\s*homepage\s+"[^"]+"', re.MULTILINE)
-LICENSE_LINE_RE = re.compile(r'^\s*license\s+"[^"]+"', re.MULTILINE)
-VERSION_LINE_RE = re.compile(r'^\s*version\s+"[^"]+"', re.MULTILINE)
 # `test do` at start of a line (allowing indentation). Only the opening
 # marker is counted — Homebrew allows exactly one such block per formula.
 TEST_DO_RE = re.compile(r'^\s*test\s+do\b', re.MULTILINE)
