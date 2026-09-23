@@ -7,8 +7,10 @@
 # failing `brew audit --strict` must (a) not print that formula's
 # `::endgroup::`, (b) skip auditing any later formula, and (c) propagate
 # that formula's own exit code. Also guards the happy path emitting one
-# `::group::`/`::endgroup::` pair per formula. Stubs `brew` via a
-# PATH-shim, mirroring scripts/test_brew_ci_summary_brew_path.sh.
+# `::group::`/`::endgroup::` pair per formula, and the trailing
+# `BREW_AUDIT_SUMMARY: {...}` structured record (status/formula_count/
+# warned_count/failed_formula) on both the pass and fail paths. Stubs
+# `brew` via a PATH-shim, mirroring scripts/test_brew_ci_summary_brew_path.sh.
 #
 # Usage: scripts/test_brew_audit_all.sh
 # Exit status: 0 if all assertions pass, 1 otherwise.
@@ -64,6 +66,8 @@ assert_exit_code "happy path endgroup count" 3 "$endgroup_count"
 assert_contains "happy path includes alpha" "$output" "kubestellar/tap/alpha"
 assert_contains "happy path includes beta" "$output" "kubestellar/tap/beta"
 assert_contains "happy path includes gamma" "$output" "kubestellar/tap/gamma"
+assert_contains "happy path summary line" "$output" \
+  'BREW_AUDIT_SUMMARY: {"status":"pass","formula_count":3,"warned_count":0,"failed_formula":null}'
 
 # --- Case 2: beta fails -> stop before gamma, propagate exit code ---
 stub2="$work_dir/stub2"
@@ -74,6 +78,8 @@ assert_exit_code "beta-fails propagates exit code" 7 "$code"
 assert_not_contains "beta-fails does not reach gamma" "$output" "kubestellar/tap/gamma"
 endgroup_count=$(printf '%s\n' "$output" | grep -c '^::endgroup::$')
 assert_exit_code "beta-fails only alpha's endgroup printed" 1 "$endgroup_count"
+assert_contains "beta-fails summary line names beta" "$output" \
+  'BREW_AUDIT_SUMMARY: {"status":"fail","formula_count":2,"warned_count":0,"failed_formula":"beta"}'
 
 # --- Case 3: TAP_NAME override is honored ---
 stub3="$work_dir/stub3"
@@ -99,6 +105,8 @@ assert_contains "redundant-version-only mentions issue" "$output" "#513"
 assert_contains "redundant-version-only still reaches gamma" "$output" "kubestellar/tap/gamma"
 endgroup_count=$(printf '%s\n' "$output" | grep -c '^::endgroup::$')
 assert_exit_code "redundant-version-only all three endgroups printed" 3 "$endgroup_count"
+assert_contains "redundant-version-only summary counts the warning" "$output" \
+  'BREW_AUDIT_SUMMARY: {"status":"pass","formula_count":3,"warned_count":1,"failed_formula":null}'
 
 # --- Case 5: redundant_version finding alongside another problem line
 # still fails loudly (only a *sole* redundant_version finding is absorbed) ---
@@ -111,6 +119,8 @@ output=$(env -i PATH="$stub5:/usr/bin:/bin" FORMULA_DIR="$formula_dir" bash "$SC
 code=$?
 assert_exit_code "redundant-version-plus-other propagates exit code" 3 "$code"
 assert_not_contains "redundant-version-plus-other does not reach gamma" "$output" "kubestellar/tap/gamma"
+assert_contains "redundant-version-plus-other summary names beta as failed" "$output" \
+  'BREW_AUDIT_SUMMARY: {"status":"fail","formula_count":2,"warned_count":0,"failed_formula":"beta"}'
 
 if [ "$fail_count" -gt 0 ]; then
   echo "$fail_count assertion(s) failed"
