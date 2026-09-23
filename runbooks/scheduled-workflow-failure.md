@@ -2,6 +2,10 @@
 
 **Repository:** `kubestellar/homebrew-tap`
 **Applies to:** `CodeQL Analysis`, `OpenSSF Scorecard`, `Fuzzing`, `Homebrew CI`, `Validate Formulae`, `Stale Issues`
+**Known gap:** `actionlint` also runs on a weekly `schedule:` but is not yet
+watched by this alert — a failed scheduled `actionlint` run currently has no
+automated notification; see [#549](https://github.com/kubestellar/homebrew-tap/issues/549)
+for the ready-to-apply fix.
 
 ---
 
