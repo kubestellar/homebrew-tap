@@ -25,6 +25,12 @@
 # Exit status: 0 if every formula audits clean or only trips the known
 # redundant-version false positive; otherwise the exit code of the first
 # failing `brew audit --strict` call.
+#
+# Structured output: the final line is always a grep-friendly
+# `BREW_AUDIT_SUMMARY: {...}` record (formula_count/warned_count/
+# failed_formula), mirroring the VALIDATE_FORMULAE_SUMMARY:/BREW_CI_SUMMARY:/
+# FUZZ_SUMMARY: pattern used elsewhere in this repo — this step previously
+# had no aggregate outcome record, only per-formula ::group:: blocks.
 
 set -uo pipefail
 
@@ -36,9 +42,13 @@ TAP_NAME="${TAP_NAME:-kubestellar/tap}"
 #   * Stable: `version 0.9.15` is redundant with version scanned from URL
 REDUNDANT_VERSION_PATTERN='is redundant with version scanned from URL'
 
+formula_count=0
+warned_count=0
+
 for formula in "$FORMULA_DIR"/*.rb; do
   [ -e "$formula" ] || continue
   name="$(basename "$formula" .rb)"
+  formula_count=$((formula_count + 1))
   echo "::group::brew audit --strict $TAP_NAME/$name"
 
   output="$(brew audit --strict "$TAP_NAME/$name" 2>&1)"
@@ -55,8 +65,14 @@ for formula in "$FORMULA_DIR"/*.rb; do
     && printf '%s\n' "$output" | grep -q "$REDUNDANT_VERSION_PATTERN"; then
     echo "::warning::$TAP_NAME/$name: ignoring known redundant_version false positive (see issue #513)"
     echo "::endgroup::"
+    warned_count=$((warned_count + 1))
     continue
   fi
 
+  printf 'BREW_AUDIT_SUMMARY: {"status":"fail","formula_count":%s,"warned_count":%s,"failed_formula":"%s"}\n' \
+    "$formula_count" "$warned_count" "$name"
   exit "$exit_code"
 done
+
+printf 'BREW_AUDIT_SUMMARY: {"status":"pass","formula_count":%s,"warned_count":%s,"failed_formula":null}\n' \
+  "$formula_count" "$warned_count"
