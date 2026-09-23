@@ -44,8 +44,7 @@ import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR, DESC_LINE_RE
-LICENSE_LINE_RE = re.compile(r'^\s*license\s+"([^"]+)"', re.MULTILINE)
+from formula_test_fixtures import FORMULA_DIR, DESC_LINE_RE, LICENSE_LINE_RE
 CLASS_HEADER_RE = re.compile(
     r'^\s*class\s+[A-Za-z0-9_]+\s*<\s*Formula\b', re.MULTILINE
 )
