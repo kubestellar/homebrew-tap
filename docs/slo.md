@@ -18,11 +18,14 @@ Analysis`, `OpenSSF Scorecard`, `Fuzzing`, `Homebrew CI`, `Validate Formulae`,
 and `Stale Issues`. The structured per-run summary lines described below are
 now applied for all three of `brew-ci.yml`, `fuzz.yml`, and
 `validate-formulae.yml` (see [#479](https://github.com/kubestellar/homebrew-tap/pull/479)).
-The one remaining gap is a missing `schedule:` trigger on
-`validate-formulae.yml` (`brew-ci.yml` and `fuzz.yml` already have one),
-which still requires a maintainer with `workflows` permission to apply —
-tracked with the exact replacement diff in
-[#508](https://github.com/kubestellar/homebrew-tap/issues/508).
+`validate-formulae.yml` gained its own `schedule:` trigger (closing
+[#508](https://github.com/kubestellar/homebrew-tap/issues/508)), so all six
+watched workflows now run on a schedule or `main`-branch push.
+The remaining gap is that `actionlint.yml` also has a weekly `schedule:`
+trigger but is **not** in the watched-workflows list above, so a failed
+scheduled `actionlint` run currently has no automated alert — tracked with
+the exact replacement diff in
+[#549](https://github.com/kubestellar/homebrew-tap/issues/549).
 
 ## User-facing service
 
