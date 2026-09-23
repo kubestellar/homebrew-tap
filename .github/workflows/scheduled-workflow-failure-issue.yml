@@ -33,6 +33,7 @@ on:
       - "Homebrew CI"
       - "Validate Formulae"
       - "Stale Issues"
+      - "actionlint"
     types:
       - completed
 
