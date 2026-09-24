@@ -31,10 +31,10 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from formula_test_fixtures import (
-    FORMULA_DIR,
     DESC_LINE_RE,
     URL_INLINE_RE as URL_RE,
     VERSION_LINE_RE,
+    list_formula_paths,
 )
 
 VERSION_RE = re.compile(r"^(?P<sem>\d+\.\d+\.\d+)(?:-nightly\.\d{8})?$")
@@ -45,8 +45,7 @@ class TestFormulaExtraInvariants(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.formulae = sorted(FORMULA_DIR.glob("*.rb"))
-        assert cls.formulae, f"no formulae discovered under {FORMULA_DIR}"
+        cls.formulae = list_formula_paths()
 
     def test_version_matches_semver_or_semver_nightly(self):
         for f in self.formulae:

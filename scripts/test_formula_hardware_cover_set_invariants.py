@@ -32,7 +32,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR
+from formula_test_fixtures import list_formula_paths
 
 # Same regex shape as the sibling structural tests use (see
 # test_formula_structural_further_invariants.py) so both files agree on
@@ -75,8 +75,7 @@ class HardwareGuardCoverSetInvariants(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = sorted(FORMULA_DIR.glob("*.rb"))
-        assert cls.formula_files, f"no Formula/*.rb under {FORMULA_DIR}"
+        cls.formula_files = list_formula_paths()
 
     def test_each_formula_covers_the_expected_four_way_platform_set_exactly(self):
         # The tap is a pre-built-binary tap for the four Homebrew targets

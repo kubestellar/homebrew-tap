@@ -39,7 +39,7 @@ import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR, URL_LINE_RE as URL_RE
+from formula_test_fixtures import FORMULA_DIR, URL_LINE_RE as URL_RE, list_formula_paths
 
 
 class TestFormulaURLUniqueness(unittest.TestCase):
@@ -47,9 +47,7 @@ class TestFormulaURLUniqueness(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = sorted(FORMULA_DIR.glob("*.rb"))
-        if not cls.formula_files:
-            raise unittest.SkipTest(f"no .rb files in {FORMULA_DIR}")
+        cls.formula_files = list_formula_paths()
 
     def test_urls_within_each_formula_are_distinct(self):
         offenders = []

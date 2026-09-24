@@ -29,12 +29,12 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from formula_test_fixtures import (
-    FORMULA_DIR,
     DESC_LINE_RE,
     HOMEPAGE_LINE_RE,
     RELEASE_URL_RE,
     URL_LINE_RE,
     VERSION_LINE_RE,
+    list_formula_paths,
 )
 
 # <name>_<version>_<os>_<arch>.tar.gz
@@ -55,8 +55,7 @@ class TestFormulaReleaseArtifactInvariants(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.formulae = sorted(FORMULA_DIR.glob("*.rb"))
-        assert cls.formulae, f"no formulae discovered under {FORMULA_DIR}"
+        cls.formulae = list_formula_paths()
 
     def test_every_release_url_uses_v_prefixed_tag_matching_declared_version(self):
         for f in self.formulae:
@@ -119,7 +118,7 @@ class TestFormulaAuditCleanMetadata(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.formulae = sorted(FORMULA_DIR.glob("*.rb"))
+        cls.formulae = list_formula_paths()
 
     def test_desc_starts_with_capital_letter(self):
         for f in self.formulae:
@@ -164,7 +163,7 @@ class TestFormulaHasNoLeftoverStubs(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.formulae = sorted(FORMULA_DIR.glob("*.rb"))
+        cls.formulae = list_formula_paths()
 
     def test_no_bottle_block(self):
         for f in self.formulae:

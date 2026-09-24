@@ -48,7 +48,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR
+from formula_test_fixtures import list_formula_paths
 
 # The canonical top-level declaration order emitted by GoReleaser. Each
 # entry is (label, regex-that-matches-the-first-occurrence-in-file).
@@ -75,8 +75,7 @@ class TopLevelStanzaOrderingInvariants(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formulae = sorted(FORMULA_DIR.glob("*.rb"))
-        assert cls.formulae, f"no formulae discovered under {FORMULA_DIR}"
+        cls.formulae = list_formula_paths()
 
     def _first_offset(self, text: str, label: str, pat: re.Pattern[str]) -> int:
         m = pat.search(text)
