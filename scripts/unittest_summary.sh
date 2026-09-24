@@ -12,12 +12,11 @@
 # "no tests ran" outcome (unittest exit code 5) into an undifferentiated
 # non-zero exit, the same silent-skip failure class as #268.
 #
-# This is a standalone script, not wired into any workflow here: wiring it
-# into validate-formulae.yml requires editing
-# .github/workflows/validate-formulae.yml, which needs the `workflows`
-# permission this script does not assume. See
-# runbooks/proposed-validate-formulae-unittest-summary-step.yml for the
-# ready-to-apply step a maintainer with that permission can add.
+# This script is invoked from .github/workflows/validate-formulae.yml's
+# "Run all scripts/test_*.py unit tests" step so the run gets a
+# grep-able, fixed-shape outcome record and the "no tests ran" (exit 5)
+# outcome is surfaced distinctly instead of being silently folded into
+# an undifferentiated non-zero exit.
 #
 # Stdout-only structured output: no exporter, metrics backend, or off-box
 # data flow is added, and labels are bounded (status/counts only). Full

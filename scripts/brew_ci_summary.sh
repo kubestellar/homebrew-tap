@@ -9,11 +9,10 @@
 # ::group:: blocks to see whether/why a given OS's audit+install+test run
 # passed, which is the "Formula CI health" SLI tracked in docs/slo.md.
 #
-# This is a standalone script, not wired into any workflow here: wiring it
-# into brew-ci.yml requires editing .github/workflows/brew-ci.yml, which
-# needs the `workflows` permission this script does not assume. See
-# runbooks/proposed-brew-ci-observability-summary-step.yml for the
-# ready-to-apply step a maintainer with that permission can add.
+# This script is invoked from .github/workflows/brew-ci.yml's
+# brew-audit-and-install job (the "Emit brew CI summary" step) so a
+# reader gets the structured outcome record without scrolling
+# ::group:: blocks.
 #
 # Stdout-only structured output: no exporter, metrics backend, or off-box
 # data flow is added, and labels are bounded (status/os/counts only).
