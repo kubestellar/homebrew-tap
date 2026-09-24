@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016  # single-quoted snippets are intentionally expanded inside run_snippet sub-shells
 # test_test_lib.sh — regression tests for scripts/test_lib.sh.
 #
 # scripts/test_lib.sh is the shared scaffolding sourced by every
