@@ -11,22 +11,19 @@
 # logic here lets scripts/test_verify_pr_title.sh cover every branch of
 # the regex with no CI round-trip.
 #
-# Wiring the workflow to CALL this script instead of duplicating the
-# regex still needs an edit to .github/workflows/pr-verifier.yml, which
-# requires the `workflows` permission this script cannot assume. Until
-# that edit lands, the workflow and this script must stay in sync; the
-# workflow file remains the ground truth for what the PR-title check
-# enforces on github.com, and any regex change must be applied in BOTH
-# places in the same PR.
+# The workflow now calls this script directly (see
+# .github/workflows/pr-verifier.yml — the "Validate PR title" step runs
+# `scripts/verify_pr_title.sh`, no regex is inlined), so this script is
+# the single source of truth for the PR-title convention and a regex
+# change here does not require a paired workflow edit.
 #
 # Usage:
 #   PR_TITLE='fix: correct typo' scripts/verify_pr_title.sh
 #   scripts/verify_pr_title.sh 'fix: correct typo'
 #
 # Exit status: 0 if the title is valid, 1 otherwise (and a
-# ::error::-annotated help block is written to stdout, matching what the
-# inline workflow step emits today so the GitHub Actions annotation is
-# unchanged after the workflow is rewired).
+# ::error::-annotated help block is written to stdout for GitHub Actions
+# to surface as a check annotation).
 
 set -uo pipefail
 

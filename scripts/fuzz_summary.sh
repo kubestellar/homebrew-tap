@@ -11,11 +11,9 @@
 # given run passed. This is the "Formula fuzz health" SLI tracked in
 # docs/slo.md.
 #
-# This is a standalone script, not wired into any workflow here: wiring it
-# into fuzz.yml requires editing .github/workflows/fuzz.yml, which needs
-# the `workflows` permission this script does not assume. See
-# runbooks/proposed-fuzz-observability-summary-step.yml for the
-# ready-to-apply step a maintainer with that permission can add.
+# This script is invoked from .github/workflows/fuzz.yml's final summary
+# step so the run gets a machine-readable outcome record instead of only
+# the free-text "Fuzzing completed successfully!" checklist.
 #
 # Stdout-only structured output: no exporter, metrics backend, or off-box
 # data flow is added, and labels are bounded (status/counts only).
