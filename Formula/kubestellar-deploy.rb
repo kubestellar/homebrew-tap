@@ -46,5 +46,6 @@ class KubestellarDeploy < Formula
 
   test do
     system bin/"kubestellar-deploy", "version"
+    system bin/"kubestellar-deploy", "--help"
   end
 end
