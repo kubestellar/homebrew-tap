@@ -18,7 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import ALLOWED_URL_HOSTS, FORMULA_DIR, _extract_url_hosts
+from formula_test_fixtures import ALLOWED_URL_HOSTS, FORMULA_DIR, _extract_url_hosts, list_formula_paths
 
 def _bin_install_names(text: str) -> set[str]:
     """Return the set of binary names installed by any `bin.install "<name>"`
@@ -56,9 +56,7 @@ class TestFormulaInstallTestConsistency(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = sorted(FORMULA_DIR.glob("*.rb"))
-        if not cls.formula_files:
-            raise unittest.SkipTest(f"no .rb files in {FORMULA_DIR}")
+        cls.formula_files = list_formula_paths()
 
     def test_test_block_references_an_installed_binary(self):
         offenders = []
@@ -101,9 +99,7 @@ class TestFormulaHomepageURLRepoConsistency(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = sorted(FORMULA_DIR.glob("*.rb"))
-        if not cls.formula_files:
-            raise unittest.SkipTest(f"no .rb files in {FORMULA_DIR}")
+        cls.formula_files = list_formula_paths()
 
     def test_release_url_repo_matches_homepage_repo(self):
         offenders = []

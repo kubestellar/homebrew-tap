@@ -63,5 +63,42 @@ class LoadFormulaeTests(unittest.TestCase):
             self.assertEqual(list(result.keys()), ["real"])
 
 
+class ListFormulaPathsTests(unittest.TestCase):
+    def test_returns_sorted_paths_for_populated_dir(self):
+        # The 17 setUpClass sites this helper replaces all sorted the
+        # glob; preserve that so per-formula subtests keep running in a
+        # deterministic order.
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            (tmp_path / "beta.rb").write_text("class Beta < Formula\nend\n", encoding="utf-8")
+            (tmp_path / "alpha.rb").write_text("class Alpha < Formula\nend\n", encoding="utf-8")
+            with mock.patch.object(formula_test_fixtures, "FORMULA_DIR", tmp_path):
+                result = formula_test_fixtures.list_formula_paths()
+            self.assertEqual([p.name for p in result], ["alpha.rb", "beta.rb"])
+            for p in result:
+                self.assertIsInstance(p, Path)
+
+    def test_empty_formula_dir_raises_assertion_error_with_path(self):
+        # Mirror the load_formulae() empty-case contract exactly: the
+        # whole point of extracting this helper (see homebrew-tap#559)
+        # is to make bad-FORMULA_DIR states self-diagnosing instead of
+        # producing silent SkipTest.
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            with mock.patch.object(formula_test_fixtures, "FORMULA_DIR", tmp_path):
+                with self.assertRaises(AssertionError) as cm:
+                    formula_test_fixtures.list_formula_paths()
+            self.assertIn(str(tmp_path), str(cm.exception))
+
+    def test_non_rb_files_are_ignored(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            (tmp_path / "real.rb").write_text("class Real < Formula\nend\n", encoding="utf-8")
+            (tmp_path / "notes.md").write_text("# ignored", encoding="utf-8")
+            with mock.patch.object(formula_test_fixtures, "FORMULA_DIR", tmp_path):
+                result = formula_test_fixtures.list_formula_paths()
+            self.assertEqual([p.name for p in result], ["real.rb"])
+
+
 if __name__ == "__main__":
     unittest.main()

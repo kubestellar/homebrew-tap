@@ -32,7 +32,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR, HOMEPAGE_LINE_RE, VERSION_LINE_RE
+from formula_test_fixtures import HOMEPAGE_LINE_RE, VERSION_LINE_RE, list_formula_paths
 
 NIGHTLY_RE = re.compile(r"^\d+\.\d+\.\d+-nightly\.(?P<stamp>\d{8})$")
 ON_MACOS_RE = re.compile(r"^\s*on_macos\s+do\b", re.MULTILINE)
@@ -49,8 +49,7 @@ class TestFormulaFurtherInvariants(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.formulae = sorted(FORMULA_DIR.glob("*.rb"))
-        assert cls.formulae, f"no formulae discovered under {FORMULA_DIR}"
+        cls.formulae = list_formula_paths()
 
     def test_nightly_stamp_is_a_real_past_or_present_date(self):
         today = datetime.now(timezone.utc).date()

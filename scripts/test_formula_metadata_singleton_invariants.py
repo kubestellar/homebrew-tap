@@ -37,11 +37,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from formula_test_fixtures import (
-    FORMULA_DIR,
     DESC_LINE_RE,
     HOMEPAGE_LINE_RE,
     LICENSE_LINE_RE,
     VERSION_LINE_RE,
+    list_formula_paths,
 )
 
 # `test do` at start of a line (allowing indentation). Only the opening
@@ -54,8 +54,7 @@ class TestMetadataSingletons(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.formulae = sorted(FORMULA_DIR.glob("*.rb"))
-        assert cls.formulae, f"no formulae found under {FORMULA_DIR}"
+        cls.formulae = list_formula_paths()
 
     def _assert_exactly_one(self, pattern, label):
         for f in self.formulae:
@@ -102,8 +101,7 @@ class TestTestBlockSingleton(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.formulae = sorted(FORMULA_DIR.glob("*.rb"))
-        assert cls.formulae, f"no formulae found under {FORMULA_DIR}"
+        cls.formulae = list_formula_paths()
 
     def test_every_formula_has_exactly_one_test_do_block(self):
         for f in self.formulae:

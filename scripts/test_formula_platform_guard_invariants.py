@@ -15,7 +15,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR, URL_INLINE_RE, URL_LINE_RE
+from formula_test_fixtures import FORMULA_DIR, URL_INLINE_RE, URL_LINE_RE, list_formula_paths
 
 class TestFormulaPlatformURLPolicy(unittest.TestCase):
     """Cross-formula copy-paste guards on every Formula/*.rb.
@@ -39,9 +39,7 @@ class TestFormulaPlatformURLPolicy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = sorted(FORMULA_DIR.glob("*.rb"))
-        if not cls.formula_files:
-            raise unittest.SkipTest(f"no .rb files in {FORMULA_DIR}")
+        cls.formula_files = list_formula_paths()
 
     def test_every_formula_has_both_macos_and_linux_blocks(self):
         # Homebrew supports macOS and Linux. Every formula in this
@@ -180,9 +178,7 @@ class TestFormulaArchAndShaCopyPasteGuards(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = sorted(FORMULA_DIR.glob("*.rb"))
-        if not cls.formula_files:
-            raise unittest.SkipTest(f"no .rb files in {FORMULA_DIR}")
+        cls.formula_files = list_formula_paths()
 
     def _iter_arch_scoped_urls(self, body: str):
         """Yield (arch_token_expected, url) for each url() inside a
@@ -356,9 +352,7 @@ class TestFormulaVersionTokenBoundaryGuards(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = sorted(FORMULA_DIR.glob("*.rb"))
-        if not cls.formula_files:
-            raise unittest.SkipTest(f"no .rb files in {FORMULA_DIR}")
+        cls.formula_files = list_formula_paths()
 
     @staticmethod
     def _extract_version(body: str) -> str | None:

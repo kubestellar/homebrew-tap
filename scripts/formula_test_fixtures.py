@@ -92,6 +92,30 @@ def load_formulae() -> dict[str, str]:
     return {p.stem: p.read_text(encoding="utf-8") for p in files}
 
 
+def list_formula_paths() -> list[Path]:
+    """Return every Formula/*.rb as a sorted ``list[Path]``.
+
+    Path-shaped sibling of ``load_formulae()`` for setUpClass callers
+    that need the paths themselves (typically to read the body later, or
+    to use ``path.name`` in a failure message). Matches ``load_formulae()``'s
+    empty-case policy: sorted glob of ``*.rb``, raise if none found.
+
+    Motivating history (see kubestellar/homebrew-tap#559): 17
+    ``test_formula_*.py`` modules previously re-implemented this glob
+    independently in their own ``setUpClass`` with divergent empty-case
+    behavior — some ``raise unittest.SkipTest(...)`` (silently skipping
+    the module on an empty tap), some ``assert cls.formulae, ...``
+    (hard-failing with slightly different wording). This helper picks
+    the same "raise on empty" direction the ``load_formulae()`` docstring
+    already documents, so a bad ``FORMULA_DIR`` produces one clear error
+    across every invariant module instead of a mixed skip/fail signal.
+    """
+    files = sorted(FORMULA_DIR.glob("*.rb"))
+    if not files:
+        raise AssertionError(f"no formulae found under {FORMULA_DIR}")
+    return files
+
+
 # Homebrew formulae in this tap may pull artifacts only from these hosts.
 # Extend this set with a code change (reviewed) when a new upstream lands.
 ALLOWED_URL_HOSTS = {

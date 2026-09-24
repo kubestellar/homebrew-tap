@@ -23,6 +23,7 @@ from formula_test_fixtures import (
     HOMEPAGE_LINE_RE,
     URL_LINE_RE,
     _extract_url_hosts,
+    list_formula_paths,
 )
 
 class TestFormulaPolicy(unittest.TestCase):
@@ -30,9 +31,7 @@ class TestFormulaPolicy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = sorted(FORMULA_DIR.glob("*.rb"))
-        if not cls.formula_files:
-            raise unittest.SkipTest(f"no .rb files in {FORMULA_DIR}")
+        cls.formula_files = list_formula_paths()
 
     def test_every_formula_has_a_test_block(self):
         # `brew audit --strict` requires a `test do` block on every
@@ -143,9 +142,7 @@ class TestFormulaSupplyChainPolicy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = sorted(FORMULA_DIR.glob("*.rb"))
-        if not cls.formula_files:
-            raise unittest.SkipTest(f"no .rb files in {FORMULA_DIR}")
+        cls.formula_files = list_formula_paths()
 
     def test_sha256_values_unique_within_each_formula(self):
         # Two `url` lines in the same formula that resolve to distinct
@@ -249,9 +246,7 @@ class TestFormulaClassAndMetadataPolicy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = sorted(FORMULA_DIR.glob("*.rb"))
-        if not cls.formula_files:
-            raise unittest.SkipTest(f"no .rb files in {FORMULA_DIR}")
+        cls.formula_files = list_formula_paths()
 
     def test_class_name_matches_filename(self):
         offenders = []

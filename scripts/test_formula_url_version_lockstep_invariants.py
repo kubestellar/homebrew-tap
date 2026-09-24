@@ -24,11 +24,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import (
-    FORMULA_DIR,
-    RELEASE_URL_RE,
+from formula_test_fixtures import (    RELEASE_URL_RE,
     URL_LINE_RE,
     VERSION_LINE_RE,
+    list_formula_paths,
 )
 
 # <name>_<version>_<os>_<arch>.tar.gz
@@ -44,8 +43,7 @@ class TestFormulaURLVersionLockstep(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.formulae = sorted(FORMULA_DIR.glob("*.rb"))
-        assert cls.formulae, f"no formulae discovered under {FORMULA_DIR}"
+        cls.formulae = list_formula_paths()
 
     def test_release_url_tag_matches_declared_version(self):
         for f in self.formulae:
