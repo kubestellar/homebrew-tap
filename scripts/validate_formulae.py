@@ -8,7 +8,7 @@ import re
 import sys
 from pathlib import Path
 
-from formula_test_fixtures import (
+from formula_parser import (
     SHA256_LINE_RE,
     URL_INLINE_RE,
     VERSION_LINE_RE,
