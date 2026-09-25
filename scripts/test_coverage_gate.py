@@ -68,8 +68,8 @@ class ParseArgsTests(unittest.TestCase):
         args = coverage_gate._parse_args([])
         self.assertEqual(
             args.include,
-            "scripts/validate_formulae.py,scripts/formula_test_fixtures.py,"
-            "scripts/coverage_gate.py",
+            "scripts/validate_formulae.py,scripts/formula_parser.py,"
+            "scripts/formula_test_fixtures.py,scripts/coverage_gate.py",
         )
 
     def test_include_flag_overrides_default(self):
@@ -131,8 +131,8 @@ class MainGuardTests(unittest.TestCase):
         self.assertEqual(rc, 0)
         report.assert_called_once_with(
             90,
-            "scripts/validate_formulae.py,scripts/formula_test_fixtures.py,"
-            "scripts/coverage_gate.py",
+            "scripts/validate_formulae.py,scripts/formula_parser.py,"
+            "scripts/formula_test_fixtures.py,scripts/coverage_gate.py",
             True,
         )
 

@@ -8,19 +8,29 @@ branch = True
 #
 #   * validate_formulae.py — the tap-side formula validator invoked by
 #     .github/workflows/validate-formulae.yml (see #334).
-#   * formula_test_fixtures.py — shared fixtures / regex definitions
-#     imported by ~16 scripts/test_formula_*_invariants.py modules
-#     (see #328, #329, #450). A weakening here silently weakens every
-#     downstream invariant test that depends on the same regex or the
-#     shared load_formulae() loader, so it needs the same 100% ratchet
-#     as validate_formulae.py itself.
+#   * formula_parser.py — production-shared stanza regex / discovery
+#     helpers (``FORMULA_DIR``, ``VERSION_LINE_RE``, ``URL_LINE_RE``,
+#     ``load_formulae()``, ``list_formula_paths()``, etc.). Imported
+#     directly by ``validate_formulae.py`` and by ~25
+#     ``test_formula_*_invariants.py`` modules; a weakening here would
+#     silently weaken every downstream invariant test that depends on
+#     these regexes or the shared loader. Split out of
+#     ``formula_test_fixtures.py`` in kubestellar/homebrew-tap#565.
+#   * formula_test_fixtures.py — synthetic test-only Formula/*.rb
+#     bodies (``VALID_OPS`` / ``VALID_DEPLOY``) plus backward-compatible
+#     re-exports of the ``formula_parser`` symbols so the existing
+#     ``test_formula_*_invariants.py`` import sites keep working
+#     unchanged. Historically also held the parser symbols listed above
+#     (see #328, #329, #450); kept on the 100% ratchet so the re-export
+#     shim itself cannot silently rot.
 #   * coverage_gate.py — the coverage gate helper itself, invoked by
 #     .github/workflows/validate-formulae.yml. If this file silently
-#     drops below 100%, a regression in the gate could allow the two
-#     modules above to drift below their ratchet without CI catching
-#     it. Guard the guard.
+#     drops below 100%, a regression in the gate could allow the modules
+#     above to drift below their ratchet without CI catching it. Guard
+#     the guard.
 include =
     scripts/validate_formulae.py
+    scripts/formula_parser.py
     scripts/formula_test_fixtures.py
     scripts/coverage_gate.py
 

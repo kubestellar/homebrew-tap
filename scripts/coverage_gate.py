@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
 Local coverage gate for the tap's production helper modules
-(scripts/validate_formulae.py and scripts/formula_test_fixtures.py)
-and the scripts/test_*.py unittest discovery suite.
+(scripts/validate_formulae.py, scripts/formula_parser.py, and
+scripts/formula_test_fixtures.py) and the scripts/test_*.py unittest
+discovery suite.
 
 Wraps the CI-side invocation from .github/workflows/validate-formulae.yml
 (`python3 -u -m unittest discover -v --buffer -s scripts -p 'test_*.py'`)
@@ -62,12 +63,14 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
         "--include",
         default=(
             "scripts/validate_formulae.py,"
+            "scripts/formula_parser.py,"
             "scripts/formula_test_fixtures.py,"
             "scripts/coverage_gate.py"
         ),
         help=(
             "Comma-separated glob(s) to include in the coverage report "
             "(default: scripts/validate_formulae.py,"
+            "scripts/formula_parser.py,"
             "scripts/formula_test_fixtures.py,scripts/coverage_gate.py)."
         ),
     )
