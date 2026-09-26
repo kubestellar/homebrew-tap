@@ -12,6 +12,7 @@ on:
       - 'scripts/test_*.sh'
       - '.coveragerc'
       - 'requirements-dev.txt'
+      - 'requirements-dev.in'
       - '.github/workflows/validate-formulae.yml'
   pull_request:
     branches: [main]
@@ -24,6 +25,7 @@ on:
       - 'scripts/test_*.sh'
       - '.coveragerc'
       - 'requirements-dev.txt'
+      - 'requirements-dev.in'
       - '.github/workflows/validate-formulae.yml'
   schedule:
     # Daily catch-all so the drift check (unit tests + upstream artifact
@@ -53,10 +55,15 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Install pinned test dependencies
-        # requirements-dev.txt pins pytest, pytest-cov, and coverage so a
-        # newly-published (potentially malicious) PyPI release cannot be
-        # pulled into CI silently. See #5883 / #5884 for rationale.
-        run: pip install --disable-pip-version-check -r requirements-dev.txt
+        # requirements-dev.txt pins pytest, pytest-cov, coverage and their
+        # transitive dependencies by exact version AND sha256 artifact hash.
+        # --require-hashes makes pip refuse any artifact whose digest does
+        # not match, so neither a newly-published PyPI release nor a
+        # republished/tampered artifact for the pinned version can be pulled
+        # into CI silently. The file is generated from requirements-dev.in
+        # with pip-compile --generate-hashes; see that file to regenerate.
+        # See #5883 / #5884 for the version-pin rationale and #567 for hashes.
+        run: pip install --disable-pip-version-check --require-hashes -r requirements-dev.txt
 
       - name: Run all scripts/test_*.py unit tests
         # Delegates to scripts/unittest_summary.sh (regression-tested by
