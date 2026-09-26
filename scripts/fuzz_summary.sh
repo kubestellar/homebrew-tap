@@ -15,6 +15,10 @@
 # step so the run gets a machine-readable outcome record instead of only
 # the free-text "Fuzzing completed successfully!" checklist.
 #
+# The summary line (and its $GITHUB_STEP_SUMMARY table) is emitted via the
+# shared scripts/lib_emit_summary.sh, which owns the JSON shape/escaping
+# contract for every *_SUMMARY: marker in this repo.
+#
 # Stdout-only structured output: no exporter, metrics backend, or off-box
 # data flow is added, and labels are bounded (status/counts only).
 #
@@ -31,6 +35,9 @@ set -uo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FORMULA_DIR="${FORMULA_DIR:-$REPO_ROOT/Formula}"
 
+# shellcheck source=scripts/lib_emit_summary.sh
+. "$REPO_ROOT/scripts/lib_emit_summary.sh"
+
 JOB_STATUS="${JOB_STATUS:-unknown}"
 
 formula_count=0
@@ -41,8 +48,7 @@ if [ -d "$FORMULA_DIR" ]; then
   done
 fi
 
-printf 'FUZZ_SUMMARY: {"status":"%s","formula_count":%s}\n' \
-  "$JOB_STATUS" "$formula_count"
+emit_ci_summary FUZZ_SUMMARY status="$JOB_STATUS" formula_count="$formula_count"
 
 if [ "$JOB_STATUS" != "success" ]; then
   exit 1

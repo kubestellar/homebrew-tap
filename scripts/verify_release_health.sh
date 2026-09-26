@@ -19,6 +19,9 @@ set -uo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FORMULA_DIR="$REPO_ROOT/Formula"
 
+# shellcheck source=scripts/lib_emit_summary.sh
+. "$REPO_ROOT/scripts/lib_emit_summary.sh"
+
 if ! command -v brew >/dev/null 2>&1; then
   echo "verify_release_health.sh: 'brew' is not on PATH — install Homebrew first." >&2
   exit 2
@@ -64,16 +67,18 @@ for name in "${formulae[@]}"; do
   fi
 done
 
-# Single-line JSON summary for CI-log observability, mirroring the
-# VALIDATE_FORMULAE_SUMMARY: pattern in validate_formulae.py: stdout-only,
-# no exporter, no external data flow, no unbounded labels — just bounded
-# integer counts so a future caller (manual or CI) can grep a structured
-# pass/fail record instead of parsing the free-text output above.
+# Single-line JSON summary for CI-log observability via the shared
+# lib_emit_summary.sh emitter (the same contract as VALIDATE_FORMULAE_SUMMARY:
+# in validate_formulae.py): stdout-only, no exporter, no external data flow,
+# no unbounded labels — just bounded integer counts so a future caller
+# (manual or CI) can grep a structured pass/fail record instead of parsing
+# the free-text output above.
 if [ "$failed_count" -eq 0 ]; then
   status="pass"
 else
   status="fail"
 fi
-echo "VERIFY_RELEASE_HEALTH_SUMMARY: {\"status\":\"${status}\",\"formula_count\":${formula_count},\"failed_count\":${failed_count}}"
+emit_ci_summary VERIFY_RELEASE_HEALTH_SUMMARY \
+  status="$status" formula_count="$formula_count" failed_count="$failed_count"
 
 exit "$overall_status"

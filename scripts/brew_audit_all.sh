@@ -30,13 +30,18 @@
 # `BREW_AUDIT_SUMMARY: {...}` record (formula_count/warned_count/
 # failed_formula), mirroring the VALIDATE_FORMULAE_SUMMARY:/BREW_CI_SUMMARY:/
 # FUZZ_SUMMARY: pattern used elsewhere in this repo — this step previously
-# had no aggregate outcome record, only per-formula ::group:: blocks.
+# had no aggregate outcome record, only per-formula ::group:: blocks. The
+# line is emitted via the shared scripts/lib_emit_summary.sh, so the
+# failed_formula string is JSON-escaped rather than interpolated raw.
 
 set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FORMULA_DIR="${FORMULA_DIR:-$REPO_ROOT/Formula}"
 TAP_NAME="${TAP_NAME:-kubestellar/tap}"
+
+# shellcheck source=scripts/lib_emit_summary.sh
+. "$REPO_ROOT/scripts/lib_emit_summary.sh"
 
 # Matches brew audit --strict's `* ` problem-line bullets, e.g.:
 #   * Stable: `version 0.9.15` is redundant with version scanned from URL
@@ -69,10 +74,12 @@ for formula in "$FORMULA_DIR"/*.rb; do
     continue
   fi
 
-  printf 'BREW_AUDIT_SUMMARY: {"status":"fail","formula_count":%s,"warned_count":%s,"failed_formula":"%s"}\n' \
-    "$formula_count" "$warned_count" "$name"
+  # failed_formula:str — the stem is caller-controlled, so force the JSON
+  # string type even for a stem that looks numeric (or is literally "null").
+  emit_ci_summary BREW_AUDIT_SUMMARY status=fail \
+    formula_count="$formula_count" warned_count="$warned_count" failed_formula:str="$name"
   exit "$exit_code"
 done
 
-printf 'BREW_AUDIT_SUMMARY: {"status":"pass","formula_count":%s,"warned_count":%s,"failed_formula":null}\n' \
-  "$formula_count" "$warned_count"
+emit_ci_summary BREW_AUDIT_SUMMARY status=pass \
+  formula_count="$formula_count" warned_count="$warned_count" failed_formula=null
