@@ -17,12 +17,14 @@ branch = True
 #     these regexes or the shared loader. Split out of
 #     ``formula_test_fixtures.py`` in kubestellar/homebrew-tap#565.
 #   * formula_test_fixtures.py — synthetic test-only Formula/*.rb
-#     bodies (``VALID_OPS`` / ``VALID_DEPLOY``) plus backward-compatible
-#     re-exports of the ``formula_parser`` symbols so the existing
-#     ``test_formula_*_invariants.py`` import sites keep working
-#     unchanged. Historically also held the parser symbols listed above
-#     (see #328, #329, #450); kept on the 100% ratchet so the re-export
-#     shim itself cannot silently rot.
+#     bodies (``VALID_OPS`` / ``VALID_DEPLOY``) shared by
+#     ``test_validate_formulae.py`` and its split-off sibling
+#     ``test_validate_formulae_step_summary.py``. Historically also
+#     held the parser symbols listed above and a backward-compatible
+#     re-export block (see #328, #329, #450, #565); the re-export block
+#     was retired in kubestellar/homebrew-tap#570 once every consumer
+#     imported from ``formula_parser`` directly. Kept on the 100%
+#     ratchet so the remaining fixture module cannot silently rot.
 #   * coverage_gate.py — the coverage gate helper itself, invoked by
 #     .github/workflows/validate-formulae.yml. If this file silently
 #     drops below 100%, a regression in the gate could allow the modules

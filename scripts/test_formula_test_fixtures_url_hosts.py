@@ -1,6 +1,5 @@
 """
-Tests for scripts/formula_parser.py::_extract_url_hosts (and the
-formula_test_fixtures.py re-export shim's coverage of it).
+Tests for scripts/formula_parser.py::_extract_url_hosts.
 
 `_extract_url_hosts` is the single choke point between "a `url "..."` line
 inside Formula/*.rb" and "a hostname compared against the ALLOWED_URL_HOSTS
@@ -9,9 +8,10 @@ test_formula_consistency_invariants.py:123). Any change to how it partitions
 scheme/host silently moves the security boundary.
 
 Moved from formula_test_fixtures.py to formula_parser.py in
-kubestellar/homebrew-tap#565; formula_test_fixtures.py still re-exports it
-for backward compatibility, and the final test case here pins the shim so
-that a removal there would fail loudly.
+kubestellar/homebrew-tap#565; the historical backward-compatible
+re-export in formula_test_fixtures.py was retired in kubestellar/
+homebrew-tap#570 once every consumer imported from formula_parser
+directly, so no shim pin remains here.
 
 The existing test_formula_test_fixtures.py only covers load_formulae(). The
 parser's behavior is otherwise pinned only by the real Formula/*.rb files,
@@ -32,7 +32,6 @@ import sys
 import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import formula_test_fixtures  # noqa: E402
 from formula_parser import ALLOWED_URL_HOSTS, _extract_url_hosts  # noqa: E402
 
 
@@ -162,7 +161,7 @@ class ExtractUrlHostsAllowlistShapeTests(unittest.TestCase):
         # a deliberate, reviewed commit — this test fails on such changes
         # so the diff is forced through review with an explicit rationale
         # (matches the "extend this set with a code change (reviewed)"
-        # comment in formula_test_fixtures.py:62).
+        # comment in formula_parser.py).
         self.assertEqual(
             ALLOWED_URL_HOSTS,
             {"github.com", "objects.githubusercontent.com"},
@@ -180,13 +179,6 @@ class ExtractUrlHostsAllowlistShapeTests(unittest.TestCase):
             'end\n'
         )
         self.assertEqual(_extract_url_hosts(body), [])
-
-    def test_module_exports_expected_public_surface(self):
-        # Guards against a rename that would silently break the two
-        # callers cited in the module docstring.
-        self.assertTrue(hasattr(formula_test_fixtures, "_extract_url_hosts"))
-        self.assertTrue(hasattr(formula_test_fixtures, "ALLOWED_URL_HOSTS"))
-        self.assertTrue(hasattr(formula_test_fixtures, "load_formulae"))
 
 
 if __name__ == "__main__":
