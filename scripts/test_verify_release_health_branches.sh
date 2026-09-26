@@ -46,6 +46,9 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/test_lib.sh"
 
 REPO_ROOT="$(repo_root)"
 SCRIPT_SOURCE="$REPO_ROOT/scripts/verify_release_health.sh"
+# The script sources scripts/lib_emit_summary.sh relative to its own
+# location, so every fixture copies the library alongside it.
+LIB_SOURCE="$REPO_ROOT/scripts/lib_emit_summary.sh"
 
 if [ ! -f "$SCRIPT_SOURCE" ]; then
   echo "FAIL (setup): script not found at $SCRIPT_SOURCE"
@@ -63,6 +66,7 @@ _make_ungitted_fixture() {
   local dir="$1"; shift
   mkdir -p "$dir/scripts" "$dir/Formula"
   cp "$SCRIPT_SOURCE" "$dir/scripts/verify_release_health.sh"
+  cp "$LIB_SOURCE" "$dir/scripts/lib_emit_summary.sh"
   chmod +x "$dir/scripts/verify_release_health.sh"
   for name in "$@"; do
     printf 'class %s < Formula\nend\n' "$name" > "$dir/Formula/${name}.rb"
@@ -78,6 +82,7 @@ _make_fixture() {
   local dir="$1"; shift
   mkdir -p "$dir/scripts" "$dir/Formula"
   cp "$SCRIPT_SOURCE" "$dir/scripts/verify_release_health.sh"
+  cp "$LIB_SOURCE" "$dir/scripts/lib_emit_summary.sh"
   chmod +x "$dir/scripts/verify_release_health.sh"
   for name in "$@"; do
     printf 'class %s < Formula\nend\n' "$name" > "$dir/Formula/${name}.rb"

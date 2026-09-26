@@ -18,6 +18,10 @@
 # outcome is surfaced distinctly instead of being silently folded into
 # an undifferentiated non-zero exit.
 #
+# The summary line (and its $GITHUB_STEP_SUMMARY table) is emitted via the
+# shared scripts/lib_emit_summary.sh, which owns the JSON shape/escaping
+# contract for every *_SUMMARY: marker in this repo.
+#
 # Stdout-only structured output: no exporter, metrics backend, or off-box
 # data flow is added, and labels are bounded (status/counts only). Full
 # unittest verbose output is preserved unchanged ahead of the summary line.
@@ -41,6 +45,9 @@ set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SCRIPTS_DIR="${SCRIPTS_DIR:-$REPO_ROOT/scripts}"
+
+# shellcheck source=scripts/lib_emit_summary.sh
+. "$REPO_ROOT/scripts/lib_emit_summary.sh"
 
 output_file="$(mktemp)"
 trap 'rm -f "$output_file"' EXIT
@@ -82,8 +89,8 @@ elif [ "$unittest_exit" -ne 0 ]; then
   status="fail"
 fi
 
-printf 'UNITTEST_SUMMARY: {"status":"%s","tests_run":%s,"failures":%s,"errors":%s}\n' \
-  "$status" "$tests_run" "$failures" "$errors"
+emit_ci_summary UNITTEST_SUMMARY \
+  status="$status" tests_run="$tests_run" failures="$failures" errors="$errors"
 
 if [ "$status" = "pass" ]; then
   exit 0
