@@ -14,6 +14,10 @@
 # reader gets the structured outcome record without scrolling
 # ::group:: blocks.
 #
+# The summary line (and its $GITHUB_STEP_SUMMARY table) is emitted via the
+# shared scripts/lib_emit_summary.sh, which owns the JSON shape/escaping
+# contract for every *_SUMMARY: marker in this repo.
+#
 # Stdout-only structured output: no exporter, metrics backend, or off-box
 # data flow is added, and labels are bounded (status/os/counts only).
 #
@@ -35,6 +39,9 @@ set -uo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FORMULA_DIR="${FORMULA_DIR:-$REPO_ROOT/Formula}"
+
+# shellcheck source=scripts/lib_emit_summary.sh
+. "$REPO_ROOT/scripts/lib_emit_summary.sh"
 
 JOB_STATUS="${JOB_STATUS:-unknown}"
 MATRIX_OS="${MATRIX_OS:-unknown}"
@@ -65,8 +72,9 @@ if [ -d "$FORMULA_DIR" ]; then
   done
 fi
 
-printf 'BREW_CI_SUMMARY: {"status":"%s","os":"%s","formula_count":%s,"installed_count":%s}\n' \
-  "$JOB_STATUS" "$MATRIX_OS" "$formula_count" "$installed_count"
+emit_ci_summary BREW_CI_SUMMARY \
+  status="$JOB_STATUS" os="$MATRIX_OS" \
+  formula_count="$formula_count" installed_count="$installed_count"
 
 if [ "$JOB_STATUS" != "success" ]; then
   exit 1
