@@ -1,11 +1,17 @@
 """
-Tests for scripts/formula_test_fixtures.py::_extract_url_hosts.
+Tests for scripts/formula_parser.py::_extract_url_hosts (and the
+formula_test_fixtures.py re-export shim's coverage of it).
 
 `_extract_url_hosts` is the single choke point between "a `url "..."` line
 inside Formula/*.rb" and "a hostname compared against the ALLOWED_URL_HOSTS
 allowlist" (used by test_formula_policy_invariants.py:65-71 and
 test_formula_consistency_invariants.py:123). Any change to how it partitions
 scheme/host silently moves the security boundary.
+
+Moved from formula_test_fixtures.py to formula_parser.py in
+kubestellar/homebrew-tap#565; formula_test_fixtures.py still re-exports it
+for backward compatibility, and the final test case here pins the shim so
+that a removal there would fail loudly.
 
 The existing test_formula_test_fixtures.py only covers load_formulae(). The
 parser's behavior is otherwise pinned only by the real Formula/*.rb files,
@@ -27,7 +33,7 @@ import unittest
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import formula_test_fixtures  # noqa: E402
-from formula_test_fixtures import ALLOWED_URL_HOSTS, _extract_url_hosts  # noqa: E402
+from formula_parser import ALLOWED_URL_HOSTS, _extract_url_hosts  # noqa: E402
 
 
 class ExtractUrlHostsHappyPathTests(unittest.TestCase):

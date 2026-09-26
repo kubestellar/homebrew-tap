@@ -40,7 +40,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR
+from formula_parser import FORMULA_DIR
 
 URL_LINE_RE = re.compile(
     r'^\s*url\s+"https://github\.com/[^"]+_(?P<os>darwin|linux)_(?P<arch>amd64|arm64)\.tar\.gz"',

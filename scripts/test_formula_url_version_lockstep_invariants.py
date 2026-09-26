@@ -24,7 +24,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import (    RELEASE_URL_RE,
+from formula_parser import (    RELEASE_URL_RE,
     URL_LINE_RE,
     VERSION_LINE_RE,
     list_formula_paths,

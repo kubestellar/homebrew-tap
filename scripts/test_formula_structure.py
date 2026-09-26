@@ -31,7 +31,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR, LICENSE_LINE_RE, load_formulae as _load_formulae
+from formula_parser import FORMULA_DIR, LICENSE_LINE_RE, load_formulae as _load_formulae
 
 REQUIRED_PLATFORMS = {
     ("darwin", "amd64"),

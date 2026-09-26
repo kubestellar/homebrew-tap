@@ -32,7 +32,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import HOMEPAGE_LINE_RE, VERSION_LINE_RE, list_formula_paths
+from formula_parser import HOMEPAGE_LINE_RE, VERSION_LINE_RE, list_formula_paths
 
 NIGHTLY_RE = re.compile(r"^\d+\.\d+\.\d+-nightly\.(?P<stamp>\d{8})$")
 ON_MACOS_RE = re.compile(r"^\s*on_macos\s+do\b", re.MULTILINE)

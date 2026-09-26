@@ -44,7 +44,7 @@ import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR
+from formula_parser import FORMULA_DIR
 
 # Match a ``test do ... end`` block.  We stop at the *last* ``end`` before
 # the outer ``class ... end`` closer — in practice ``test do`` is always

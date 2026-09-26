@@ -48,7 +48,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import list_formula_paths
+from formula_parser import list_formula_paths
 
 # The canonical top-level declaration order emitted by GoReleaser. Each
 # entry is (label, regex-that-matches-the-first-occurrence-in-file).

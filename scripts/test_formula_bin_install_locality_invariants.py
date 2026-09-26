@@ -50,7 +50,7 @@ import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR, load_formulae as _load_formulae
+from formula_parser import FORMULA_DIR, load_formulae as _load_formulae
 
 # `bin.install "<name>"` — capture the binary-name argument. A GoReleaser
 # emit is always the double-quoted single-string form; we deliberately do

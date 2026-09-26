@@ -47,7 +47,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR
+from formula_parser import FORMULA_DIR
 
 
 CONFLICTS_WITH_RE = re.compile(r'^\s*conflicts_with\b', re.MULTILINE)

@@ -33,7 +33,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR, load_formulae as _load_formulae
+from formula_parser import FORMULA_DIR, load_formulae as _load_formulae
 
 ON_MACOS_RE = re.compile(r"^\s*on_macos\s+do\b")
 ON_LINUX_RE = re.compile(r"^\s*on_linux\s+do\b")

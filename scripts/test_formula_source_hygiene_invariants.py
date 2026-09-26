@@ -49,7 +49,7 @@ import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR
+from formula_parser import FORMULA_DIR
 
 # Tokens that indicate an unrendered template or an in-progress edit.
 # Match the whole word only (case-insensitive) so it does not fire on

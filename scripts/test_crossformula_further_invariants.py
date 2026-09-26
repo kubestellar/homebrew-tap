@@ -30,7 +30,7 @@ from urllib.parse import urlparse
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import (
+from formula_parser import (
     FORMULA_DIR,
     HOMEPAGE_LINE_RE as HOMEPAGE_RE,
     URL_LINE_RE as URL_RE,

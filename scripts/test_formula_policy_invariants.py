@@ -4,9 +4,10 @@ https-only + URL-host allowlisting (supply-chain guard), and formula
 class-name / metadata policy.
 
 Split out of test_validate_formulae.py (see kubestellar/homebrew-tap#324)
-to keep each test module scoped to one concern; shared fixtures
+to keep each test module scoped to one concern; shared parser helpers
 (FORMULA_DIR, ALLOWED_URL_HOSTS, _extract_url_hosts) now live in
-scripts/formula_test_fixtures.py so this module and its siblings can
+scripts/formula_parser.py (moved out of formula_test_fixtures.py in
+kubestellar/homebrew-tap#565) so this module and its siblings can
 import them without redefining them.
 """
 
@@ -17,7 +18,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import (
+from formula_parser import (
     ALLOWED_URL_HOSTS,
     FORMULA_DIR,
     HOMEPAGE_LINE_RE,

@@ -35,7 +35,7 @@ import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR
+from formula_parser import FORMULA_DIR
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 README_PATH = REPO_ROOT / "README.md"

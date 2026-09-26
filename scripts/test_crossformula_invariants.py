@@ -39,7 +39,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import (
+from formula_parser import (
     FORMULA_DIR,
     SHA256_LINE_RE as SHA256_RE,
     URL_INLINE_RE as URL_RE,

@@ -5,7 +5,8 @@ boundary checks.
 
 Split out of test_validate_formulae.py (see kubestellar/homebrew-tap#324)
 to keep each test module scoped to one concern; the shared FORMULA_DIR
-fixture lives in scripts/formula_test_fixtures.py.
+helper lives in scripts/formula_parser.py (moved out of
+formula_test_fixtures.py in kubestellar/homebrew-tap#565).
 """
 
 import re
@@ -15,7 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import FORMULA_DIR, URL_INLINE_RE, URL_LINE_RE, list_formula_paths
+from formula_parser import FORMULA_DIR, URL_INLINE_RE, URL_LINE_RE, list_formula_paths
 
 class TestFormulaPlatformURLPolicy(unittest.TestCase):
     """Cross-formula copy-paste guards on every Formula/*.rb.
