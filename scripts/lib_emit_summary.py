@@ -25,7 +25,11 @@ Wire format (identical to the bash lib):
     separators, keys in caller-supplied insertion order (NOT sorted), so
     consumers' grep-marker regexes stay stable across both languages;
   - ``int``/``float`` values become JSON numbers, ``None`` becomes JSON
-    null, ``str`` values become JSON strings with ``"``, ``\\`` and control
+    null; finite floats are always rendered in fixed-point decimal form
+    (``1e+20`` -> ``100000000000000000000``, ``1e-07`` -> ``0.0000001``)
+    because that is the only numeric shape the bash lib's type inference
+    recognises, and non-finite floats (``nan``/``inf``) are rejected with
+    ``ValueError`` since JSON has no literal for them; ``str`` values become JSON strings with ``"``, ``\\`` and control
     characters escaped (``\\n \\r \\t \\b \\f`` short escapes, any other
     control character including DEL as ``\\u00XX``); non-ASCII text is
     passed through verbatim, exactly as the bash lib does;
@@ -39,9 +43,11 @@ off-box data flow is added.
 
 from __future__ import annotations
 
+import math
 import os
 import sys
 from collections.abc import Mapping
+from decimal import Decimal
 from typing import TextIO
 
 # Values a summary field may carry; mirrors what the bash lib can render.
@@ -88,12 +94,33 @@ def json_value(value: SummaryValue) -> str:
     if isinstance(value, int):
         return str(value)
     if isinstance(value, float):
-        return repr(value)
+        return format_float(value)
     if isinstance(value, str):
         return f'"{json_escape(value)}"'
     raise TypeError(
         f"summary values must be str, int, float or None, not {type(value).__name__}"
     )
+
+
+def format_float(value: float) -> str:
+    """Render a finite float in the fixed-point decimal form the bash lib's
+    ``_emit_summary_json_value`` recognises as a number
+    (``^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$``).
+
+    ``repr()`` alone is not byte-parity safe: it switches to scientific
+    notation for very large/small magnitudes (``1e+20``, ``1e-07``), which
+    the bash side would quote as a *string*. Route through ``Decimal`` so the
+    shortest round-tripping digits from ``repr()`` are kept but expanded to
+    plain positional notation. Non-finite values have no JSON literal and
+    are rejected."""
+    if not math.isfinite(value):
+        raise ValueError(f"summary float values must be finite, not {value!r}")
+    text = repr(value)
+    if "e" in text or "E" in text:
+        text = format(Decimal(text), "f")
+        if "." not in text:
+            text += ".0"
+    return text
 
 
 def format_summary_line(prefix: str, fields: Mapping[str, SummaryValue]) -> str:

@@ -42,7 +42,8 @@ BASH_LIB = Path(__file__).parent / "lib_emit_summary.sh"
 
 # (prefix, ordered fields) — one entry per hazard the contract must agree
 # on: field order, number vs. string typing, null, escaping, non-ASCII,
-# an empty string, and a decimal.
+# an empty string, a decimal, and floats whose repr() would be scientific
+# notation (the bash lib only type-infers fixed-point decimals).
 CASES = [
     ("VALIDATE_FORMULAE_SUMMARY", {"status": "pass", "formula_count": 3, "error_count": 0}),
     ("VALIDATE_FORMULAE_SUMMARY", {"status": "fail", "formula_count": 2, "error_count": 1}),
@@ -51,6 +52,7 @@ CASES = [
     ("BREW_AUDIT_SUMMARY", {"status": "fail", "formula_count": 3, "warned_count": 1, "failed_formula": "kc-agent"}),
     ("BREW_AUDIT_SUMMARY", {"status": "pass", "formula_count": 3, "warned_count": 0, "failed_formula": None}),
     ("T", {"forced": "123", "also": "null", "neg": -7, "dec": 2.5, "empty": ""}),
+    ("T", {"big": 1e20, "tiny": 1e-7, "mid": 1.5e16, "negbig": -1e20, "negzero": -0.0, "whole": 3.0}),
     ("T", {"k": 'quote" back\\slash', "ctl": "a\tb\nc\rd\be\ff\x01g\x7f", "uni": "héllo ✅"}),
 ]
 
@@ -64,6 +66,10 @@ def _bash_args(fields: dict) -> list[str]:
             args.append(f"{key}=null")
         elif isinstance(value, str) and (value == "null" or _looks_numeric(value)):
             args.append(f"{key}:str={value}")
+        elif isinstance(value, float):
+            # A bash caller writes the number positionally (2.5, not 2.5e0);
+            # str()/repr() would hand bash "1e+20", which it must quote.
+            args.append(f"{key}={les.format_float(value)}")
         else:
             args.append(f"{key}={value}")
     return args

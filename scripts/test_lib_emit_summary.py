@@ -53,6 +53,34 @@ class TestFormatSummaryLine(unittest.TestCase):
             {"n": -3, "f": 2.5, "z": None, "s": "12", "e": ""},
         )
 
+    def test_float_never_uses_scientific_notation(self):
+        # repr() would give 1e+20 / 1e-07 / 1.5e+16; the bash lib only
+        # type-infers fixed-point decimals, so those must be expanded.
+        cases = {
+            1e20: "100000000000000000000.0",
+            -1e20: "-100000000000000000000.0",
+            1e-7: "0.0000001",
+            1.5e16: "15000000000000000.0",
+            2.5: "2.5",
+            -0.0: "-0.0",
+            0.1: "0.1",
+            123456789.123: "123456789.123",
+        }
+        for value, expected in cases.items():
+            with self.subTest(value=value):
+                rendered = les.json_value(value)
+                self.assertEqual(rendered, expected)
+                self.assertEqual(float(rendered), value)
+                self.assertRegex(rendered, r"^-?(0|[1-9][0-9]*)(\.[0-9]+)?$")
+
+    def test_non_finite_float_rejected(self):
+        for value in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    les.json_value(value)
+                with self.assertRaises(ValueError):
+                    les.format_summary_line("T", {"f": value})
+
     def test_empty_fields_render_empty_object(self):
         self.assertEqual(les.format_summary_line("T", {}), "T: {}")
 
