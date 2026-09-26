@@ -5,11 +5,23 @@ on:
     branches: [main]
     paths:
       - 'Formula/**'
+      - 'scripts/brew_tap_setup.sh'
+      - 'scripts/brew_audit_all.sh'
+      - 'scripts/brew_install_smoke.sh'
+      - 'scripts/brew_test_installed.sh'
+      - 'scripts/brew_untap_self.sh'
+      - 'scripts/brew_ci_summary.sh'
       - '.github/workflows/brew-ci.yml'
   pull_request:
     branches: [main]
     paths:
       - 'Formula/**'
+      - 'scripts/brew_tap_setup.sh'
+      - 'scripts/brew_audit_all.sh'
+      - 'scripts/brew_install_smoke.sh'
+      - 'scripts/brew_test_installed.sh'
+      - 'scripts/brew_untap_self.sh'
+      - 'scripts/brew_ci_summary.sh'
       - '.github/workflows/brew-ci.yml'
   schedule:
     # Daily catch-all to detect upstream artifact rot (deleted/rotated release

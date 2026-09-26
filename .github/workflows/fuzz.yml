@@ -5,10 +5,16 @@ on:
     branches: [ "main" ]
     paths:
       - "Formula/**"
+      - "scripts/formula_fuzz.sh"
+      - "scripts/fuzz_summary.sh"
+      - ".github/workflows/fuzz.yml"
   pull_request:
     branches: [ "main" ]
     paths:
       - "Formula/**"
+      - "scripts/formula_fuzz.sh"
+      - "scripts/fuzz_summary.sh"
+      - ".github/workflows/fuzz.yml"
   schedule:
     # Weekly catch-all so formula syntax/structure/URL-checksum fuzzing runs
     # independent of a Formula/** diff, mirroring codeql.yml's `0 4 * * 1`
