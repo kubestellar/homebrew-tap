@@ -1,8 +1,8 @@
 # Development / CI dependencies for validate-formulae unit tests + coverage.
 #
-# GENERATED from requirements-dev.in by pip-compile --generate-hashes; edit
-# requirements-dev.in and regenerate rather than hand-editing this file
-# (see the regeneration command in requirements-dev.in).
+# GENERATED from requirements-dev.in by scripts/compile_requirements_dev.sh
+# (pip-compile --generate-hashes); edit requirements-dev.in and rerun the
+# script rather than hand-editing this file. The script keeps this header.
 #
 # Every package -- including transitive dependencies -- is pinned to an exact
 # version AND to the sha256 of each acceptable release artifact. CI installs

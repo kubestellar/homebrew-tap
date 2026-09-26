@@ -5,11 +5,12 @@
 # Regenerate requirements-dev.txt after changing a pin here:
 #
 #   pip install pip-tools
-#   pip-compile --generate-hashes --no-annotate --no-header \
-#       --output-file=requirements-dev.txt requirements-dev.in
+#   scripts/compile_requirements_dev.sh
 #
-# Keep the header comment block at the top of requirements-dev.txt intact
-# (pip-compile --no-header does not emit one).
+# The wrapper runs `pip-compile --generate-hashes --no-annotate --no-header`
+# and automatically reapplies the explanatory header comment block at the
+# top of requirements-dev.txt (pip-compile --no-header would otherwise
+# drop it). Do not call pip-compile directly against requirements-dev.txt.
 pytest==9.1.1
 pytest-cov==7.1.0
 coverage==7.16.1
