@@ -27,9 +27,10 @@
 #   NOW             - override the timestamp line (used by tests); defaults
 #                     to the current UTC time.
 #
-# failed-jobs mode uses (see the `Fetch failed jobs` steps in
-# .github/workflows/scheduled-workflow-failure-issue.yml, which today
-# inline the same `gh run view … --jq …` snippet twice):
+# failed-jobs mode uses (called by the `Fetch failed jobs for comment` and
+# `Fetch failed job details` steps in
+# .github/workflows/scheduled-workflow-failure-issue.yml, which previously
+# inlined the same `gh run view … --jq …` snippet twice):
 #   REPOSITORY      - e.g. "kubestellar/homebrew-tap"
 #   RUN_ID          - e.g. "123456789"
 # failed-jobs prints the comma-joined names of jobs whose conclusion is
@@ -93,11 +94,11 @@ case "$mode" in
   failed-jobs)
     require REPOSITORY
     require RUN_ID
-    # Match the inline snippet in scheduled-workflow-failure-issue.yml's
-    # `Fetch failed jobs for comment` / `Fetch failed job details` steps
-    # (which appear twice, byte-identically): swallow any `gh run view`
-    # failure to an empty string so the surrounding workflow step keeps
-    # its exit-0 contract and downstream steps still run.
+    # Preserve the contract of the snippet formerly inlined (twice,
+    # byte-identically) in scheduled-workflow-failure-issue.yml's
+    # `Fetch failed jobs for comment` / `Fetch failed job details` steps:
+    # swallow any `gh run view` failure to an empty string so the calling
+    # workflow step keeps its exit-0 contract and downstream steps still run.
     gh run view "$RUN_ID" \
       --repo "$REPOSITORY" \
       --json jobs \

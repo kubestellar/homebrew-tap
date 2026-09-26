@@ -91,11 +91,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPOSITORY: ${{ github.repository }}
           RUN_ID: ${{ github.event.workflow_run.id }}
+        # Failed-job lookup is delegated to scripts/workflow_failure_notify.sh
+        # failed-jobs (regression-tested by
+        # scripts/test_workflow_failure_notify_failed_jobs.sh) rather than an
+        # inline `gh run view … --jq …` snippet, so the swallow-on-error
+        # contract survives edits.
         run: |
-          FAILED_JOBS=$(gh run view "$RUN_ID" \
-            --repo "$REPOSITORY" \
-            --json jobs \
-            --jq '[.jobs[] | select(.conclusion == "failure") | .name] | join(", ")' 2>/dev/null || echo "")
+          FAILED_JOBS=$(scripts/workflow_failure_notify.sh failed-jobs)
           echo "failed_jobs=${FAILED_JOBS}" >> "$GITHUB_OUTPUT"
 
       - name: Comment on existing issue
@@ -140,11 +142,13 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPOSITORY: ${{ github.repository }}
           RUN_ID: ${{ github.event.workflow_run.id }}
+        # Failed-job lookup is delegated to scripts/workflow_failure_notify.sh
+        # failed-jobs (regression-tested by
+        # scripts/test_workflow_failure_notify_failed_jobs.sh) rather than an
+        # inline `gh run view … --jq …` snippet, so the swallow-on-error
+        # contract survives edits.
         run: |
-          FAILED_JOBS=$(gh run view "$RUN_ID" \
-            --repo "$REPOSITORY" \
-            --json jobs \
-            --jq '[.jobs[] | select(.conclusion == "failure") | .name] | join(", ")' 2>/dev/null || echo "")
+          FAILED_JOBS=$(scripts/workflow_failure_notify.sh failed-jobs)
           echo "failed_jobs=${FAILED_JOBS}" >> "$GITHUB_OUTPUT"
 
       - name: Open new issue
