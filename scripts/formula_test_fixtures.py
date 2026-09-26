@@ -4,43 +4,25 @@ scripts/test_validate_formulae.py and its split-off sibling
 scripts/test_validate_formulae_step_summary.py (see kubestellar/homebrew-
 tap#541).
 
-Historical note (kubestellar/homebrew-tap#565): this module previously
-also held the stanza regexes, the ``Formula/`` glob (``FORMULA_DIR``),
-``load_formulae()`` / ``list_formula_paths()``, and
+Historical note (kubestellar/homebrew-tap#565, #570): this module
+previously also held the stanza regexes, the ``Formula/`` glob
+(``FORMULA_DIR``), ``load_formulae()`` / ``list_formula_paths()``, and
 ``ALLOWED_URL_HOSTS`` / ``_extract_url_hosts()``. Those symbols were
 imported by production ``scripts/validate_formulae.py`` (the module
 Homebrew CI's *Validate Formulae* job runs) as well as by the
 ``test_formula_*_invariants.py`` suites, so a file named
 ``formula_test_fixtures.py`` was silently doubling as a production
-helper. They now live in :mod:`formula_parser` and are re-exported here
-solely for backward-compatible import paths in the existing
-``test_formula_*_invariants.py`` modules — new imports should target
-:mod:`formula_parser` directly.
+helper. They now live in :mod:`formula_parser`; the backward-compatible
+re-export block that briefly bridged the two homes was retired in
+kubestellar/homebrew-tap#570 after every consumer had been migrated to
+import from :mod:`formula_parser` directly. This file is now what its
+name promises: test-only fixtures, nothing else.
 
 Not itself a test module (does not match the ``test_*.py`` discovery
 pattern), so ``unittest discover`` never picks it up directly.
 """
 
 import textwrap
-
-# Re-export the production-shared parser symbols for backward-compatible
-# imports (``from formula_test_fixtures import VERSION_LINE_RE`` etc.).
-# New code should import from ``formula_parser`` directly.
-from formula_parser import (  # noqa: F401
-    ALLOWED_URL_HOSTS,
-    DESC_LINE_RE,
-    FORMULA_DIR,
-    HOMEPAGE_LINE_RE,
-    LICENSE_LINE_RE,
-    RELEASE_URL_RE,
-    SHA256_LINE_RE,
-    URL_INLINE_RE,
-    URL_LINE_RE,
-    VERSION_LINE_RE,
-    _extract_url_hosts,
-    list_formula_paths,
-    load_formulae,
-)
 
 
 # Synthetic Formula/*.rb bodies shared by scripts/test_validate_formulae.py
