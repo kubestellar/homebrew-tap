@@ -2,8 +2,6 @@
 """Validate Homebrew formula metadata for drift: version/URL mismatch,
 malformed sha256, missing sha256 after url, and paired formula lockstep."""
 
-import json
-import os
 import re
 import sys
 from pathlib import Path
@@ -13,15 +11,23 @@ from formula_parser import (
     URL_INLINE_RE,
     VERSION_LINE_RE,
 )
+from lib_emit_summary import (
+    append_step_summary,
+    emit_summary_line,
+    status_cell,
+)
 
 # Validates the *value* captured by SHA256_LINE_RE (64 lowercase hex chars),
 # not the sha256 stanza itself; kept local because it has no fixtures peer.
 SHA256_VALUE_RE = re.compile(r'^[0-9a-f]{64}$')
 
-# Prefix for the machine-readable CI summary line (see emit_summary()).
-# Grep this marker in CI logs to get a structured pass/fail count without
-# parsing the free-text OK:/FAIL: lines.
-SUMMARY_PREFIX = "VALIDATE_FORMULAE_SUMMARY:"
+# Marker for the machine-readable CI summary line (see emit_summary()).
+# Grep this in CI logs to get a structured pass/fail count without parsing
+# the free-text OK:/FAIL: lines. SUMMARY_MARKER is the bare prefix the
+# shared lib_emit_summary contract takes; SUMMARY_PREFIX is the literal
+# "<MARKER>:" that appears at the start of the emitted line.
+SUMMARY_MARKER = "VALIDATE_FORMULAE_SUMMARY"
+SUMMARY_PREFIX = f"{SUMMARY_MARKER}:"
 
 # Cap on how many individual errors are rendered in the $GITHUB_STEP_SUMMARY
 # table so a pathological run (e.g. every formula broken) can't blow up the
@@ -149,18 +155,26 @@ def emit_summary(
     GitHub Actions (that env var is set by the runner for every step; no
     workflow YAML edit is needed to opt in).
 
+    The JSON line is produced by the shared scripts/lib_emit_summary.py so
+    its shape, key order and escaping stay byte-identical to the bash
+    emitters' (scripts/lib_emit_summary.sh); see kubestellar/homebrew-tap#581.
+    Fields are emitted in this order — status first, then the counts — like
+    every other *_SUMMARY: record in this repo.
+
     Both outputs are stdout/file-only (no external data flow, no exporter):
     the JSON line lets CI tooling grep a structured pass/fail record instead
     of parsing the free-text OK:/FAIL: lines above it, and the step summary
     surfaces the same bounded fields in the GitHub Actions checks UI instead
     of requiring a reviewer to open the raw log.
     """
-    summary = {
-        "status": status,
-        "formula_count": formula_count,
-        "error_count": error_count,
-    }
-    print(f"{SUMMARY_PREFIX} {json.dumps(summary, sort_keys=True)}")
+    emit_summary_line(
+        SUMMARY_MARKER,
+        {
+            "status": status,
+            "formula_count": formula_count,
+            "error_count": error_count,
+        },
+    )
     _write_step_summary(status, formula_count, error_count, errors or [])
 
 
@@ -168,18 +182,18 @@ def _write_step_summary(
     status: str, formula_count: int, error_count: int, errors: list[str]
 ) -> None:
     """Append a markdown table to $GITHUB_STEP_SUMMARY, if set. No-op
-    outside GitHub Actions (e.g. local runs, unit tests)."""
-    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
-    if not summary_path:
-        return
+    outside GitHub Actions (e.g. local runs, unit tests).
 
-    icon = "✅" if status == "pass" else "❌"
+    This drift-specific rendering (fixed three-column table plus an errors
+    <details> block) intentionally differs from the generic one-column-per-
+    key table the bash lib renders; the shared contract is the JSON line,
+    not the markdown."""
     lines = [
         "### Formula drift check",
         "",
         "| Status | Formulae checked | Errors |",
         "|--------|-------------------|--------|",
-        f"| {icon} {status} | {formula_count} | {error_count} |",
+        f"| {status_cell(status)} | {formula_count} | {error_count} |",
     ]
     if errors:
         shown = errors[:MAX_STEP_SUMMARY_ERRORS]
@@ -193,9 +207,7 @@ def _write_step_summary(
         lines.append("")
         lines.append("</details>")
     lines.append("")
-
-    with open(summary_path, "a", encoding="utf-8") as f:
-        f.write("\n".join(lines) + "\n")
+    append_step_summary(lines)
 
 
 def _write_step_summary_warnings(warnings: list[str]) -> None:
@@ -205,17 +217,12 @@ def _write_step_summary_warnings(warnings: list[str]) -> None:
     clean run's summary is unchanged."""
     if not warnings:
         return
-    summary_path = os.environ.get("GITHUB_STEP_SUMMARY")
-    if not summary_path:
-        return
 
     lines = ["### ⚠️ Nightly channel warnings", ""]
     for w in warnings:
         lines.append(f"- {w}")
     lines.append("")
-
-    with open(summary_path, "a", encoding="utf-8") as f:
-        f.write("\n".join(lines) + "\n")
+    append_step_summary(lines)
 
 
 def validate(formula_dir: Path) -> int:

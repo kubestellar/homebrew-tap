@@ -25,6 +25,11 @@ branch = True
 #     was retired in kubestellar/homebrew-tap#570 once every consumer
 #     imported from ``formula_parser`` directly. Kept on the 100%
 #     ratchet so the remaining fixture module cannot silently rot.
+#   * lib_emit_summary.py — the Python owner of the '<PREFIX>: {json}'
+#     CI summary contract shared with scripts/lib_emit_summary.sh
+#     (kubestellar/homebrew-tap#581). Imported by ``validate_formulae.py``;
+#     scripts/test_emit_summary_parity.py asserts it stays byte-identical
+#     to the bash emitter, so a gap here is a gap in that guarantee.
 #   * coverage_gate.py — the coverage gate helper itself, invoked by
 #     .github/workflows/validate-formulae.yml. If this file silently
 #     drops below 100%, a regression in the gate could allow the modules
@@ -34,6 +39,7 @@ include =
     scripts/validate_formulae.py
     scripts/formula_parser.py
     scripts/formula_test_fixtures.py
+    scripts/lib_emit_summary.py
     scripts/coverage_gate.py
 
 [report]

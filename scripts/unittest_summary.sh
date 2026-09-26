@@ -20,7 +20,9 @@
 #
 # The summary line (and its $GITHUB_STEP_SUMMARY table) is emitted via the
 # shared scripts/lib_emit_summary.sh, which owns the JSON shape/escaping
-# contract for every *_SUMMARY: marker in this repo.
+# contract for every bash *_SUMMARY: marker in this repo (its Python twin
+# is scripts/lib_emit_summary.py, kept in parity by
+# scripts/test_emit_summary_parity.py).
 #
 # Stdout-only structured output: no exporter, metrics backend, or off-box
 # data flow is added, and labels are bounded (status/counts only). Full

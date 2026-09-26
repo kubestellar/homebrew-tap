@@ -41,16 +41,20 @@ class TestEmitSummaryJSONLine(unittest.TestCase):
         self.assertEqual(payload["formula_count"], 3)
         self.assertEqual(payload["error_count"], 0)
 
-    def test_json_keys_are_sorted(self):
+    def test_json_keys_follow_insertion_order_status_first(self):
         buf = io.StringIO()
         with mock.patch.dict(os.environ, {}, clear=False):
             os.environ.pop("GITHUB_STEP_SUMMARY", None)
             with redirect_stdout(buf):
                 emit_summary(status="fail", formula_count=2, error_count=1)
-        payload_str = buf.getvalue().strip()[len(SUMMARY_PREFIX):].strip()
-        # sort_keys=True -> alphabetical: error_count < formula_count < status
-        self.assertLess(payload_str.index("error_count"), payload_str.index("formula_count"))
-        self.assertLess(payload_str.index("formula_count"), payload_str.index("status"))
+        line = buf.getvalue().strip()
+        # Shared lib_emit_summary contract (#581): keys keep the caller's
+        # order — status first, then counts — exactly like every bash
+        # *_SUMMARY: emitter, and the JSON is compact (no spaces).
+        self.assertEqual(
+            line,
+            f'{SUMMARY_PREFIX} {{"status":"fail","formula_count":2,"error_count":1}}',
+        )
 
 
 class TestWriteStepSummaryNoop(unittest.TestCase):
