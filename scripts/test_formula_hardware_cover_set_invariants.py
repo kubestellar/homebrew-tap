@@ -32,7 +32,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import list_formula_paths
+from formula_parser import list_formula_paths
 
 # Same regex shape as the sibling structural tests use (see
 # test_formula_structural_further_invariants.py) so both files agree on

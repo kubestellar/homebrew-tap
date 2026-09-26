@@ -4,9 +4,10 @@ references, homepage/url github owner-repo consistency, and the
 validate_formulae.py CLI entrypoint.
 
 Split out of test_validate_formulae.py (see kubestellar/homebrew-tap#324)
-to keep each test module scoped to one concern; shared fixtures
+to keep each test module scoped to one concern; shared parser helpers
 (FORMULA_DIR, ALLOWED_URL_HOSTS, _extract_url_hosts) live in
-scripts/formula_test_fixtures.py.
+scripts/formula_parser.py (moved out of formula_test_fixtures.py in
+kubestellar/homebrew-tap#565).
 """
 
 import re
@@ -18,7 +19,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import ALLOWED_URL_HOSTS, FORMULA_DIR, _extract_url_hosts, list_formula_paths
+from formula_parser import ALLOWED_URL_HOSTS, FORMULA_DIR, _extract_url_hosts, list_formula_paths
 
 def _bin_install_names(text: str) -> set[str]:
     """Return the set of binary names installed by any `bin.install "<name>"`

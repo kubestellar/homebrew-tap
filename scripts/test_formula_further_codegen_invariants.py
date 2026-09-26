@@ -39,7 +39,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from formula_test_fixtures import (
+from formula_parser import (
     FORMULA_DIR,
     DESC_LINE_RE as DESC_RE,
     HOMEPAGE_LINE_RE as HOMEPAGE_RE,
