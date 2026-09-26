@@ -84,7 +84,7 @@ case "$mode" in
     fi
     printf '\n### Next Steps\n'
     printf '1. Check the [failed run](%s) for error details\n' "$RUN_URL"
-    printf '2. Follow the [Scheduled Workflow Failure runbook](../../runbooks/scheduled-workflow-failure.md)\n'
+    printf '2. Follow the [Scheduled Workflow Failure runbook](https://github.com/kubestellar/homebrew-tap/blob/main/runbooks/scheduled-workflow-failure.md)\n'
     printf '3. Fix the underlying issue\n'
     printf '4. **Do not close** this issue until the workflow passes on `main`\n\n'
     printf -- '---\n'

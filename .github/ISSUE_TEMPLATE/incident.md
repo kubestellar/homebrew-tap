@@ -37,7 +37,7 @@ assignees: ""
 
 <!-- What was done to stop the bleeding and restore service? Link to the rollback runbook steps followed and any rollback PR. -->
 
-See: [Formula Rollback Runbook](../../runbooks/formula-rollback.md)
+See: [Formula Rollback Runbook](https://github.com/kubestellar/homebrew-tap/blob/main/runbooks/formula-rollback.md)
 
 ## Contributing Factors
 
