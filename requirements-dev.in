@@ -1,0 +1,15 @@
+# Top-level development / CI dependencies for the validate-formulae unit
+# tests + coverage gate. This is the human-edited input; requirements-dev.txt
+# is the generated, hash-pinned lockfile that CI actually installs.
+#
+# Regenerate requirements-dev.txt after changing a pin here:
+#
+#   pip install pip-tools
+#   pip-compile --generate-hashes --no-annotate --no-header \
+#       --output-file=requirements-dev.txt requirements-dev.in
+#
+# Keep the header comment block at the top of requirements-dev.txt intact
+# (pip-compile --no-header does not emit one).
+pytest==9.1.1
+pytest-cov==7.1.0
+coverage==7.16.1
