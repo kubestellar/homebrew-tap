@@ -7,7 +7,12 @@
 # own printf for this line, "mirroring" validate_formulae.emit_summary() on
 # the Python side without any shared mechanism to keep the JSON shape,
 # quoting, and $GITHUB_STEP_SUMMARY behaviour in lockstep. This library is
-# the one bash owner of that contract (see kubestellar/homebrew-tap#577).
+# the one bash owner of that contract (see kubestellar/homebrew-tap#577);
+# scripts/lib_emit_summary.py is the one Python owner, and
+# scripts/test_emit_summary_parity.py asserts both produce byte-identical
+# '<PREFIX>: {json}' lines for the same inputs (kubestellar/homebrew-tap#581).
+# A change to the wire format here must be mirrored there, and the parity
+# test fails until it is.
 #
 # Usage: source this file, then call:
 #
