@@ -44,10 +44,7 @@ silent regression from codegen template changes or editor churn.
 from __future__ import annotations
 
 import pathlib
-import sys
 import unittest
-
-sys.path.insert(0, str(pathlib.Path(__file__).parent))
 
 from formula_parser import FORMULA_DIR
 

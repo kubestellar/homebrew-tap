@@ -41,11 +41,7 @@ offending formula individually.
 """
 
 import re
-import sys
 import unittest
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent))
 
 from formula_parser import FORMULA_DIR
 

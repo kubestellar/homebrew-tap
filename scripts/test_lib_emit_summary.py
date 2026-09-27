@@ -25,15 +25,13 @@ ratchet sees every branch:
 import io
 import json
 import os
-import sys
 import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
 from unittest import mock
 
-sys.path.insert(0, str(Path(__file__).parent))
-import lib_emit_summary as les  # noqa: E402
+import lib_emit_summary as les
 
 
 class TestFormatSummaryLine(unittest.TestCase):

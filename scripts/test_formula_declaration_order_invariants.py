@@ -42,11 +42,7 @@ Runnable the same way as the sibling test modules::
 """
 
 import re
-import sys
 import unittest
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent))
 
 from formula_parser import list_formula_paths
 

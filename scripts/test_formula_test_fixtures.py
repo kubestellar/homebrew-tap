@@ -21,15 +21,12 @@ was removed; every invariant test module now imports parser symbols from
 """
 from __future__ import annotations
 
-import os
-import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest import mock
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import formula_parser  # noqa: E402
+import formula_parser
 
 
 class LoadFormulaeTests(unittest.TestCase):

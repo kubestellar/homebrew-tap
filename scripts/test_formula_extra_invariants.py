@@ -24,11 +24,7 @@ Standalone `unittest` module for parity with the sibling test files.
 """
 
 import re
-import sys
 import unittest
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent))
 
 from formula_parser import (
     DESC_LINE_RE,

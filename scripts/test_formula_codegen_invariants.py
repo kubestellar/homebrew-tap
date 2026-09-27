@@ -33,11 +33,7 @@ Runnable the same way as the sibling test module:
 """
 
 import re
-import sys
 import unittest
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent))
 
 from formula_parser import (
     FORMULA_DIR,

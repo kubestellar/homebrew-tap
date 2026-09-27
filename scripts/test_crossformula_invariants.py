@@ -31,13 +31,9 @@ Runnable the same way as the sibling test modules:
 """
 
 import re
-import sys
 import unittest
 from collections import Counter
 from datetime import date, timedelta
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent))
 
 from formula_parser import (
     FORMULA_DIR,

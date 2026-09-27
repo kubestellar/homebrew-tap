@@ -9,7 +9,6 @@ import textwrap
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
 from formula_test_fixtures import VALID_DEPLOY, VALID_OPS
 from validate_formulae import parse_formula, validate
 

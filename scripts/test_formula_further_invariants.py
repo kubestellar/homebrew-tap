@@ -25,12 +25,9 @@ Standalone `unittest` module for parity with the sibling test files.
 """
 
 import re
-import sys
 import unittest
 from datetime import date, datetime, timezone
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent))
 
 from formula_parser import HOMEPAGE_LINE_RE, VERSION_LINE_RE, list_formula_paths
 

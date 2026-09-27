@@ -30,10 +30,7 @@ from __future__ import annotations
 
 import pathlib
 import re
-import sys
 import unittest
-
-sys.path.insert(0, str(pathlib.Path(__file__).parent))
 
 from formula_parser import FORMULA_DIR
 
