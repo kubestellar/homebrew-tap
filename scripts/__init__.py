@@ -30,7 +30,30 @@ bare imports without a file-local shim:
 
 The insertion is idempotent so repeated imports (e.g. under ``pytest``,
 whose default ``prepend`` import mode also loads this package) do not
-grow ``sys.path``.
+grow ``sys.path``. It also preserves the *precedence* the per-file shim
+had: that shim always ``insert(0, ...)``-ed, so ``scripts/`` shadowed any
+same-named module earlier on the path (a stray top-level
+``coverage_gate`` or ``formula_parser`` from ``PYTHONPATH``, say). A
+plain ``if dir not in sys.path`` guard would skip the insert when the
+directory is already present *later* in the path and silently lose that
+shadowing, so the shim removes any existing entry for this directory
+(compared by real path, since ``discover`` and ``PYTHONPATH`` spell it
+differently) and re-inserts it at index 0.
+
+One consequence of the package form is worth knowing: a test module
+that imports a *sibling test module* by bare name (today only
+``test_lockstep_nightly_tolerance_invariants`` →
+``test_crossformula_invariants``) gets the top-level copy of that
+module, not ``scripts.test_crossformula_invariants``. That is the same
+module object the bare-import helpers resolve to and is harmless for
+sharing helpers, but if both spellings are loaded in one process the
+sibling's ``TestCase`` classes exist under two module identities. The
+CI and standalone forms never import under the package name, so this
+only affects ad-hoc ``python3 -m unittest scripts.test_a scripts.test_b``
+invocations.
+
+``scripts/test_scripts_package_syspath.py`` pins these guarantees
+(precedence, idempotence, the package form) in subprocesses.
 
 Not itself a test module (does not match the ``test_*.py`` discovery
 pattern) and not on the ``.coveragerc`` 100% ratchet: it carries no
@@ -38,10 +61,17 @@ production logic, only the import-path setup the test modules need.
 """
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
 _SCRIPTS_DIR = str(Path(__file__).resolve().parent)
 
-if _SCRIPTS_DIR not in sys.path:
-    sys.path.insert(0, _SCRIPTS_DIR)
+
+def _is_scripts_dir(entry: str) -> bool:
+    # '' means the cwd and is left alone; non-str entries belong to path hooks.
+    return isinstance(entry, str) and bool(entry) and os.path.realpath(entry) == _SCRIPTS_DIR
+
+
+sys.path[:] = [entry for entry in sys.path if not _is_scripts_dir(entry)]
+sys.path.insert(0, _SCRIPTS_DIR)

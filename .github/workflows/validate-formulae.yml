@@ -6,6 +6,7 @@ on:
     paths:
       - 'Formula/**'
       - 'README.md'
+      - 'scripts/__init__.py'
       - 'scripts/validate_formulae.py'
       - 'scripts/lib_*.py'
       - 'scripts/test_*.py'
@@ -20,6 +21,7 @@ on:
     paths:
       - 'Formula/**'
       - 'README.md'
+      - 'scripts/__init__.py'
       - 'scripts/validate_formulae.py'
       - 'scripts/lib_*.py'
       - 'scripts/test_*.py'
