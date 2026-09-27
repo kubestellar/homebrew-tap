@@ -10,11 +10,7 @@ formula_test_fixtures.py in kubestellar/homebrew-tap#565).
 """
 
 import re
-import sys
 import unittest
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent))
 
 from formula_parser import FORMULA_DIR, URL_INLINE_RE, URL_LINE_RE, list_formula_paths
 

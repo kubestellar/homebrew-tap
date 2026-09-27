@@ -17,8 +17,6 @@ import textwrap
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent))
-
 from formula_parser import ALLOWED_URL_HOSTS, FORMULA_DIR, _extract_url_hosts, list_formula_paths
 
 def _bin_install_names(text: str) -> set[str]:

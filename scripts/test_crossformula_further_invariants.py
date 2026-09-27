@@ -23,12 +23,8 @@ Runnable the same way as the sibling test modules:
     python3 scripts/test_crossformula_further_invariants.py
 """
 
-import sys
 import unittest
-from pathlib import Path
 from urllib.parse import urlparse
-
-sys.path.insert(0, str(Path(__file__).parent))
 
 from formula_parser import (
     FORMULA_DIR,

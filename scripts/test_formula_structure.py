@@ -25,11 +25,7 @@ so it can be invoked from CI the same way as test_validate_formulae.py:
 """
 
 import re
-import sys
 import unittest
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent))
 
 from formula_parser import FORMULA_DIR, LICENSE_LINE_RE, load_formulae as _load_formulae
 

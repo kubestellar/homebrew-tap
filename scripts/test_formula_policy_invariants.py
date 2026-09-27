@@ -12,11 +12,7 @@ import them without redefining them.
 """
 
 import re
-import sys
 import unittest
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent))
 
 from formula_parser import (
     ALLOWED_URL_HOSTS,

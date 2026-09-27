@@ -33,11 +33,7 @@ Run:
 """
 from __future__ import annotations
 
-import pathlib
-import sys
 import unittest
-
-sys.path.insert(0, str(pathlib.Path(__file__).parent))
 
 from formula_parser import FORMULA_DIR, URL_LINE_RE as URL_RE, list_formula_paths
 

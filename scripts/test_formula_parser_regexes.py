@@ -44,13 +44,10 @@ These tests exercise each regex directly against synthetic strings
 """
 from __future__ import annotations
 
-import os
 import re
-import sys
 import unittest
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import formula_parser  # noqa: E402
+import formula_parser
 
 
 class SingleStanzaRegexTests(unittest.TestCase):

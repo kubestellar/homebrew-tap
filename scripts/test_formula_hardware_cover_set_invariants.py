@@ -26,11 +26,7 @@ statement of "the tap supports amd64 + arm64 on both macOS and Linux."
 """
 
 import re
-import sys
 import unittest
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent))
 
 from formula_parser import list_formula_paths
 

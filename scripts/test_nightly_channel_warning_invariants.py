@@ -10,13 +10,10 @@ goreleaser config, not in this tap.
 
 import io
 import os
-import sys
 import tempfile
 import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent))
 
 from validate_formulae import (
     _write_step_summary_warnings,

@@ -18,8 +18,7 @@ from contextlib import redirect_stderr
 from unittest import mock
 
 # The helper lives alongside this test file under scripts/.
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import coverage_gate  # noqa: E402
+import coverage_gate
 
 
 class ParseArgsTests(unittest.TestCase):
