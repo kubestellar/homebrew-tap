@@ -1,11 +1,7 @@
 # Scheduled Workflow Failure Runbook
 
 **Repository:** `kubestellar/homebrew-tap`
-**Applies to:** `CodeQL Analysis`, `OpenSSF Scorecard`, `Fuzzing`, `Homebrew CI`, `Validate Formulae`, `Stale Issues`
-**Known gap:** `actionlint` also runs on a weekly `schedule:` but is not yet
-watched by this alert — a failed scheduled `actionlint` run currently has no
-automated notification; see [#549](https://github.com/kubestellar/homebrew-tap/issues/549)
-for the ready-to-apply fix.
+**Applies to:** `CodeQL Analysis`, `OpenSSF Scorecard`, `Fuzzing`, `Homebrew CI`, `Validate Formulae`, `Stale Issues`, `actionlint`
 
 ---
 
@@ -15,10 +11,12 @@ Use this runbook when you are assigned, or notice, an auto-filed issue
 titled `Workflow failure: <workflow name>` and labeled `workflow-failure`.
 These issues are created by
 [`.github/workflows/scheduled-workflow-failure-issue.yml`](../.github/workflows/scheduled-workflow-failure-issue.yml)
-(applied in #441) whenever:
+(applied in #441; extended to `actionlint` in
+[#551](https://github.com/kubestellar/homebrew-tap/pull/551)) whenever:
 
 - A scheduled (`cron`) or manually (`workflow_dispatch`) triggered run of
-  `CodeQL Analysis`, `OpenSSF Scorecard`, `Fuzzing`, or `Stale Issues` fails, or
+  `CodeQL Analysis`, `OpenSSF Scorecard`, `Fuzzing`, `Stale Issues`, or
+  `actionlint` fails, or
 - `Homebrew CI` or `Validate Formulae` fails on `main`.
 
 This closes the alert gap described in [`docs/slo.md`](../docs/slo.md#slos-service-level-objectives):
@@ -55,6 +53,10 @@ depending on someone noticing a red check.
    formula or code regression — issues/PRs due for stale-marking or
    auto-closing per policy simply won't be, with no other signal until this
    alert fires. Fix the workflow/permissions issue and re-run.
+7. For `actionlint` failures, this signals a floating-tag pin drift or a
+   shellcheck regression in a workflow file with no matching
+   `.github/workflows/**`/`scripts/**.sh` push or PR diff — fix the
+   underlying lint finding or re-pin the action and re-run.
 
 ## Known Recurring Failure Signatures
 
@@ -80,10 +82,10 @@ check here before re-investigating from scratch.
 ## Notes
 
 - The alert workflow only fires for `schedule`/`workflow_dispatch` events (for
-  `CodeQL Analysis`, `OpenSSF Scorecard`, `Fuzzing`, `Stale Issues`) or
-  `main`-branch runs (for `Homebrew CI`, `Validate Formulae`) — pull-request
-  failures are already visible via the PR's own status checks and do not need
-  a duplicate issue.
+  `CodeQL Analysis`, `OpenSSF Scorecard`, `Fuzzing`, `Stale Issues`,
+  `actionlint`) or `main`-branch runs (for `Homebrew CI`, `Validate Formulae`)
+  — pull-request failures are already visible via the PR's own status checks
+  and do not need a duplicate issue.
 - No runtime backend or metrics exporter is added by this mechanism; it is a
   GitHub Actions `workflow_run` → `gh issue create`/`comment` job only, per the
   no-backend-configured scope of this repository (see `docs/slo.md`).

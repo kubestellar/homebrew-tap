@@ -15,17 +15,16 @@ applied in #441; see the
 [Scheduled Workflow Failure Runbook](../runbooks/scheduled-workflow-failure.md))
 that closes most of the alert gaps described below — it watches `CodeQL
 Analysis`, `OpenSSF Scorecard`, `Fuzzing`, `Homebrew CI`, `Validate Formulae`,
-and `Stale Issues`. The structured per-run summary lines described below are
-now applied for all three of `brew-ci.yml`, `fuzz.yml`, and
-`validate-formulae.yml` (see [#479](https://github.com/kubestellar/homebrew-tap/pull/479)).
+`Stale Issues`, and `actionlint`. The structured per-run summary lines
+described below are now applied for all three of `brew-ci.yml`, `fuzz.yml`,
+and `validate-formulae.yml` (see [#479](https://github.com/kubestellar/homebrew-tap/pull/479)).
 `validate-formulae.yml` gained its own `schedule:` trigger (closing
-[#508](https://github.com/kubestellar/homebrew-tap/issues/508)), so all six
-watched workflows now run on a schedule or `main`-branch push.
-The remaining gap is that `actionlint.yml` also has a weekly `schedule:`
-trigger but is **not** in the watched-workflows list above, so a failed
-scheduled `actionlint` run currently has no automated alert — tracked with
-the exact replacement diff in
-[#549](https://github.com/kubestellar/homebrew-tap/issues/549).
+[#508](https://github.com/kubestellar/homebrew-tap/issues/508)), and
+`actionlint.yml`'s weekly `schedule:` run gained alert coverage (closing
+[#549](https://github.com/kubestellar/homebrew-tap/issues/549) via
+[#551](https://github.com/kubestellar/homebrew-tap/pull/551)), so all seven
+watched workflows now run on a schedule or `main`-branch push and are
+covered by the alert.
 
 ## User-facing service
 
