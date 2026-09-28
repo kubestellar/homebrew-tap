@@ -43,7 +43,7 @@ offending formula individually.
 import re
 import unittest
 
-from formula_parser import FORMULA_DIR
+from formula_parser import load_formulae
 
 
 CONFLICTS_WITH_RE = re.compile(r'^\s*conflicts_with\b', re.MULTILINE)
@@ -62,11 +62,7 @@ BOTTLE_SYMBOL_RE = re.compile(r'^\s*bottle\s+:[a-z_]+\b', re.MULTILINE)
 class FormulaLoader(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.formulae = {
-            p.stem: p.read_text(encoding="utf-8")
-            for p in sorted(FORMULA_DIR.glob("*.rb"))
-        }
-        assert cls.formulae, "no formulae found under Formula/"
+        cls.formulae = load_formulae()
 
 
 class StrayStanzaGuards(FormulaLoader):
