@@ -31,16 +31,6 @@ write_case_dir() {
   mkdir -p "$dir"
 }
 
-assert_exit() {
-  local name="$1" expected="$2" actual="$3"
-  if [ "$actual" -eq "$expected" ]; then
-    echo "OK ($name)"
-  else
-    echo "FAIL ($name): expected exit=$expected, got exit=$actual"
-    fail_count=$((fail_count + 1))
-  fi
-}
-
 # --- Case 1: a single passing test ---
 pass_dir="$work_dir/pass"
 write_case_dir "$pass_dir"
@@ -60,7 +50,7 @@ assert_contains "pass-summary-line" "$output" 'UNITTEST_SUMMARY: {"status":"pass
 assert_contains "pass-tests-run" "$output" '"tests_run":1'
 assert_contains "pass-failures" "$output" '"failures":0'
 assert_contains "pass-verbose-preserved" "$output" "test_true"
-assert_exit "pass-exit" 0 "$exit_code"
+assert_exit_code "pass-exit" 0 "$exit_code"
 
 # --- Case 2: a failing test ---
 fail_dir="$work_dir/fail"
@@ -80,7 +70,7 @@ exit_code=$?
 assert_contains "fail-summary-line" "$output" 'UNITTEST_SUMMARY: {"status":"fail"'
 assert_contains "fail-tests-run" "$output" '"tests_run":1'
 assert_contains "fail-failures" "$output" '"failures":1'
-assert_exit "fail-exit" 1 "$exit_code"
+assert_exit_code "fail-exit" 1 "$exit_code"
 
 # --- Case 3: an erroring test ---
 error_dir="$work_dir/error"
@@ -99,7 +89,7 @@ output=$(SCRIPTS_DIR="$error_dir" "$SCRIPT" 2>&1)
 exit_code=$?
 assert_contains "error-summary-line" "$output" 'UNITTEST_SUMMARY: {"status":"fail"'
 assert_contains "error-errors" "$output" '"errors":1'
-assert_exit "error-exit" 1 "$exit_code"
+assert_exit_code "error-exit" 1 "$exit_code"
 
 # --- Case 4: no matching test_*.py files at all ---
 empty_dir="$work_dir/empty"
@@ -108,7 +98,7 @@ output=$(SCRIPTS_DIR="$empty_dir" "$SCRIPT" 2>&1)
 exit_code=$?
 assert_contains "no-tests-summary-line" "$output" 'UNITTEST_SUMMARY: {"status":"no_tests"'
 assert_contains "no-tests-run-zero" "$output" '"tests_run":0'
-assert_exit "no-tests-exit" 1 "$exit_code"
+assert_exit_code "no-tests-exit" 1 "$exit_code"
 
 if [ "$fail_count" -eq 0 ]; then
   echo "All unittest_summary.sh tests passed."

@@ -201,21 +201,12 @@ case "$out" in
 esac
 
 # ------------------------------------------------------------------
-# assert_exit — argument order is (actual, expected, message)
+# assert_exit_code — optional custom message
 # ------------------------------------------------------------------
-# Note: assert_exit predates assert_exit_code and uses the INVERSE
-# argument order. Regressing to a common order would break the
-# 20+ existing call sites; guard it explicitly.
-run_snippet 'fail_count=0; assert_exit case-a 3 3 "msg"; echo "rc=$?"; echo "fc=$fail_count"'
+run_snippet 'fail_count=0; assert_exit_code case-c 4 5 "wrong-exit"; echo "rc=$?"; echo "fc=$fail_count"'
 case "$out" in
-  *"rc=0"*"fc=0"*) ;;
-  *) note "assert_exit/pass" "expected rc=0 fc=0 on equal codes, got: $out" ;;
-esac
-
-run_snippet 'fail_count=0; assert_exit case-b 4 5 "wrong-exit"; echo "rc=$?"; echo "fc=$fail_count"'
-case "$out" in
-  *"FAIL (case-b): wrong-exit"*"rc=1"*"fc=1"*) ;;
-  *) note "assert_exit/fail" "expected FAIL with 'wrong-exit' message, got: $out" ;;
+  *"FAIL (case-c): wrong-exit"*"rc=1"*"fc=1"*) ;;
+  *) note "assert_exit_code/message" "expected FAIL with 'wrong-exit' message, got: $out" ;;
 esac
 
 # ------------------------------------------------------------------

@@ -133,7 +133,7 @@ _stub_brew_ok "$case_dir"
 output=$(PATH="$case_dir/bin:/usr/bin:/bin" \
   "$case_dir/scripts/verify_release_health.sh" foo 2>&1)
 exit_code=$?
-assert_exit ungitted-last-commit "$exit_code" 0 \
+assert_exit_code ungitted-last-commit 0 "$exit_code" \
   "expected exit=0 on ungitted fixture with successful fetch, got $exit_code. Output: $output" || :
 assert_grep ungitted-last-commit "$output" "last commit: <unknown>" \
   "expected 'last commit: <unknown>' fallback; got: $output" || :
@@ -151,7 +151,7 @@ _stub_brew_failing_with_marker "$case_dir" "unit-test-123"
 output=$(PATH="$case_dir/bin:/usr/bin:/bin" \
   "$case_dir/scripts/verify_release_health.sh" foo 2>&1)
 exit_code=$?
-assert_exit failed-fetch-replay "$exit_code" 1 \
+assert_exit_code failed-fetch-replay 1 "$exit_code" \
   "expected exit=1 on failed fetch, got $exit_code. Output: $output" || :
 assert_grep failed-fetch-replay "$output" "fetch: FAILED (see below)" \
   "expected 'fetch: FAILED (see below)' suffix; got: $output" || :
@@ -176,7 +176,7 @@ _stub_brew_ok "$case_dir"
 output=$(PATH="$case_dir/bin:/usr/bin:/bin" \
   "$case_dir/scripts/verify_release_health.sh" ghost foo 2>&1)
 exit_code=$?
-assert_exit mixed-skip-success "$exit_code" 1 \
+assert_exit_code mixed-skip-success 1 "$exit_code" \
   "expected exit=1 (SKIP contributes to failed_count), got $exit_code. Output: $output" || :
 assert_grep mixed-skip-success "$output" "SKIP: no such formula file" \
   "expected SKIP diagnostic for ghost; got: $output" || :
