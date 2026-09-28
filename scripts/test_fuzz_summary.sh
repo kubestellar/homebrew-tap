@@ -31,7 +31,7 @@ assert_case() {
   assert_grep "$name" "$output" '^FUZZ_SUMMARY: {' "missing FUZZ_SUMMARY: line. Got: $output" || return
   assert_grep "$name" "$output" "\"status\":\"$job_status\"" "expected status=$job_status. Got: $output" || return
   assert_grep "$name" "$output" '"formula_count":2' "expected formula_count=2. Got: $output" || return
-  assert_exit "$name" "$exit_code" "$expected_exit" "expected exit=$expected_exit, got exit=$exit_code" || return
+  assert_exit_code "$name" "$expected_exit" "$exit_code" "expected exit=$expected_exit, got exit=$exit_code" || return
   echo "OK ($name)"
 }
 

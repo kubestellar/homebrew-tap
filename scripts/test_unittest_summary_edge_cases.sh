@@ -42,16 +42,6 @@ SCRIPT="$REPO_ROOT/scripts/unittest_summary.sh"
 work_dir="$(mktemp -d)"
 trap 'rm -rf "$work_dir"' EXIT
 
-assert_exit() {
-  local name="$1" expected="$2" actual="$3"
-  if [ "$actual" -eq "$expected" ]; then
-    echo "OK ($name)"
-  else
-    echo "FAIL ($name): expected exit=$expected, got exit=$actual"
-    fail_count=$((fail_count + 1))
-  fi
-}
-
 # --- Case 1: failure-only run must set errors:0 ---
 dir1="$work_dir/failure_only"
 mkdir -p "$dir1"
@@ -70,7 +60,7 @@ exit_code=$?
 assert_contains "1a status=fail"       "$output" '"status":"fail"'
 assert_contains "1b failures=1"        "$output" '"failures":1'
 assert_contains "1c errors=0 fallback" "$output" '"errors":0'
-assert_exit     "1d exit=1"            1 "$exit_code"
+assert_exit_code     "1d exit=1"            1 "$exit_code"
 
 # --- Case 2: error-only run must set failures:0 ---
 dir2="$work_dir/error_only"
@@ -90,7 +80,7 @@ exit_code=$?
 assert_contains "2a status=fail"          "$output" '"status":"fail"'
 assert_contains "2b errors=1"             "$output" '"errors":1'
 assert_contains "2c failures=0 fallback"  "$output" '"failures":0'
-assert_exit     "2d exit=1"               1 "$exit_code"
+assert_exit_code     "2d exit=1"               1 "$exit_code"
 
 # --- Case 3: mixed failures + errors ---
 dir3="$work_dir/mixed"
@@ -121,7 +111,7 @@ assert_contains "3a status=fail"    "$output" '"status":"fail"'
 assert_contains "3b tests_run=6"    "$output" '"tests_run":6'
 assert_contains "3c failures=2"     "$output" '"failures":2'
 assert_contains "3d errors=3"       "$output" '"errors":3'
-assert_exit     "3e exit=1"         1 "$exit_code"
+assert_exit_code     "3e exit=1"         1 "$exit_code"
 
 # --- Case 4: multi-test pass reports N > 1 ---
 dir4="$work_dir/multi_pass"
@@ -148,7 +138,7 @@ assert_contains "4a status=pass"    "$output" '"status":"pass"'
 assert_contains "4b tests_run=4"    "$output" '"tests_run":4'
 assert_contains "4c failures=0"     "$output" '"failures":0'
 assert_contains "4d errors=0"       "$output" '"errors":0'
-assert_exit     "4e exit=0"         0 "$exit_code"
+assert_exit_code     "4e exit=0"         0 "$exit_code"
 
 # --- Case 5: unittest verbose tail lines appear ahead of the summary ---
 # The base pass case only asserts the test name; this case additionally
@@ -184,7 +174,7 @@ assert_contains "6a status=fail"    "$output" '"status":"fail"'
 assert_contains "6b tests_run=12"   "$output" '"tests_run":12'
 assert_contains "6c failures=12"    "$output" '"failures":12'
 assert_contains "6d errors=0"       "$output" '"errors":0'
-assert_exit     "6e exit=1"         1 "$exit_code"
+assert_exit_code     "6e exit=1"         1 "$exit_code"
 
 if [ "$fail_count" -eq 0 ]; then
   echo "All unittest_summary.sh edge-case tests passed."

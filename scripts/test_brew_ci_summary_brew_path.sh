@@ -104,7 +104,7 @@ run_case() {
   assert_grep "$name" "$output" '"formula_count":2' "expected formula_count=2. Got: $output" || return
   assert_grep "$name" "$output" "\"installed_count\":$expected_installed_count" \
     "expected installed_count=$expected_installed_count. Got: $output" || return
-  assert_exit "$name" "$exit_code" "$expected_exit" "expected exit=$expected_exit, got exit=$exit_code" || return
+  assert_exit_code "$name" "$expected_exit" "$exit_code" "expected exit=$expected_exit, got exit=$exit_code" || return
   local line_count
   line_count=$(printf '%s' "$output" | grep -c '^BREW_CI_SUMMARY: {')
   if [ "$line_count" -ne 1 ]; then

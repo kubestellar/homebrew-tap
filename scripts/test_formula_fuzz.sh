@@ -57,21 +57,21 @@ write_good_formula "$good_dir/kubestellar-ops.rb" KubestellarOps
 
 output=$("$SCRIPT" "$good_dir" 2>&1)
 exit_code=$?
-assert_exit "happy-path" "$exit_code" 0 "expected exit=0 with well-formed formulae. Got exit=$exit_code, output: $output"
+assert_exit_code "happy-path" 0 "$exit_code" "expected exit=0 with well-formed formulae. Got exit=$exit_code, output: $output"
 assert_grep "happy-path" "$output" "Formula fuzzing passed" "expected success marker. Got: $output"
 
 # ---------- empty / missing formula dir ----------
 
 output=$("$SCRIPT" "$work_dir/does-not-exist" 2>&1)
 exit_code=$?
-assert_exit "missing-formula-dir" "$exit_code" 1 "expected exit=1 for missing dir. Got exit=$exit_code, output: $output"
+assert_exit_code "missing-formula-dir" 1 "$exit_code" "expected exit=1 for missing dir. Got exit=$exit_code, output: $output"
 assert_grep "missing-formula-dir" "$output" "No formula files found" "expected explicit no-formulae message. Got: $output"
 
 empty_dir="$work_dir/empty"
 mkdir -p "$empty_dir"
 output=$("$SCRIPT" "$empty_dir" 2>&1)
 exit_code=$?
-assert_exit "empty-formula-dir" "$exit_code" 1 "expected exit=1 for empty dir. Got exit=$exit_code, output: $output"
+assert_exit_code "empty-formula-dir" 1 "$exit_code" "expected exit=1 for empty dir. Got exit=$exit_code, output: $output"
 
 # ---------- syntax fuzzing ----------
 # Ruby availability was guarded at the top of the file, so these cases
@@ -88,7 +88,7 @@ RUBY
 
 output=$("$SCRIPT" "$syntax_dir" 2>&1)
 exit_code=$?
-assert_exit "syntax-error-fails" "$exit_code" 1 "expected exit=1 when ruby -c fails. Got exit=$exit_code, output: $output"
+assert_exit_code "syntax-error-fails" 1 "$exit_code" "expected exit=1 when ruby -c fails. Got exit=$exit_code, output: $output"
 assert_grep "syntax-error-fails" "$output" "Syntax error in" "expected 'Syntax error in' log. Got: $output"
 
 # ---------- structure fuzzing ----------
@@ -103,7 +103,7 @@ RUBY
 
 output=$("$SCRIPT" "$struct_dir" 2>&1)
 exit_code=$?
-assert_exit "missing-formula-class" "$exit_code" 1 "expected exit=1 when Formula class is absent. Got exit=$exit_code, output: $output"
+assert_exit_code "missing-formula-class" 1 "$exit_code" "expected exit=1 when Formula class is absent. Got exit=$exit_code, output: $output"
 assert_grep "missing-formula-class" "$output" "Missing Formula class in" "expected 'Missing Formula class' log. Got: $output"
 
 struct_dir2="$work_dir/struct2"
@@ -120,7 +120,7 @@ RUBY
 
 output=$("$SCRIPT" "$struct_dir2" 2>&1)
 exit_code=$?
-assert_exit "missing-install-method" "$exit_code" 1 "expected exit=1 when install method is missing. Got exit=$exit_code, output: $output"
+assert_exit_code "missing-install-method" 1 "$exit_code" "expected exit=1 when install method is missing. Got exit=$exit_code, output: $output"
 assert_grep "missing-install-method" "$output" "Missing install method in" "expected 'Missing install method' log. Got: $output"
 
 # `define_method(:install)` must count as a valid install method (this
@@ -142,7 +142,7 @@ RUBY
 
 output=$("$SCRIPT" "$struct_dir3" 2>&1)
 exit_code=$?
-assert_exit "define-method-install-accepted" "$exit_code" 0 "define_method(:install) must satisfy the install-method guard. Got exit=$exit_code, output: $output"
+assert_exit_code "define-method-install-accepted" 0 "$exit_code" "define_method(:install) must satisfy the install-method guard. Got exit=$exit_code, output: $output"
 
 # ---------- URL / checksum fuzzing ----------
 
@@ -163,7 +163,7 @@ RUBY
 
 output=$("$SCRIPT" "$url_dir" 2>&1)
 exit_code=$?
-assert_exit "bad-url-scheme-fails" "$exit_code" 1 "expected exit=1 when a url uses a non-http(s) scheme. Got exit=$exit_code, output: $output"
+assert_exit_code "bad-url-scheme-fails" 1 "$exit_code" "expected exit=1 when a url uses a non-http(s) scheme. Got exit=$exit_code, output: $output"
 assert_grep "bad-url-scheme-fails" "$output" "Invalid URL format" "expected 'Invalid URL format' log. Got: $output"
 
 # plain http:// (unencrypted downgrade) must also fail — see #493
@@ -183,7 +183,7 @@ RUBY
 
 output=$("$SCRIPT" "$http_dir" 2>&1)
 exit_code=$?
-assert_exit "plain-http-url-fails" "$exit_code" 1 "expected exit=1 when a url uses plain http:// (see #493). Got exit=$exit_code, output: $output"
+assert_exit_code "plain-http-url-fails" 1 "$exit_code" "expected exit=1 when a url uses plain http:// (see #493). Got exit=$exit_code, output: $output"
 assert_grep "plain-http-url-fails" "$output" "Invalid URL format" "expected 'Invalid URL format' log. Got: $output"
 
 # url declared but no sha256 must fail
@@ -202,7 +202,7 @@ RUBY
 
 output=$("$SCRIPT" "$sha_dir" 2>&1)
 exit_code=$?
-assert_exit "missing-sha256-fails" "$exit_code" 1 "expected exit=1 when a url has no sha256. Got exit=$exit_code, output: $output"
+assert_exit_code "missing-sha256-fails" 1 "$exit_code" "expected exit=1 when a url has no sha256. Got exit=$exit_code, output: $output"
 assert_grep "missing-sha256-fails" "$output" "Missing sha256 checksum in" "expected 'Missing sha256 checksum' log. Got: $output"
 
 # ---------- real Formula/ directory must pass ----------
@@ -212,7 +212,7 @@ assert_grep "missing-sha256-fails" "$output" "Missing sha256 checksum in" "expec
 if [ -d "$REPO_ROOT/Formula" ] && compgen -G "$REPO_ROOT/Formula/*.rb" >/dev/null; then
   output=$("$SCRIPT" "$REPO_ROOT/Formula" 2>&1)
   exit_code=$?
-  assert_exit "real-formulae-pass" "$exit_code" 0 "in-tree Formula/*.rb must satisfy fuzz guards. Got exit=$exit_code, output: $output"
+  assert_exit_code "real-formulae-pass" 0 "$exit_code" "in-tree Formula/*.rb must satisfy fuzz guards. Got exit=$exit_code, output: $output"
 fi
 
 # ---------- default argument ----------
@@ -224,6 +224,6 @@ mkdir -p "$default_arg_dir/Formula"
 write_good_formula "$default_arg_dir/Formula/kc-agent.rb" KcAgent
 output=$(cd "$default_arg_dir" && "$SCRIPT" 2>&1)
 exit_code=$?
-assert_exit "default-formula-dir" "$exit_code" 0 "expected default arg to resolve to ./Formula. Got exit=$exit_code, output: $output"
+assert_exit_code "default-formula-dir" 0 "$exit_code" "expected default arg to resolve to ./Formula. Got exit=$exit_code, output: $output"
 
 finish "formula_fuzz.sh"

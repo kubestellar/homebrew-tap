@@ -45,7 +45,7 @@ check_summary() {
     "expected formula_count=$expected_formula_count. Got: $output" || return
   assert_grep "$name" "$output" "\"installed_count\":$expected_installed_count" \
     "expected installed_count=$expected_installed_count. Got: $output" || return
-  assert_exit "$name" "$exit_code" "$expected_exit" "expected exit=$expected_exit, got exit=$exit_code" || return
+  assert_exit_code "$name" "$expected_exit" "$exit_code" "expected exit=$expected_exit, got exit=$exit_code" || return
   # A well-formed run must emit exactly ONE BREW_CI_SUMMARY line, never
   # multiple, regardless of which branches were taken.
   local line_count
