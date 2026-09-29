@@ -55,11 +55,11 @@ class TestFormulaInstallTestConsistency(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = list_formula_paths()
+        cls.formula_paths = list_formula_paths()
 
     def test_test_block_references_an_installed_binary(self):
         offenders = []
-        for f in self.formula_files:
+        for f in self.formula_paths:
             text = f.read_text()
             installed = _bin_install_names(text)
             referenced = _test_block_binary_refs(text)
@@ -98,11 +98,11 @@ class TestFormulaHomepageURLRepoConsistency(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = list_formula_paths()
+        cls.formula_paths = list_formula_paths()
 
     def test_release_url_repo_matches_homepage_repo(self):
         offenders = []
-        for f in self.formula_files:
+        for f in self.formula_paths:
             text = f.read_text()
 
             hp_matches = re.findall(r'^\s*homepage\s+"([^"]+)"', text, re.MULTILINE)

@@ -35,7 +35,7 @@ from __future__ import annotations
 
 import unittest
 
-from formula_parser import FORMULA_DIR, URL_LINE_RE as URL_RE, list_formula_paths
+from formula_parser import URL_LINE_RE as URL_RE, list_formula_paths
 
 
 class TestFormulaURLUniqueness(unittest.TestCase):
@@ -43,11 +43,11 @@ class TestFormulaURLUniqueness(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = list_formula_paths()
+        cls.formula_paths = list_formula_paths()
 
     def test_urls_within_each_formula_are_distinct(self):
         offenders = []
-        for f in self.formula_files:
+        for f in self.formula_paths:
             urls = URL_RE.findall(f.read_text())
             if len(urls) != len(set(urls)):
                 seen: dict[str, int] = {}
@@ -70,7 +70,7 @@ class TestFormulaURLUniqueness(unittest.TestCase):
     def test_each_formula_declares_expected_number_of_urls(self):
         # Guardrail so a regression that drops URL lines doesn't make the
         # uniqueness check trivially pass on a 1-element set.
-        for f in self.formula_files:
+        for f in self.formula_paths:
             with self.subTest(formula=f.name):
                 urls = URL_RE.findall(f.read_text())
                 self.assertEqual(
@@ -89,16 +89,11 @@ class TestFormulaURLCrossFormulaUniqueness(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = sorted(FORMULA_DIR.glob("*.rb"))
-        if len(cls.formula_files) < 2:
-            raise unittest.SkipTest(
-                f"cross-formula check needs >=2 formulae; found "
-                f"{len(cls.formula_files)} in {FORMULA_DIR}"
-            )
+
 
     def test_no_url_is_shared_across_formulae(self):
         origin: dict[str, list[str]] = {}
-        for f in self.formula_files:
+        for f in self.formula_paths:
             for url in URL_RE.findall(f.read_text()):
                 origin.setdefault(url, []).append(f.name)
         shared = {u: fs for u, fs in origin.items() if len(set(fs)) > 1}

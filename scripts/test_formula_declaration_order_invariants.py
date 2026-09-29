@@ -71,7 +71,7 @@ class TopLevelStanzaOrderingInvariants(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formulae = list_formula_paths()
+        cls.formula_paths = list_formula_paths()
 
     def _first_offset(self, text: str, label: str, pat: re.Pattern[str]) -> int:
         m = pat.search(text)
@@ -83,7 +83,7 @@ class TopLevelStanzaOrderingInvariants(unittest.TestCase):
         return m.start()
 
     def test_canonical_top_level_stanza_order(self):
-        for f in self.formulae:
+        for f in self.formula_paths:
             text = f.read_text()
             with self.subTest(formula=f.name):
                 offsets = [
@@ -112,7 +112,7 @@ class TopLevelStanzaOrderingInvariants(unittest.TestCase):
         # out here so a future maintainer who touches the ordering test
         # can't silently drop this specific constraint without also
         # breaking a differently-named test.
-        for f in self.formulae:
+        for f in self.formula_paths:
             text = f.read_text()
             with self.subTest(formula=f.name):
                 on_macos = _STANZA_PATTERNS[5][1].search(text)

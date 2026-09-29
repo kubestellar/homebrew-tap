@@ -41,10 +41,10 @@ class TestFormulaExtraInvariants(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.formulae = list_formula_paths()
+        cls.formula_paths = list_formula_paths()
 
     def test_version_matches_semver_or_semver_nightly(self):
-        for f in self.formulae:
+        for f in self.formula_paths:
             with self.subTest(formula=f.name):
                 m = VERSION_LINE_RE.search(f.read_text())
                 self.assertIsNotNone(m, f"{f.name}: no version line")
@@ -56,7 +56,7 @@ class TestFormulaExtraInvariants(unittest.TestCase):
                 )
 
     def test_every_release_url_ends_with_tar_gz(self):
-        for f in self.formulae:
+        for f in self.formula_paths:
             urls = URL_RE.findall(f.read_text())
             self.assertTrue(urls, f"{f.name}: no urls found")
             for url in urls:
@@ -71,7 +71,7 @@ class TestFormulaExtraInvariants(unittest.TestCase):
         """`brew audit --strict` requires desc to start with a capital letter
         and to NOT end in a period. A codegen regression that dropped either
         rule would leave the tap unauditable in CI."""
-        for f in self.formulae:
+        for f in self.formula_paths:
             with self.subTest(formula=f.name):
                 m = DESC_LINE_RE.search(f.read_text())
                 self.assertIsNotNone(m, f"{f.name}: no desc line")
@@ -89,7 +89,7 @@ class TestFormulaExtraInvariants(unittest.TestCase):
     def test_formula_files_use_lf_line_endings(self):
         """Mixed line endings choke some brew versions and are impossible to
         introduce intentionally on the Linux runners this repo uses."""
-        for f in self.formulae:
+        for f in self.formula_paths:
             with self.subTest(formula=f.name):
                 raw = f.read_bytes()
                 self.assertNotIn(

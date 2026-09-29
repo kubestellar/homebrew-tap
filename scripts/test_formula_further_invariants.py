@@ -46,11 +46,11 @@ class TestFormulaFurtherInvariants(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.formulae = list_formula_paths()
+        cls.formula_paths = list_formula_paths()
 
     def test_nightly_stamp_is_a_real_past_or_present_date(self):
         today = datetime.now(timezone.utc).date()
-        for f in self.formulae:
+        for f in self.formula_paths:
             with self.subTest(formula=f.name):
                 m = VERSION_LINE_RE.search(f.read_text())
                 self.assertIsNotNone(m, f"{f.name}: no version line")
@@ -75,7 +75,7 @@ class TestFormulaFurtherInvariants(unittest.TestCase):
                 )
 
     def test_homepage_is_under_kubestellar_org(self):
-        for f in self.formulae:
+        for f in self.formula_paths:
             with self.subTest(formula=f.name):
                 m = HOMEPAGE_LINE_RE.search(f.read_text())
                 self.assertIsNotNone(m, f"{f.name}: no homepage line")
@@ -87,7 +87,7 @@ class TestFormulaFurtherInvariants(unittest.TestCase):
                 )
 
     def test_each_formula_has_exactly_one_on_macos_and_on_linux_block(self):
-        for f in self.formulae:
+        for f in self.formula_paths:
             text = f.read_text()
             with self.subTest(formula=f.name):
                 self.assertEqual(
@@ -102,7 +102,7 @@ class TestFormulaFurtherInvariants(unittest.TestCase):
                 )
 
     def test_test_block_invokes_matching_binary(self):
-        for f in self.formulae:
+        for f in self.formula_paths:
             text = f.read_text()
             with self.subTest(formula=f.name):
                 self.assertEqual(

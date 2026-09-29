@@ -29,7 +29,7 @@ tarball-suffix checks and only surface as a broken ``brew install``.
 import re
 import unittest
 
-from formula_parser import FORMULA_DIR, load_formulae as _load_formulae
+from formula_parser import load_formulae as _load_formulae
 
 ON_MACOS_RE = re.compile(r"^\s*on_macos\s+do\b")
 ON_LINUX_RE = re.compile(r"^\s*on_linux\s+do\b")
@@ -79,7 +79,6 @@ class HardwareGuardInvariants(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.formulae = _load_formulae()
-        assert cls.formulae, f"no formulae found under {FORMULA_DIR}"
 
     def test_helper_finds_four_guard_lines_per_formula(self):
         """Sanity-check the extractor before the semantic tests rely on

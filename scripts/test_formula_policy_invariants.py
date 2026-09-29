@@ -28,14 +28,14 @@ class TestFormulaPolicy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = list_formula_paths()
+        cls.formula_paths = list_formula_paths()
 
     def test_every_formula_has_a_test_block(self):
         # `brew audit --strict` requires a `test do` block on every
         # formula; if someone deletes one during a refactor, we want to
         # catch it in unit tests before it reaches `brew` in CI.
         missing = []
-        for f in self.formula_files:
+        for f in self.formula_paths:
             body = f.read_text()
             if not re.search(r'^\s*test\s+do\b', body, re.MULTILINE):
                 missing.append(f.name)
@@ -49,7 +49,7 @@ class TestFormulaPolicy(unittest.TestCase):
         # URL would be a downgrade attack surface. Homebrew accepts
         # them but our tap does not.
         offenders = []
-        for f in self.formula_files:
+        for f in self.formula_paths:
             for url, scheme, _host in _extract_url_hosts(f.read_text()):
                 if scheme != "https":
                     offenders.append((f.name, url, scheme))
@@ -63,7 +63,7 @@ class TestFormulaPolicy(unittest.TestCase):
         # attacker-controlled infrastructure. This test fails loudly
         # if any host outside ALLOWED_URL_HOSTS shows up.
         offenders = []
-        for f in self.formula_files:
+        for f in self.formula_paths:
             for url, _scheme, host in _extract_url_hosts(f.read_text()):
                 if host not in ALLOWED_URL_HOSTS:
                     offenders.append((f.name, host, url))
@@ -83,7 +83,7 @@ class TestFormulaPolicy(unittest.TestCase):
         # exists. If we intended a group of 2 but only 1 name matches
         # a file, that's a bug in the constant, not in the tap.
         from validate_formulae import LOCKSTEP_GROUPS
-        formula_stems = {f.stem for f in self.formula_files}
+        formula_stems = {f.stem for f in self.formula_paths}
         for group in LOCKSTEP_GROUPS:
             missing = group - formula_stems
             self.assertEqual(
@@ -100,7 +100,7 @@ class TestFormulaPolicy(unittest.TestCase):
         # but not by our drift checker (no urls -> no url iteration ->
         # no errors). Assert every formula has at least one release URL.
         empty = []
-        for f in self.formula_files:
+        for f in self.formula_paths:
             hosts = _extract_url_hosts(f.read_text())
             if not hosts:
                 empty.append(f.name)
@@ -139,7 +139,7 @@ class TestFormulaSupplyChainPolicy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = list_formula_paths()
+        cls.formula_paths = list_formula_paths()
 
     def test_sha256_values_unique_within_each_formula(self):
         # Two `url` lines in the same formula that resolve to distinct
@@ -149,7 +149,7 @@ class TestFormulaSupplyChainPolicy(unittest.TestCase):
         # will happily "verify" the wrong archive against the pasted
         # digest for one architecture.
         offenders = []
-        for f in self.formula_files:
+        for f in self.formula_paths:
             text = f.read_text()
             urls = [m.group(1) for m in URL_LINE_RE.finditer(text)]
             shas = [m.group(1) for m in re.finditer(r'^\s*sha256\s+"([^"]+)"', text, re.MULTILINE)]
@@ -178,7 +178,7 @@ class TestFormulaSupplyChainPolicy(unittest.TestCase):
         # A homepage over plain http shows up in `brew info` and in the
         # GitHub taps directory — same downgrade concern as `url`.
         offenders = []
-        for f in self.formula_files:
+        for f in self.formula_paths:
             for m in HOMEPAGE_LINE_RE.finditer(f.read_text()):
                 homepage = m.group(1)
                 scheme = homepage.partition("://")[0]
@@ -198,7 +198,7 @@ class TestFormulaSupplyChainPolicy(unittest.TestCase):
         offenders = []
         sha_line_re = re.compile(r'^\s*sha256\s+"([^"]+)"', re.MULTILINE)
         good = re.compile(r'^[0-9a-f]{64}$')
-        for f in self.formula_files:
+        for f in self.formula_paths:
             for m in sha_line_re.finditer(f.read_text()):
                 digest = m.group(1)
                 if not good.match(digest):
@@ -243,13 +243,13 @@ class TestFormulaClassAndMetadataPolicy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = list_formula_paths()
+        cls.formula_paths = list_formula_paths()
 
     def test_class_name_matches_filename(self):
         offenders = []
         class_re = re.compile(r'^\s*class\s+([A-Za-z0-9_]+)\s*<\s*Formula\b',
                               re.MULTILINE)
-        for f in self.formula_files:
+        for f in self.formula_paths:
             expected = _expected_class_name(f.stem)
             m = class_re.search(f.read_text())
             if not m:
@@ -268,7 +268,7 @@ class TestFormulaClassAndMetadataPolicy(unittest.TestCase):
 
     def test_every_formula_has_desc(self):
         missing = [
-            f.name for f in self.formula_files
+            f.name for f in self.formula_paths
             if not re.search(r'^\s*desc\s+"[^"]+"', f.read_text(), re.MULTILINE)
         ]
         self.assertEqual(
@@ -278,7 +278,7 @@ class TestFormulaClassAndMetadataPolicy(unittest.TestCase):
 
     def test_every_formula_has_license(self):
         missing = [
-            f.name for f in self.formula_files
+            f.name for f in self.formula_paths
             if not re.search(r'^\s*license\s+"[^"]+"', f.read_text(), re.MULTILINE)
         ]
         self.assertEqual(

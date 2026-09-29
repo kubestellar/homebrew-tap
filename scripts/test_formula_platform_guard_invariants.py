@@ -36,7 +36,7 @@ class TestFormulaPlatformURLPolicy(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = list_formula_paths()
+        cls.formula_paths = list_formula_paths()
 
     def test_every_formula_has_both_macos_and_linux_blocks(self):
         # Homebrew supports macOS and Linux. Every formula in this
@@ -44,7 +44,7 @@ class TestFormulaPlatformURLPolicy(unittest.TestCase):
         # one platform should be caught here, not by an end-user
         # `brew install` failing on their laptop.
         missing = []
-        for f in self.formula_files:
+        for f in self.formula_paths:
             body = f.read_text()
             has_macos = bool(re.search(r'^\s*on_macos\s+do\b', body, re.MULTILINE))
             has_linux = bool(re.search(r'^\s*on_linux\s+do\b', body, re.MULTILINE))
@@ -69,7 +69,7 @@ class TestFormulaPlatformURLPolicy(unittest.TestCase):
         # comparison alone can't catch it because the sha of the
         # darwin artifact IS a valid 64-hex sha.
         offenders = []
-        for f in self.formula_files:
+        for f in self.formula_paths:
             lines = f.read_text().splitlines()
             # depth counters: nesting inside on_macos / on_linux
             in_macos = 0
@@ -134,7 +134,7 @@ class TestFormulaPlatformURLPolicy(unittest.TestCase):
         # release URL into `kubestellar-ops.rb` would pass every
         # existing test provided the version strings match.
         offenders = []
-        for f in self.formula_files:
+        for f in self.formula_paths:
             body = f.read_text()
             stem = f.stem  # e.g. "kc-agent"
             # Accept either the exact stem or its `_`-normalized form
@@ -175,7 +175,7 @@ class TestFormulaArchAndShaCopyPasteGuards(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = list_formula_paths()
+        cls.formula_paths = list_formula_paths()
 
     def _iter_arch_scoped_urls(self, body: str):
         """Yield (arch_token_expected, url) for each url() inside a
@@ -224,7 +224,7 @@ class TestFormulaArchAndShaCopyPasteGuards(unittest.TestCase):
         # vice versa) — the platform token stays correct so
         # TestFormulaPlatformURLPolicy wouldn't fire.
         offenders = []
-        for f in self.formula_files:
+        for f in self.formula_paths:
             for expected_arch, url in self._iter_arch_scoped_urls(f.read_text()):
                 other = "arm64" if expected_arch == "amd64" else "amd64"
                 if expected_arch not in url or other in url:
@@ -245,7 +245,7 @@ class TestFormulaArchAndShaCopyPasteGuards(unittest.TestCase):
         # Take one real formula, flip 'amd64' -> 'arm64' in an
         # intel-branch URL, and verify the same policy rejects it.
         real = None
-        for f in self.formula_files:
+        for f in self.formula_paths:
             for expected_arch, url in self._iter_arch_scoped_urls(f.read_text()):
                 if expected_arch == "amd64" and "amd64" in url:
                     real = (f, url)
@@ -278,7 +278,7 @@ class TestFormulaArchAndShaCopyPasteGuards(unittest.TestCase):
         # are cryptographically impossible, so any duplicate within a
         # single formula is a copy-paste bug.
         dup_offenders = []
-        for f in self.formula_files:
+        for f in self.formula_paths:
             body = f.read_text()
             shas = re.findall(r'^\s*sha256\s+"([0-9a-f]{64})"', body, re.MULTILINE)
             seen: dict[str, int] = {}
@@ -303,7 +303,7 @@ class TestFormulaArchAndShaCopyPasteGuards(unittest.TestCase):
         # a diff that normalises casing (or accidentally truncates)
         # is caught before merge.
         offenders = []
-        for f in self.formula_files:
+        for f in self.formula_paths:
             body = f.read_text()
             for line_no, line in enumerate(body.splitlines(), start=1):
                 m = re.match(r'^\s*sha256\s+"([^"]+)"', line)
@@ -349,7 +349,7 @@ class TestFormulaVersionTokenBoundaryGuards(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = list_formula_paths()
+        cls.formula_paths = list_formula_paths()
 
     @staticmethod
     def _extract_version(body: str) -> str | None:
@@ -362,7 +362,7 @@ class TestFormulaVersionTokenBoundaryGuards(unittest.TestCase):
 
     def test_url_contains_version_path_segment(self):
         offenders = []
-        for f in self.formula_files:
+        for f in self.formula_paths:
             body = f.read_text()
             v = self._extract_version(body)
             self.assertIsNotNone(v, f"{f.name} has no version declaration")
@@ -378,7 +378,7 @@ class TestFormulaVersionTokenBoundaryGuards(unittest.TestCase):
 
     def test_url_contains_version_filename_token(self):
         offenders = []
-        for f in self.formula_files:
+        for f in self.formula_paths:
             body = f.read_text()
             v = self._extract_version(body)
             self.assertIsNotNone(v, f"{f.name} has no version declaration")
@@ -399,7 +399,7 @@ class TestFormulaVersionTokenBoundaryGuards(unittest.TestCase):
         # declared version is a proper prefix of the URL version).
         # The bare ``version in url`` check would still pass; the
         # boundary-token check must NOT.
-        sample = self.formula_files[0].read_text()
+        sample = self.formula_paths[0].read_text()
         v = self._extract_version(sample)
         self.assertIsNotNone(v)
         good_seg = f"v{v}/"

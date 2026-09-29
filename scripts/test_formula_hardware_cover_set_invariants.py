@@ -71,7 +71,7 @@ class HardwareGuardCoverSetInvariants(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.formula_files = list_formula_paths()
+        cls.formula_paths = list_formula_paths()
 
     def test_each_formula_covers_the_expected_four_way_platform_set_exactly(self):
         # The tap is a pre-built-binary tap for the four Homebrew targets
@@ -80,7 +80,7 @@ class HardwareGuardCoverSetInvariants(unittest.TestCase):
         # path) or a duplicate combo (one URL wins, the other is dead
         # code) — must fail loudly at test time, not at brew-install time
         # on a contributor's laptop.
-        for f in self.formula_files:
+        for f in self.formula_paths:
             with self.subTest(formula=f.name):
                 pairs = _guard_pairs(f.read_text())
                 self.assertEqual(
