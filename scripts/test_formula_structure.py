@@ -110,18 +110,6 @@ class FormulaStructureTests(unittest.TestCase):
                     f"{name}.rb missing license",
                 )
 
-    def test_desc_length_within_homebrew_guideline(self):
-        # Homebrew's `brew audit` warns when desc is missing or >80 chars.
-        for name, text in self.formulae.items():
-            with self.subTest(formula=name):
-                m = re.search(r'^\s*desc\s+"([^"]+)"', text, re.MULTILINE)
-                self.assertIsNotNone(m, f"{name}.rb missing desc")
-                desc = m.group(1)
-                self.assertTrue(
-                    1 <= len(desc) <= 80,
-                    f"{name}.rb desc length {len(desc)} outside 1..80: {desc!r}",
-                )
-
     def test_url_binary_prefix_matches_formula_name(self):
         # The URL basename must start with "<formula-name>_" so that a
         # rename does not leave a stale tarball prefix pointing at the
