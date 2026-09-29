@@ -40,7 +40,7 @@ from __future__ import annotations
 import re
 import unittest
 
-from formula_parser import FORMULA_DIR
+from formula_parser import load_formulae
 
 # Match a ``test do ... end`` block.  We stop at the *last* ``end`` before
 # the outer ``class ... end`` closer — in practice ``test do`` is always
@@ -91,11 +91,7 @@ class TestBlockReadonlyInvariants(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.formulae = {
-            p.stem: p.read_text(encoding="utf-8")
-            for p in sorted(FORMULA_DIR.glob("*.rb"))
-        }
-        assert cls.formulae, f"no formulae under {FORMULA_DIR}"
+        cls.formulae = load_formulae()
 
     def _test_body(self, text: str) -> str:
         m = TEST_BLOCK_RE.search(text)
