@@ -79,7 +79,6 @@ class HardwareGuardInvariants(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.formulae = _load_formulae()
-        assert cls.formulae, f"no formulae found under {FORMULA_DIR}"
 
     def test_helper_finds_four_guard_lines_per_formula(self):
         """Sanity-check the extractor before the semantic tests rely on

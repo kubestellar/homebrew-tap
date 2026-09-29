@@ -50,10 +50,10 @@ class TestMetadataSingletons(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.formulae = list_formula_paths()
+        cls.formula_paths = list_formula_paths()
 
     def _assert_exactly_one(self, pattern, label):
-        for f in self.formulae:
+        for f in self.formula_paths:
             with self.subTest(formula=f.name, stanza=label):
                 text = f.read_text()
                 matches = pattern.findall(text)
@@ -97,10 +97,10 @@ class TestTestBlockSingleton(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.formulae = list_formula_paths()
+        cls.formula_paths = list_formula_paths()
 
     def test_every_formula_has_exactly_one_test_do_block(self):
-        for f in self.formulae:
+        for f in self.formula_paths:
             with self.subTest(formula=f.name):
                 text = f.read_text()
                 matches = TEST_DO_RE.findall(text)

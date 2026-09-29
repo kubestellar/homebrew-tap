@@ -51,10 +51,10 @@ class TestFormulaReleaseArtifactInvariants(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.formulae = list_formula_paths()
+        cls.formula_paths = list_formula_paths()
 
     def test_every_release_url_uses_v_prefixed_tag_matching_declared_version(self):
-        for f in self.formulae:
+        for f in self.formula_paths:
             src = f.read_text()
             m = VERSION_LINE_RE.search(src)
             self.assertIsNotNone(m, f"{f.name}: no version line")
@@ -77,7 +77,7 @@ class TestFormulaReleaseArtifactInvariants(unittest.TestCase):
                     )
 
     def test_tarball_filename_follows_name_version_os_arch_convention(self):
-        for f in self.formulae:
+        for f in self.formula_paths:
             src = f.read_text()
             m = VERSION_LINE_RE.search(src)
             self.assertIsNotNone(m, f"{f.name}: no version line")
@@ -114,10 +114,10 @@ class TestFormulaAuditCleanMetadata(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.formulae = list_formula_paths()
+        cls.formula_paths = list_formula_paths()
 
     def test_desc_starts_with_capital_letter(self):
-        for f in self.formulae:
+        for f in self.formula_paths:
             with self.subTest(formula=f.name):
                 m = DESC_LINE_RE.search(f.read_text())
                 self.assertIsNotNone(m, f"{f.name}: no desc line")
@@ -130,7 +130,7 @@ class TestFormulaAuditCleanMetadata(unittest.TestCase):
 
     def test_desc_does_not_end_with_period(self):
         # `brew audit`: "Description shouldn't end with a full stop."
-        for f in self.formulae:
+        for f in self.formula_paths:
             with self.subTest(formula=f.name):
                 m = DESC_LINE_RE.search(f.read_text())
                 self.assertIsNotNone(m, f"{f.name}: no desc line")
@@ -141,7 +141,7 @@ class TestFormulaAuditCleanMetadata(unittest.TestCase):
                 )
 
     def test_homepage_uses_https(self):
-        for f in self.formulae:
+        for f in self.formula_paths:
             with self.subTest(formula=f.name):
                 m = HOMEPAGE_LINE_RE.search(f.read_text())
                 self.assertIsNotNone(m, f"{f.name}: no homepage line")
@@ -159,10 +159,10 @@ class TestFormulaHasNoLeftoverStubs(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.formulae = list_formula_paths()
+        cls.formula_paths = list_formula_paths()
 
     def test_no_bottle_block(self):
-        for f in self.formulae:
+        for f in self.formula_paths:
             with self.subTest(formula=f.name):
                 src = f.read_text()
                 self.assertNotRegex(
@@ -175,7 +175,7 @@ class TestFormulaHasNoLeftoverStubs(unittest.TestCase):
 
     def test_no_head_block(self):
         # head "<url>" or head do
-        for f in self.formulae:
+        for f in self.formula_paths:
             with self.subTest(formula=f.name):
                 src = f.read_text()
                 self.assertNotRegex(

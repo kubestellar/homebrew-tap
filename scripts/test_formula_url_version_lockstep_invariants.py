@@ -39,10 +39,10 @@ class TestFormulaURLVersionLockstep(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.formulae = list_formula_paths()
+        cls.formula_paths = list_formula_paths()
 
     def test_release_url_tag_matches_declared_version(self):
-        for f in self.formulae:
+        for f in self.formula_paths:
             src = f.read_text()
             vm = VERSION_LINE_RE.search(src)
             self.assertIsNotNone(vm, f"{f.name}: no version line")
@@ -72,7 +72,7 @@ class TestFormulaURLVersionLockstep(unittest.TestCase):
                 )
 
     def test_release_url_filename_matches_declared_version(self):
-        for f in self.formulae:
+        for f in self.formula_paths:
             src = f.read_text()
             vm = VERSION_LINE_RE.search(src)
             self.assertIsNotNone(vm, f"{f.name}: no version line")
