@@ -89,7 +89,7 @@ class TestFormulaURLCrossFormulaUniqueness(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-
+        cls.formula_paths = list_formula_paths()
 
     def test_no_url_is_shared_across_formulae(self):
         origin: dict[str, list[str]] = {}
