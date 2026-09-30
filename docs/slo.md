@@ -65,27 +65,20 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   green through [#490](https://github.com/kubestellar/homebrew-tap/pull/490)
   (both `ubuntu-latest` and `macos-latest` legs green on `main`). All three
   referenced issues are closed.
-- **Formula drift health** currently only gets a data point when a
-  `Formula/**` (or related-path) change triggers `validate-formulae.yml` on
-  `main`. `brew-ci.yml` closed this gap for itself with a daily `schedule:`
-  trigger (`17 6 * * *`, added in
-  [#464](https://github.com/kubestellar/homebrew-tap/pull/464), closing
-  [#318](https://github.com/kubestellar/homebrew-tap/issues/318)), but
-  `validate-formulae.yml` still has none, so a break with **no matching
-  Formula diff** — e.g. an upstream
+- **Formula drift health** is now re-verified daily even absent a
+  `Formula/**` diff: `validate-formulae.yml` gained a daily `schedule:`
+  trigger (`43 7 * * *`, offset from `brew-ci.yml`'s `17 6 * * *` and
+  `fuzz.yml`'s `0 8 * * 1`), closing the gap tracked in
+  [#508](https://github.com/kubestellar/homebrew-tap/issues/508). A break
+  with **no matching Formula diff** — e.g. an upstream
   [`kubestellar-mcp`](https://github.com/kubestellar/kubestellar-mcp) release
   being deleted/re-tagged/pruned, a transient CDN/host 404 on the pinned
-  release URL, or a yanked binary after its `sha256` was already pinned — can
-  still go undetected indefinitely between merges for the drift-check side,
-  with the ≤15-minute detection SLO below having no mechanism behind it for
-  this failure class on `validate-formulae.yml`. **Recommendation:** add a
-  daily `schedule:` trigger to `validate-formulae.yml`, mirroring
-  `brew-ci.yml`'s and `fuzz.yml`'s existing cadence, so the tap's live
-  installability is re-verified on the drift-check side too, not only on a
-  Formula push. Tracked, with the exact ready-to-apply diff, in
-  [#508](https://github.com/kubestellar/homebrew-tap/issues/508) — filed
-  issue-only because it requires a `.github/workflows/**` change and this
-  agent's token lacks the `workflows` permission GitHub requires to push one.
+  release URL, or a yanked binary after its `sha256` was already pinned — is
+  now caught by this scheduled run within the ≤15-minute detection SLO below,
+  and a failed scheduled run is itself alerted on by
+  [`scheduled-workflow-failure-issue.yml`](../.github/workflows/scheduled-workflow-failure-issue.yml)
+  (it watches `Validate Formulae` for both `schedule` and `main`-push
+  failures).
 - **Time to detect a broken `main` release ≤ 15 minutes.** CI on `main` normally
   completes well within this window; a failed run should be triaged as soon as it
   is reported. An automated `workflow_run`-triggered job that files a
