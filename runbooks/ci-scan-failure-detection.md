@@ -1,36 +1,46 @@
-# CI / Scheduled-Scan Failure Detection Runbook
+# CI / Scheduled-Scan Failure Detection Runbook (superseded)
 
 **Repository:** `kubestellar/homebrew-tap`
 **Applies to:** `brew-ci.yml`, `validate-formulae.yml`, `codeql.yml` (weekly
 schedule), `scorecard.yml` (weekly schedule)
 
+> **Superseded by automation.** The gap this runbook was written to work
+> around is closed: `.github/workflows/scheduled-workflow-failure-issue.yml`
+> (applied in #441, extended in #479/#508/#551/#580) now auto-files a
+> `kind/bug` + `workflow-failure` tracking issue on a failing scheduled or
+> `main`-branch run of `CodeQL Analysis`, `OpenSSF Scorecard`, `Fuzzing`,
+> `Homebrew CI`, `Validate Formulae`, `Stale Issues`, and `actionlint` — see
+> [`docs/slo.md`](../docs/slo.md) and the
+> [Scheduled Workflow Failure Runbook](./scheduled-workflow-failure.md), which
+> is now the primary runbook for these failures. **Use that runbook, not the
+> manual steps below**, which are kept only as historical background on why
+> this gap originally existed (#316, #318, #337).
+
 ---
 
-## Why This Exists
+## Why This Existed (background only)
 
-None of the watched workflows currently have an `if: failure()` notification
-step, and `brew-ci.yml` / `validate-formulae.yml` only trigger on `Formula/**`
+None of the watched workflows had an `if: failure()` notification step, and
+`brew-ci.yml` / `validate-formulae.yml` only triggered on `Formula/**`
 changes rather than on a schedule (see #316, #318, #337). That means:
 
-- A failing `main`-branch CI run produces only a red check on a commit that
-  nobody is necessarily looking at.
-- A failing weekly `codeql.yml` or `scorecard.yml` scheduled scan produces no
-  notification at all — the only surface is the Actions tab.
-- If Formula files go untouched for a while, drift (e.g. an upstream
-  URL/checksum going stale) between `brew-ci.yml` runs is invisible until the
+- A failing `main`-branch CI run produced only a red check on a commit that
+  nobody was necessarily looking at.
+- A failing weekly `codeql.yml` or `scorecard.yml` scheduled scan produced no
+  notification at all — the only surface was the Actions tab.
+- If Formula files went untouched for a while, drift (e.g. an upstream
+  URL/checksum going stale) between `brew-ci.yml` runs was invisible until the
   next Formula PR.
 
-Adding automated `if: failure()` alerting requires editing files under
-`.github/workflows/`, which needs the GitHub App `workflows` permission that
-agent tokens in this repo do not carry. This runbook documents the manual
-detection workaround in the meantime; the automated fix (following the same
-`actions/github-script`-based failure-issue pattern used for the equivalent
-gap in other kubestellar repos) still needs a maintainer with `workflows`
-scope to apply directly to the four files above.
+This has since been closed by
+[`.github/workflows/scheduled-workflow-failure-issue.yml`](../.github/workflows/scheduled-workflow-failure-issue.yml),
+which required a maintainer with the `workflows` permission to apply (agent
+tokens in this repo don't carry it) — that landing is why this document is
+now superseded rather than actively maintained.
 
 ---
 
-## Manual Detection Steps
+## Manual Detection Steps (historical — superseded, see banner above)
 
 Run this check periodically (recommended: weekly, and immediately after any
 Formula change lands):
@@ -74,16 +84,16 @@ Formula change lands):
 
 ---
 
-## Closing the Loop (for the eventual automated fix)
+## Closing the Loop (done)
 
-When a maintainer with `workflows` permission implements the automated
-alert, it should:
+The automated alert described above landed and now:
 
-- Trigger on `workflow_run` (or an `if: failure()` step) for `brew-ci.yml`,
-  `validate-formulae.yml`, `codeql.yml`, and `scorecard.yml`.
-- File (or comment on) a single open tracking issue per workflow to avoid
-  duplicate noise on repeat failures.
-- Link back to this runbook from the issue body.
+- Triggers on `workflow_run` for `CodeQL Analysis`, `OpenSSF Scorecard`,
+  `Fuzzing`, `Homebrew CI`, `Validate Formulae`, `Stale Issues`, and
+  `actionlint`.
+- Files (or comments on) a single open `kind/bug` + `workflow-failure`
+  tracking issue per workflow to avoid duplicate noise on repeat failures.
+- Links back to the [Scheduled Workflow Failure Runbook](./scheduled-workflow-failure.md).
 
-Once that lands, this file should be updated to describe the automated flow
-instead of the manual steps above.
+Follow that runbook for any new scheduled/`main` failure. This file is kept
+only for historical context on why the gap originally existed.
