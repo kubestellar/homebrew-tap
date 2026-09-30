@@ -60,6 +60,22 @@ def _parse_args(argv: list[str]) -> argparse.Namespace:
         action="store_true",
         help="Also emit coverage.xml for CI artifact upload.",
     )
+    env_report_only = os.environ.get("COVERAGE_GATE_REPORT_ONLY", "")
+    default_report_only = env_report_only.strip().lower() in ("1", "true", "yes")
+    p.add_argument(
+        "--report-only",
+        dest="report_only",
+        action="store_true",
+        default=default_report_only,
+        help=(
+            "Skip re-running the test suite and report on the existing "
+            ".coverage file (also enabled by COVERAGE_GATE_REPORT_ONLY=1). "
+            "Use this when a prior step already produced .coverage via "
+            "`coverage run -m unittest discover ...` (e.g. "
+            "scripts/unittest_summary.sh with COVERAGE_SOURCE=scripts), so "
+            "CI does not run the suite twice. See kubestellar/homebrew-tap#612."
+        ),
+    )
     p.add_argument(
         "--include",
         default=(
@@ -162,7 +178,7 @@ def main(argv: list[str] | None = None) -> int:
         sys.stderr.write(f"coverage_gate: scripts/ not found at {SCRIPTS_DIR}\n")
         return 1
 
-    tests_rc = _run_tests_under_coverage()
+    tests_rc = 0 if args.report_only else _run_tests_under_coverage()
     if tests_rc != 0:
         return 1
     return _report(args.min, args.include, args.xml)
