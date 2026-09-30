@@ -144,6 +144,42 @@ class MainGuardTests(unittest.TestCase):
             rc = coverage_gate.main([])
         self.assertEqual(rc, 2)
 
+    def test_report_only_flag_skips_run_tests(self):
+        # With --report-only, main() must NOT invoke _run_tests_under_coverage
+        # (the whole point of the flag: the caller already produced .coverage
+        # via a prior `coverage run` — see kubestellar/homebrew-tap#612).
+        with mock.patch.object(coverage_gate, "_import_coverage", return_value=True), \
+             mock.patch.object(coverage_gate, "_run_tests_under_coverage") as run, \
+             mock.patch.object(coverage_gate, "_report", return_value=0) as report:
+            rc = coverage_gate.main(["--report-only", "--min", "100"])
+        self.assertEqual(rc, 0)
+        run.assert_not_called()
+        report.assert_called_once()
+        self.assertEqual(report.call_args.args[0], 100)
+
+    def test_report_only_env_var_skips_run_tests(self):
+        # COVERAGE_GATE_REPORT_ONLY=1 must have the same effect as the flag,
+        # matching the existing COVERAGE_MIN env-var override pattern.
+        with mock.patch.dict(os.environ, {"COVERAGE_GATE_REPORT_ONLY": "1"}, clear=False), \
+             mock.patch.object(coverage_gate, "_import_coverage", return_value=True), \
+             mock.patch.object(coverage_gate, "_run_tests_under_coverage") as run, \
+             mock.patch.object(coverage_gate, "_report", return_value=0):
+            rc = coverage_gate.main([])
+        self.assertEqual(rc, 0)
+        run.assert_not_called()
+
+    def test_report_only_env_var_ignored_when_not_truthy(self):
+        # A non-truthy value (e.g. "0", "no", "") must NOT flip the mode on,
+        # so a stray unset-to-empty in a CI matrix cannot silently skip the
+        # test run.
+        with mock.patch.dict(os.environ, {"COVERAGE_GATE_REPORT_ONLY": "0"}, clear=False), \
+             mock.patch.object(coverage_gate, "_import_coverage", return_value=True), \
+             mock.patch.object(coverage_gate, "_run_tests_under_coverage", return_value=0) as run, \
+             mock.patch.object(coverage_gate, "_report", return_value=0):
+            rc = coverage_gate.main([])
+        self.assertEqual(rc, 0)
+        run.assert_called_once()
+
 
 class RunTestsUnderCoverageTests(unittest.TestCase):
     def test_command_shape_matches_ci_invocation(self):
