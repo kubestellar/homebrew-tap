@@ -40,7 +40,7 @@ from __future__ import annotations
 import re
 import unittest
 
-from formula_parser import FORMULA_DIR, DESC_LINE_RE, LICENSE_LINE_RE
+from formula_parser import list_formula_paths, DESC_LINE_RE, LICENSE_LINE_RE
 CLASS_HEADER_RE = re.compile(
     r'^\s*class\s+[A-Za-z0-9_]+\s*<\s*Formula\b', re.MULTILINE
 )
@@ -51,9 +51,7 @@ BREW_AUDIT_DESC_MAX_LEN = 80
 
 
 def _formulae():
-    files = sorted(FORMULA_DIR.glob("*.rb"))
-    assert files, f"no formulae discovered under {FORMULA_DIR}"
-    return files
+    return list_formula_paths()
 
 
 class TestFormulaDescLength(unittest.TestCase):

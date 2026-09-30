@@ -46,7 +46,7 @@ from __future__ import annotations
 import pathlib
 import unittest
 
-from formula_parser import FORMULA_DIR
+from formula_parser import list_formula_paths
 
 # Tokens that indicate an unrendered template or an in-progress edit.
 # Match the whole word only (case-insensitive) so it does not fire on
@@ -57,10 +57,7 @@ UTF8_BOM = b"\xef\xbb\xbf"
 
 
 def _formula_files() -> list[pathlib.Path]:
-    files = sorted(FORMULA_DIR.glob("*.rb"))
-    if not files:
-        raise AssertionError(f"no formulae found under {FORMULA_DIR}")
-    return files
+    return list_formula_paths()
 
 
 class FormulaSourceHygieneInvariants(unittest.TestCase):
