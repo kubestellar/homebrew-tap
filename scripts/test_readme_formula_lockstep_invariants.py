@@ -32,7 +32,7 @@ import pathlib
 import re
 import unittest
 
-from formula_parser import FORMULA_DIR
+from formula_parser import load_formulae
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 README_PATH = REPO_ROOT / "README.md"
@@ -61,7 +61,7 @@ STATUS_NOT_PLANNED_ROW_RE = re.compile(
 
 
 def _formula_names() -> list[str]:
-    return sorted(p.stem for p in FORMULA_DIR.glob("*.rb"))
+    return sorted(load_formulae())
 
 
 def _brew_install_names(readme_text: str) -> list[str]:
