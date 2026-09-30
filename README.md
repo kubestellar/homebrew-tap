@@ -189,8 +189,8 @@ KC_ALLOWED_ORIGINS="https://console1.example.com,https://console2.example.com" k
 If `brew install`/`brew upgrade` is broken for any formula in this tap, start here:
 
 - [Formula Rollback Runbook](runbooks/formula-rollback.md) — detection, triage, rollback, and user self-service recovery steps
-- [CI / Scheduled-Scan Failure Detection Runbook](runbooks/ci-scan-failure-detection.md) — how to notice and triage a failing `brew-ci.yml`, `validate-formulae.yml`, `codeql.yml`, or `scorecard.yml` run today, before any automated alert exists
-- [Scheduled Workflow Failure Runbook](runbooks/scheduled-workflow-failure.md) — what to do once a maintainer applies the proposed `workflow_run`-based failure-alert workflow
+- [Scheduled Workflow Failure Runbook](runbooks/scheduled-workflow-failure.md) — triage a failing `CodeQL Analysis`, `OpenSSF Scorecard`, `Fuzzing`, `Homebrew CI`, `Validate Formulae`, `Stale Issues`, or `actionlint` run; the automated `workflow_run`-based failure-alert workflow that files the tracking issue is already live
+- [CI / Scheduled-Scan Failure Detection Runbook](runbooks/ci-scan-failure-detection.md) *(superseded — kept for historical background only)*
 - [SLOs/SLIs](docs/slo.md) — CI health targets and detection/mitigation time budgets
 - [File an incident report](https://github.com/kubestellar/homebrew-tap/issues/new?template=incident.md)
 - [Postmortem template](docs/postmortem-template.md) — for incidents exceeding the mitigation budget or affecting more than a handful of users
