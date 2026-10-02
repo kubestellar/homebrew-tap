@@ -50,9 +50,7 @@ jobs:
       github.event.workflow_run.conclusion == 'failure' &&
       (github.event.workflow_run.event == 'schedule' ||
        github.event.workflow_run.event == 'workflow_dispatch' ||
-       (github.event.workflow_run.head_branch == 'main' &&
-        (github.event.workflow_run.name == 'Homebrew CI' ||
-         github.event.workflow_run.name == 'Validate Formulae')))
+       github.event.workflow_run.head_branch == 'main')
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
