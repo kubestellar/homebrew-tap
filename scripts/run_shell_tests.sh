@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 # run_shell_tests.sh — discover-and-run wrapper for scripts/test_*.sh.
 #
-# The 10 shell test files in scripts/ (109 assertions total) are runnable
-# standalone but no workflow enumerates them, so regressions to the five
-# CI-observability helpers they cover (brew_ci_summary, fuzz_summary,
-# unittest_summary, verify_release_health, workflow_failure_notify) can
-# land silently. See kubestellar-tap#411 for context.
+# The growing set of shell test files in scripts/ cover the
+# CI-observability helpers (brew_ci_summary, fuzz_summary,
+# unittest_summary, verify_release_health, workflow_failure_notify, and
+# others). They were originally runnable standalone only, with no
+# workflow enumerating them (kubestellar/homebrew-tap#411); that gap is
+# now closed — validate-formulae.yml's "Run scripts/test_*.sh shell
+# regression tests" step invokes this wrapper directly (see
+# kubestellar/homebrew-tap#390 and #465), so a regression here fails CI.
 #
 # This wrapper mirrors what validate-formulae.yml already does for the
 # Python side (`python3 -m unittest discover -s scripts -p 'test_*.py'`):
 # it discovers `scripts/test_*.sh`, executes each, and reports a
-# summary. Wiring the wrapper into CI still needs a workflow edit
-# (out of reach for the quality lane's tier — see the issue), but the
-# wrapper itself is repository code and can be dropped in with one line
-# from that future workflow step: `bash scripts/run_shell_tests.sh`.
+# summary.
 #
 # Exit status: 0 if every discovered test exits 0, 1 otherwise (or if
 # no tests are discovered — the empty-suite case is treated as a
