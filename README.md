@@ -111,8 +111,23 @@ Multi-cluster Kubernetes management console with built-in AI support.
 
 ### Quick start
 
+Pin to a published release so a push to `kubestellar/console@main` cannot
+silently change what runs on your machine, and use `curl -f` so an HTTP
+error from `raw.githubusercontent.com` fails the pipeline before `bash`
+reads a stray error page from stdin. Replace the tag below with the
+console release you want to install
+([browse releases](https://github.com/kubestellar/console/releases)):
+
 ```bash
-curl -sSL https://raw.githubusercontent.com/kubestellar/console/main/start.sh | bash
+curl -fsSL https://raw.githubusercontent.com/kubestellar/console/v0.3.43-nightly.20261002/start.sh | bash
+```
+
+Prefer to review the script before executing it (the recommended path):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/kubestellar/console/v0.3.43-nightly.20261002/start.sh -o /tmp/kc-console-start.sh
+less /tmp/kc-console-start.sh    # audit it
+bash /tmp/kc-console-start.sh
 ```
 
 This downloads and runs the pre-built KubeStellar Console binary, starts `kc-agent` as a background daemon, and opens your browser automatically. Press `Ctrl+C` to stop the console (kc-agent continues in background).
