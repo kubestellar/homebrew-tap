@@ -26,29 +26,7 @@ SCRIPT="$REPO_ROOT/scripts/brew_audit_all.sh"
 
 make_work_dir
 
-# make_stub_brew <dir> <failing_formula_or_empty> <exit_code> [<output>]
-# Creates a `brew audit --strict <tap>/<name>` stub that fails with
-# <exit_code> only when <name> == <failing_formula_or_empty>; every other
-# formula (and an empty <failing_formula_or_empty>) always succeeds. When
-# given, <output> is printed to stdout (as brew audit's problem report)
-# before the stub exits with <exit_code> for the failing formula.
-make_stub_brew() {
-  local dir="$1" failing="$2" exit_code="$3" formula_output="${4:-}"
-  mkdir -p "$dir"
-  cat > "$dir/brew" <<STUB
-#!/usr/bin/env bash
-if [ "\$1" = "audit" ]; then
-  name="\${3##*/}"
-  if [ "\$name" = "$failing" ]; then
-    printf '%s\n' "$formula_output"
-    exit $exit_code
-  fi
-  exit 0
-fi
-exit 0
-STUB
-  chmod +x "$dir/brew"
-}
+# make_stub_brew is provided by test_lib.sh.
 
 formula_dir="$work_dir/Formula"
 make_fake_formulae "$formula_dir" alpha beta gamma
