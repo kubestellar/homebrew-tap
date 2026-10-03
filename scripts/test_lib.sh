@@ -13,6 +13,9 @@
 #   make_work_dir                 — create $work_dir and register cleanup
 #   make_fake_formulae <dir> <name>...   — write minimal <Name> < Formula
 #                                          stubs (e.g. foo -> class Foo)
+#   make_stub_brew <dir> <failing> <exit_code> [<output>]
+#                                  — write a `brew audit --strict` PATH-shim
+#                                    that fails only for <failing>
 #   fail <name> <message>         — record and print a failure
 #   assert_grep <name> <haystack> <pattern> <message>
 #   assert_contains <name> <haystack> <needle>
@@ -48,6 +51,31 @@ make_fake_formulae() {
     class_name="$(tr '[:lower:]' '[:upper:]' <<< "${name:0:1}")${name:1}"
     printf 'class %s < Formula\nend\n' "$class_name" > "$dir/${name}.rb"
   done
+}
+
+# make_stub_brew <dir> <failing_formula_or_empty> <exit_code> [<output>] —
+# write a `brew audit --strict <tap>/<name>` PATH-shim to "<dir>/brew" that
+# fails with <exit_code> only when <name> == <failing_formula_or_empty>;
+# every other formula (and an empty <failing_formula_or_empty>) always
+# succeeds. When given, <output> is printed to stdout (as brew audit's
+# problem report) before the stub exits with <exit_code> for the failing
+# formula. Any other `brew` subcommand always exits 0.
+make_stub_brew() {
+  local dir="$1" failing="$2" exit_code="$3" formula_output="${4:-}"
+  mkdir -p "$dir"
+  cat > "$dir/brew" <<STUB
+#!/usr/bin/env bash
+if [ "\$1" = "audit" ]; then
+  name="\${3##*/}"
+  if [ "\$name" = "$failing" ]; then
+    printf '%s\n' "$formula_output"
+    exit $exit_code
+  fi
+  exit 0
+fi
+exit 0
+STUB
+  chmod +x "$dir/brew"
 }
 
 # fail <name> <message> — print a FAIL line and increment fail_count.

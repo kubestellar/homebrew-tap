@@ -113,6 +113,27 @@ elif ! grep -q '^class BarBaz < Formula$' "$work/barBaz.rb"; then
 fi
 
 # ------------------------------------------------------------------
+# make_stub_brew — PATH-shim fails only for the named formula
+# ------------------------------------------------------------------
+# A regression here (e.g. matching the wrong $N, or always exiting 0)
+# would silently pass every scripts/test_brew_audit_all*.sh case that
+# relies on this shim to fail on cue.
+stub_dir="$(mktemp -d)"
+trap 'rm -rf "$stub_dir"' EXIT
+run_snippet 'make_stub_brew "'"$stub_dir"'" beta 7 "problem report"; "'"$stub_dir"'/brew" audit --strict tap/alpha; echo "alpha_rc=$?"; "'"$stub_dir"'/brew" audit --strict tap/beta; echo "beta_rc=$?"'
+if [ "$rc" -ne 0 ]; then
+  note "make_stub_brew/exit" "expected 0 exit, got $rc; output: $out"
+fi
+case "$out" in
+  *"alpha_rc=0"*) ;;
+  *) note "make_stub_brew/non-failing" "expected non-failing formula to exit 0, got: $out" ;;
+esac
+case "$out" in
+  *"problem report"*"beta_rc=7"*) ;;
+  *) note "make_stub_brew/failing" "expected failing formula to print output and exit 7, got: $out" ;;
+esac
+
+# ------------------------------------------------------------------
 # fail — prints FAIL line and increments $fail_count
 # ------------------------------------------------------------------
 run_snippet 'fail_count=0; fail case-a "boom"; printf "\nfail_count=%s" "$fail_count"'
