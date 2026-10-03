@@ -101,8 +101,9 @@ ALLOWED_URL_HOSTS = {
 }
 
 
-def _extract_url_hosts(text: str) -> list[str]:
-    """Return hosts of every `url "..."` in a formula body, in order."""
+def _extract_url_hosts(text: str) -> list[tuple[str, str, str]]:
+    """Return `(url, scheme, host)` for every `url "..."` in a formula body,
+    in order of appearance."""
     hosts = []
     for m in URL_LINE_RE.finditer(text):
         url = m.group(1)
