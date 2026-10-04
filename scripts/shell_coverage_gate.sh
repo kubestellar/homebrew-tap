@@ -23,13 +23,19 @@
 # Landing this helper first lets a maintainer wire it into
 # validate-formulae.yml with a one-line workflow change:
 #
+#     - name: Install kcov
+#       run: sudo apt-get update && sudo apt-get install -y kcov
 #     - name: Enforce shell coverage gate
 #       env:
 #         SHELL_COVERAGE_MIN: "0"   # measure once, then ratchet up
 #       run: bash scripts/shell_coverage_gate.sh
 #
-# (kcov is preinstalled on ubuntu-latest GitHub-hosted runners; if that
-# ever regresses, `sudo apt-get install -y kcov` covers it.)
+# kcov is NOT preinstalled on GitHub-hosted ubuntu-latest runners (the
+# image moved to Ubuntu 24.04 in Dec 2024/Jan 2025 and trimmed its
+# preinstalled package set — see actions/runner-images'
+# Ubuntu2404-Readme.md, which lists no kcov). An explicit
+# `sudo apt-get install -y kcov` step is required; omitting it makes
+# this gate hard-fail with exit code 3 ("kcov not found") on every run.
 #
 # Usage:
 #     scripts/shell_coverage_gate.sh                   # default threshold
@@ -55,7 +61,7 @@
 set -uo pipefail
 
 usage() {
-  sed -n '2,52p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,59p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 }
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
