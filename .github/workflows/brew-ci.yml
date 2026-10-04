@@ -14,15 +14,6 @@ on:
       - '.github/workflows/brew-ci.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'Formula/**'
-      - 'scripts/brew_tap_setup.sh'
-      - 'scripts/brew_audit_all.sh'
-      - 'scripts/brew_install_smoke.sh'
-      - 'scripts/brew_test_installed.sh'
-      - 'scripts/brew_untap_self.sh'
-      - 'scripts/brew_ci_summary.sh'
-      - '.github/workflows/brew-ci.yml'
   schedule:
     # Daily catch-all to detect upstream artifact rot (deleted/rotated release
     # assets, URL/SHA256 drift) even absent a Formula/** change
@@ -36,8 +27,35 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  detect-changes:
+    name: Detect formula/script changes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    outputs:
+      changed: ${{ steps.changes.outputs.any }}
+    permissions:
+      contents: read
+    steps:
+      - name: Check for brew-related changes
+        id: changes
+        uses: dorny/paths-filter@v2.12.0
+        with:
+          filters: |
+            any:
+              - 'Formula/**'
+              - 'scripts/brew_tap_setup.sh'
+              - 'scripts/brew_audit_all.sh'
+              - 'scripts/brew_install_smoke.sh'
+              - 'scripts/brew_test_installed.sh'
+              - 'scripts/brew_untap_self.sh'
+              - 'scripts/brew_ci_summary.sh'
+              - '.github/workflows/brew-ci.yml'
+
   brew-audit-and-install:
     name: brew audit + install smoke test
+    needs: detect-changes
+    if: |
+      github.event_name != 'pull_request' || needs.detect-changes.outputs.changed == 'true'
     strategy:
       fail-fast: false
       matrix:
