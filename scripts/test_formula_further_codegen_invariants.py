@@ -49,8 +49,6 @@ DO_NOT_EDIT_RE = re.compile(
     re.IGNORECASE,
 )
 
-IF_HW_RE = re.compile(r'^\s*if Hardware::CPU\.(\w+)(?:\s+&&\s+Hardware::CPU\.(\w+))?\s+do?', re.MULTILINE)
-IF_HW_ANY_RE = re.compile(r'^\s*if Hardware::CPU\.[^\n]*', re.MULTILINE)
 TEST_BLOCK_RE = re.compile(r'\btest\s+do\b([\s\S]*?)\bend\b', re.MULTILINE)
 
 GITHUB_REPO_URL_RE = re.compile(r'^https://github\.com/([^/]+)/([^/]+)(?:/|$)')
