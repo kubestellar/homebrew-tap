@@ -37,14 +37,18 @@ whoever applies this policy must first remove the `paths:` filter from these
 workflows' `pull_request` trigger and instead gate the actual work with a
 job/step-level `if:` that checks for changed paths (so the workflow always
 runs and reports a real "success" for non-matching PRs, satisfying the
-required check) — see GitHub's guidance linked above for the pattern.
+required check) — see GitHub's guidance linked above for the pattern, and
+[issue #640](https://github.com/kubestellar/homebrew-tap/issues/640) for the
+exact replacement YAML for both workflows (a `.github/workflows/**` change,
+so it needs a maintainer or an agent with `workflows` permission to apply).
 
 ## Applying
 
 **Do not enable the three contexts above as required until the path-filter
-fix described above lands** — doing so first would deadlock every PR that
-doesn't touch `Formula/**` (including this repo's own `docs/**`/`runbooks/**`
-operations PRs). A repository administrator must apply these settings via the
+fix in [#640](https://github.com/kubestellar/homebrew-tap/issues/640) lands**
+— doing so first would deadlock every PR that doesn't touch `Formula/**`
+(including this repo's own `docs/**`/`runbooks/**` operations PRs). A
+repository administrator must apply these settings via the
 GitHub Settings > Branches UI, or via:
 
 ```bash
