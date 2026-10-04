@@ -33,7 +33,7 @@ Runnable the same way as the sibling test modules:
 import re
 import unittest
 from collections import Counter
-from datetime import date, timedelta
+from datetime import date
 
 from formula_parser import (
     FORMULA_DIR,

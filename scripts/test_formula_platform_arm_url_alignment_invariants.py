@@ -63,14 +63,6 @@ from formula_parser import FORMULA_DIR, load_formulae as _load_formulae
 ON_MACOS_START_RE = re.compile(r"^\s*on_macos\s+do\b")
 ON_LINUX_START_RE = re.compile(r"^\s*on_linux\s+do\b")
 
-# One `if Hardware::CPU.<something>? ... end` arm.
-CPU_ARM_RE = re.compile(
-    r"^\s*if\s+Hardware::CPU\.(?P<cpu>intel|arm)\?"
-    r"(?P<guard_tail>[^\n]*)\n"
-    r"(?P<body>.*?)\n\s*end\b",
-    re.MULTILINE | re.DOTALL,
-)
-
 URL_RE = re.compile(r'url\s+"[^"]*_(?P<os>darwin|linux)_(?P<arch>amd64|arm64)\.tar\.gz"')
 SHA256_RE = re.compile(r'sha256\s+"[0-9a-f]{64}"')
 
