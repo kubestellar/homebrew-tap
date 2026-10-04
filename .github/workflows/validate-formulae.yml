@@ -21,22 +21,6 @@ on:
       - '.github/workflows/validate-formulae.yml'
   pull_request:
     branches: [main]
-    paths:
-      - 'Formula/**'
-      - 'README.md'
-      - 'scripts/__init__.py'
-      - 'scripts/validate_formulae.py'
-      - 'scripts/formula_parser.py'
-      - 'scripts/formula_test_fixtures.py'
-      - 'scripts/coverage_gate.py'
-      - 'scripts/lib_*.py'
-      - 'scripts/test_*.py'
-      - 'scripts/*.sh'
-      - 'scripts/test_*.sh'
-      - '.coveragerc'
-      - 'requirements-dev.txt'
-      - 'requirements-dev.in'
-      - '.github/workflows/validate-formulae.yml'
   schedule:
     # Daily catch-all so the drift check (unit tests + upstream artifact
     # verification) re-runs even absent a Formula/** diff — e.g. an upstream
@@ -54,8 +38,42 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  detect-changes:
+    name: Detect formula/test changes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    outputs:
+      changed: ${{ steps.changes.outputs.any }}
+    permissions:
+      contents: read
+    steps:
+      - name: Check for validate-formulae-related changes
+        id: changes
+        uses: dorny/paths-filter@7267a8516b6f92bdb098633497bad573efdbf271 # v2.12.0
+        with:
+          filters: |
+            any:
+              - 'Formula/**'
+              - 'README.md'
+              - 'scripts/__init__.py'
+              - 'scripts/validate_formulae.py'
+              - 'scripts/formula_parser.py'
+              - 'scripts/formula_test_fixtures.py'
+              - 'scripts/coverage_gate.py'
+              - 'scripts/lib_*.py'
+              - 'scripts/test_*.py'
+              - 'scripts/*.sh'
+              - 'scripts/test_*.sh'
+              - '.coveragerc'
+              - 'requirements-dev.txt'
+              - 'requirements-dev.in'
+              - '.github/workflows/validate-formulae.yml'
+
   validate-formulae:
     name: unit tests + drift check
+    needs: detect-changes
+    if: |
+      github.event_name != 'pull_request' || needs.detect-changes.outputs.changed == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
