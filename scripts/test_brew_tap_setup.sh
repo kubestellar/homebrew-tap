@@ -58,6 +58,9 @@ output=$(env -i PATH="$stub1:/usr/bin:/bin" TAP_DIR="$work_dir/checkout1" \
 code=$?
 assert_exit_code "tap-ok trust-supported exit" 0 "$code"
 assert_contains "tap-ok trust-supported trust called" "$(cat "$stub1/calls.log")" "trust kubestellar/tap"
+assert_contains "tap-ok trust-supported summary emitted" "$output" "BREW_TAP_SETUP_SUMMARY: "
+assert_contains "tap-ok trust-supported summary status" "$output" "\"status\":\"success\""
+assert_contains "tap-ok trust-supported summary tap_result" "$output" "\"tap_result\":\"clean\""
 
 # --- Case 2: tap succeeds, trust unsupported -> exit 0, no trust call ---
 stub2="$work_dir/stub2"
@@ -84,6 +87,9 @@ output=$(env -i PATH="$stub4:/usr/bin:/bin" TAP_DIR="$work_dir/checkout4" \
   bash "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "tap-failed trust-unsupported exit" 1 "$code"
+assert_contains "tap-failed trust-unsupported summary status" "$output" "\"status\":\"failure\""
+assert_contains "tap-failed trust-unsupported summary tap_result" "$output" "\"tap_result\":\"failed-tolerated\""
+assert_contains "tap-failed trust-unsupported summary trust_supported" "$output" "\"trust_supported\":\"no\""
 
 # --- Case 5: tap succeeds, trust supported, trust itself fails -> propagate ---
 stub5="$work_dir/stub5"
@@ -93,6 +99,7 @@ output=$(env -i PATH="$stub5:/usr/bin:/bin" TAP_DIR="$work_dir/checkout5" \
   bash "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "trust-call-fails propagates its exit code" 3 "$code"
+assert_contains "trust-call-fails summary status" "$output" "\"status\":\"failure\""
 
 # --- Case 6: untap is attempted before tap, and tap before trust ---
 stub6="$work_dir/stub6"
