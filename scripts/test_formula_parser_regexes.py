@@ -257,5 +257,85 @@ class AllowedUrlHostsTests(unittest.TestCase):
         self.assertIsInstance(formula_parser.ALLOWED_URL_HOSTS, set)
 
 
+class ExtractReleaseTriplesTests(unittest.TestCase):
+    """extract_release_triples() is the Python owner of the (url,
+    sha256, bin_name) extraction contract shared with
+    scripts/verify_release_artifacts.sh's bash extract_triples() — see
+    scripts/test_verify_release_artifacts_parser_parity.py for the
+    cross-language agreement check. These tests pin the Python side's
+    own edge cases directly.
+    """
+
+    def test_one_triple_per_hardware_branch(self):
+        text = """
+class Widget < Formula
+  on_macos do
+    if Hardware::CPU.arm?
+      url "https://example.invalid/widget_darwin_arm64.tar.gz"
+      sha256 "aaa"
+      define_method(:install) do
+        bin.install "widget"
+      end
+    end
+    if Hardware::CPU.intel?
+      url "https://example.invalid/widget_darwin_amd64.tar.gz"
+      sha256 "bbb"
+      define_method(:install) do
+        bin.install "widget"
+      end
+    end
+  end
+end
+"""
+        self.assertEqual(
+            formula_parser.extract_release_triples(text),
+            [
+                (
+                    "https://example.invalid/widget_darwin_arm64.tar.gz",
+                    "aaa",
+                    "widget",
+                ),
+                (
+                    "https://example.invalid/widget_darwin_amd64.tar.gz",
+                    "bbb",
+                    "widget",
+                ),
+            ],
+        )
+
+    def test_bin_install_without_preceding_url_or_sha256_is_skipped(self):
+        # A `bin.install "..."` line that isn't preceded by both a
+        # `url` and a `sha256` (e.g. a malformed/partial formula body)
+        # must not emit a bogus triple with an empty url/sha256.
+        text = """
+class Broken < Formula
+  define_method(:install) do
+    bin.install "broken"
+  end
+end
+"""
+        self.assertEqual(formula_parser.extract_release_triples(text), [])
+
+    def test_sha256_without_url_does_not_leak_into_next_triple(self):
+        # A stray `sha256` line with no `url` before the next real
+        # branch must not get paired with that branch's url.
+        text = """
+class Widget < Formula
+  sha256 "stray"
+  if Hardware::CPU.arm?
+    url "https://example.invalid/widget.tar.gz"
+    sha256 "real"
+    define_method(:install) do
+      bin.install "widget"
+    end
+  end
+end
+"""
+        self.assertEqual(
+            formula_parser.extract_release_triples(text),
+            [("https://example.invalid/widget.tar.gz", "real", "widget")],
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

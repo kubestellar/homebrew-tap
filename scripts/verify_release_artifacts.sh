@@ -24,11 +24,20 @@
 # exercises all 4 branches even though brew-ci.yml's matrix only ever
 # runs 2.
 #
-# Usage: scripts/verify_release_artifacts.sh
+# Usage: scripts/verify_release_artifacts.sh [--list]
 #   FORMULA_DIR  - directory of *.rb formulae (default: <repo root>/Formula)
+#   --list       - print "<name>\t<url>\t<sha256>\t<bin_name>" triples to
+#                  stdout instead of downloading/verifying anything. Lets
+#                  scripts/test_verify_release_artifacts_parser_parity.py
+#                  assert this script's shell-out to
+#                  formula_parser.extract_release_triples() (the single
+#                  owner of the Formula/*.rb triple extraction) keeps
+#                  agreeing with calling it in-process (see
+#                  kubestellar/homebrew-tap#647).
 #
 # Exit codes:
-#   0 - every (url, sha256, binary) triple verified
+#   0 - every (url, sha256, binary) triple verified (or, under --list,
+#       triples were printed)
 #   1 - a download failure, sha256 mismatch, or missing binary was found
 #   2 - no formulae discovered (empty-suite regression guard)
 
@@ -40,12 +49,39 @@ CURL="${CURL:-curl}"
 TAR="${TAR:-tar}"
 PYTHON="${PYTHON:-python3}"
 
+list_only=0
+for arg in "$@"; do
+  case "$arg" in
+    --list) list_only=1 ;;
+    *)
+      echo "verify_release_artifacts: unknown argument: $arg" >&2
+      exit 2
+      ;;
+  esac
+done
+
 sha256_of() {
   if command -v sha256sum >/dev/null 2>&1; then
     sha256sum "$1" | awk '{print $1}'
   else
     shasum -a 256 "$1" | awk '{print $1}'
   fi
+}
+
+# extract_triples <formula-file> — print one
+# "<url>\t<sha256>\t<bin_name>" line per (url, sha256, binary) triple
+# found in <formula-file>, one per Hardware::CPU branch.
+#
+# Thin shell-out to scripts/formula_parser.py's extract_release_triples()
+# via its `--triples` CLI — the single shared owner of this extraction —
+# rather than a second, un-sync'd bash parser (see
+# kubestellar/homebrew-tap#647).
+# test_verify_release_artifacts_parser_parity.py asserts this script's
+# --list output agrees with extract_release_triples() called in-process,
+# guarding the shell-out plumbing itself.
+extract_triples() {
+  local formula="$1"
+  "$PYTHON" "$REPO_ROOT/scripts/formula_parser.py" --triples "$formula"
 }
 
 fail_count=0
@@ -62,13 +98,15 @@ fi
 
 for formula in "${formulae[@]}"; do
   name="$(basename "$formula" .rb)"
-  # (url, sha256, bin_name) triples come from scripts/formula_parser.py's
-  # extract_url_sha_bin_triples() — the shared, single source of truth for
-  # parsing Formula/*.rb — rather than a second, un-sync'd bash parser (see
-  # kubestellar/homebrew-tap#647). One `url<TAB>sha256<TAB>bin_name` line
-  # per Hardware::CPU branch.
+
+  if [ "$list_only" -eq 1 ]; then
+    while IFS=$'\t' read -r url sha bin_name; do
+      printf '%s\t%s\t%s\t%s\n' "$name" "$url" "$sha" "$bin_name"
+    done < <(extract_triples "$formula")
+    continue
+  fi
+
   while IFS=$'\t' read -r url sha bin_name; do
-    [ -z "$url" ] && continue
     checked_count=$((checked_count + 1))
     echo "::group::verify $name: $(basename "$url")"
     tmp="$(mktemp -d)"
@@ -96,8 +134,12 @@ for formula in "${formulae[@]}"; do
     fi
     rm -rf "$tmp"
     echo "::endgroup::"
-  done < <("$PYTHON" "$REPO_ROOT/scripts/formula_parser.py" --triples "$formula")
+  done < <(extract_triples "$formula")
 done
+
+if [ "$list_only" -eq 1 ]; then
+  exit 0
+fi
 
 echo "verify_release_artifacts: checked $checked_count artifact(s), $fail_count failure(s)"
 if [ "$fail_count" -gt 0 ]; then
