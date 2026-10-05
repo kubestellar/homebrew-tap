@@ -66,6 +66,9 @@ usage() {
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
+# shellcheck source=scripts/lib_emit_summary.sh
+. "$repo_root/scripts/lib_emit_summary.sh"
+
 # Defaults.
 threshold_default="${SHELL_COVERAGE_MIN:-0}"
 threshold="$threshold_default"
@@ -296,7 +299,11 @@ fi
 # sneak past an 80 threshold. Use awk so we don't depend on bc.
 percent_floor="$(awk -v p="$percent" 'BEGIN { printf "%d", p }')"
 
-echo "SHELL_COVERAGE_SUMMARY: {\"percent_covered\":\"$percent\",\"threshold\":$threshold,\"tests\":$total,\"report\":\"$merged_json\"}"
+emit_ci_summary SHELL_COVERAGE_SUMMARY \
+  percent_covered:str="$percent" \
+  threshold="$threshold" \
+  tests="$total" \
+  report:str="$merged_json"
 
 if [ "$percent_floor" -lt "$threshold" ]; then
   echo "shell_coverage_gate: coverage $percent% is below threshold $threshold%" >&2
