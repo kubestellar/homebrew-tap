@@ -38,6 +38,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FORMULA_DIR="${FORMULA_DIR:-$REPO_ROOT/Formula}"
 CURL="${CURL:-curl}"
 TAR="${TAR:-tar}"
+PYTHON="${PYTHON:-python3}"
 
 sha256_of() {
   if command -v sha256sum >/dev/null 2>&1; then
@@ -61,59 +62,41 @@ fi
 
 for formula in "${formulae[@]}"; do
   name="$(basename "$formula" .rb)"
-  # Pull ordered (url, sha256, bin_name) triples by scanning line-by-line
-  # and tracking the most recently seen `url`/`sha256` until the next
-  # `bin.install "..."` closes out the triple. Matches the consistent
-  # GoReleaser-generated shape: url, then sha256, then
-  # `define_method(:install) { bin.install "<name>" }` within the same
-  # Hardware::CPU branch, repeated once per branch.
-  url="" sha=""
-  while IFS= read -r line; do
-    case "$line" in
-      *'url "'*)
-        url="${line#*url \"}"; url="${url%%\"*}"
-        sha=""
-        ;;
-      *'sha256 "'*)
-        sha="${line#*sha256 \"}"; sha="${sha%%\"*}"
-        ;;
-      *'bin.install "'*)
-        bin_name="${line#*bin.install \"}"; bin_name="${bin_name%%\"*}"
-        if [ -n "$url" ] && [ -n "$sha" ]; then
-          checked_count=$((checked_count + 1))
-          echo "::group::verify $name: $(basename "$url")"
-          tmp="$(mktemp -d)"
-          tarball="$tmp/artifact.tar.gz"
-          if ! "$CURL" -fsSL -o "$tarball" "$url"; then
-            echo "::error title=Download failed::$name: could not fetch $url"
-            fail_count=$((fail_count + 1))
-            rm -rf "$tmp"
-            echo "::endgroup::"
-            url="" sha=""
-            continue
-          fi
-          actual_sha="$(sha256_of "$tarball")"
-          if [ "$actual_sha" != "$sha" ]; then
-            echo "::error title=sha256 mismatch::$name: $url expected $sha got $actual_sha"
-            fail_count=$((fail_count + 1))
-            rm -rf "$tmp"
-            echo "::endgroup::"
-            url="" sha=""
-            continue
-          fi
-          if ! "$TAR" -tzf "$tarball" | grep -qx "$bin_name"; then
-            echo "::error title=Binary missing from archive::$name: $bin_name not found in $(basename "$url")"
-            fail_count=$((fail_count + 1))
-          else
-            echo "verified: $name ($bin_name) sha256 + archive contents OK"
-          fi
-          rm -rf "$tmp"
-          echo "::endgroup::"
-          url="" sha=""
-        fi
-        ;;
-    esac
-  done < "$formula"
+  # (url, sha256, bin_name) triples come from scripts/formula_parser.py's
+  # extract_url_sha_bin_triples() — the shared, single source of truth for
+  # parsing Formula/*.rb — rather than a second, un-sync'd bash parser (see
+  # kubestellar/homebrew-tap#647). One `url<TAB>sha256<TAB>bin_name` line
+  # per Hardware::CPU branch.
+  while IFS=$'\t' read -r url sha bin_name; do
+    [ -z "$url" ] && continue
+    checked_count=$((checked_count + 1))
+    echo "::group::verify $name: $(basename "$url")"
+    tmp="$(mktemp -d)"
+    tarball="$tmp/artifact.tar.gz"
+    if ! "$CURL" -fsSL -o "$tarball" "$url"; then
+      echo "::error title=Download failed::$name: could not fetch $url"
+      fail_count=$((fail_count + 1))
+      rm -rf "$tmp"
+      echo "::endgroup::"
+      continue
+    fi
+    actual_sha="$(sha256_of "$tarball")"
+    if [ "$actual_sha" != "$sha" ]; then
+      echo "::error title=sha256 mismatch::$name: $url expected $sha got $actual_sha"
+      fail_count=$((fail_count + 1))
+      rm -rf "$tmp"
+      echo "::endgroup::"
+      continue
+    fi
+    if ! "$TAR" -tzf "$tarball" | grep -qx "$bin_name"; then
+      echo "::error title=Binary missing from archive::$name: $bin_name not found in $(basename "$url")"
+      fail_count=$((fail_count + 1))
+    else
+      echo "verified: $name ($bin_name) sha256 + archive contents OK"
+    fi
+    rm -rf "$tmp"
+    echo "::endgroup::"
+  done < <("$PYTHON" "$REPO_ROOT/scripts/formula_parser.py" --triples "$formula")
 done
 
 echo "verify_release_artifacts: checked $checked_count artifact(s), $fail_count failure(s)"

@@ -16,6 +16,7 @@ pattern), so `unittest discover` never picks it up directly.
 """
 
 import re
+import sys
 from pathlib import Path
 
 FORMULA_DIR = Path(__file__).resolve().parent.parent / "Formula"
@@ -48,6 +49,10 @@ SHA256_LINE_RE = re.compile(r'sha256\s+"([^"]+)"')
 # Unanchored/inline variants — intentionally distinct from the anchored
 # forms above (see note above); do not merge them.
 URL_INLINE_RE = re.compile(r'url\s+"([^"]+)"')
+
+# `bin.install "<name>"` — same pattern test_formula_bin_install_locality_
+# invariants.py uses to find the binary a formula installs.
+BIN_INSTALL_RE = re.compile(r'\bbin\.install\s+"([^"]+)"')
 
 # .../releases/download/<TAG>/<FILENAME>
 RELEASE_URL_RE = re.compile(r"/releases/download/(?P<tag>[^/]+)/(?P<file>[^/]+)$")
@@ -113,3 +118,54 @@ def _extract_url_hosts(text: str) -> list[tuple[str, str, str]]:
         host = rest.split("/", 1)[0]
         hosts.append((url, scheme, host))
     return hosts
+
+
+def extract_url_sha_bin_triples(text: str) -> list[tuple[str, str, str]]:
+    """Return ordered (url, sha256, bin_name) triples, one per
+    Hardware::CPU branch of a GoReleaser-generated formula body.
+
+    Scans line-by-line, tracking the most recently seen `url "..."` and
+    `sha256 "..."` until the next `bin.install "..."` closes out the
+    triple — the exact state machine scripts/verify_release_artifacts.sh
+    used to hand-roll itself (see kubestellar/homebrew-tap#647). Centralized
+    here so that script can shell out to this module instead of keeping a
+    second, un-sync'd copy of the parsing logic.
+    """
+    triples: list[tuple[str, str, str]] = []
+    url = sha = None
+    for line in text.splitlines():
+        m = URL_INLINE_RE.search(line)
+        if m:
+            url = m.group(1)
+            sha = None
+            continue
+        m = SHA256_LINE_RE.search(line)
+        if m:
+            sha = m.group(1)
+            continue
+        m = BIN_INSTALL_RE.search(line)
+        if m:
+            bin_name = m.group(1)
+            if url and sha:
+                triples.append((url, sha, bin_name))
+            url = sha = None
+    return triples
+
+
+def _main(argv: list[str]) -> int:
+    """CLI: `formula_parser.py --triples <Formula/foo.rb>` prints one
+    `url\tsha256\tbin_name` TSV line per triple, for
+    scripts/verify_release_artifacts.sh to consume without re-implementing
+    the parser in bash."""
+    if len(argv) != 2 or argv[0] != "--triples":
+        print("usage: formula_parser.py --triples <formula.rb>", file=sys.stderr)
+        return 2
+    path = Path(argv[1])
+    text = path.read_text(encoding="utf-8")
+    for url, sha, bin_name in extract_url_sha_bin_triples(text):
+        print(f"{url}\t{sha}\t{bin_name}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(_main(sys.argv[1:]))
