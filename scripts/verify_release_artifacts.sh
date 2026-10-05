@@ -24,11 +24,20 @@
 # exercises all 4 branches even though brew-ci.yml's matrix only ever
 # runs 2.
 #
-# Usage: scripts/verify_release_artifacts.sh
+# Usage: scripts/verify_release_artifacts.sh [--list]
 #   FORMULA_DIR  - directory of *.rb formulae (default: <repo root>/Formula)
+#   --list       - print "<name>\t<url>\t<sha256>\t<bin_name>" triples to
+#                  stdout instead of downloading/verifying anything. Lets
+#                  scripts/test_verify_release_artifacts_parser_parity.py
+#                  assert this bash matcher agrees with
+#                  formula_parser.extract_release_triples() (the Python
+#                  side of the same Formula/*.rb shape) without this
+#                  script growing a second, divergent implementation of
+#                  the extraction (see kubestellar/homebrew-tap#647).
 #
 # Exit codes:
-#   0 - every (url, sha256, binary) triple verified
+#   0 - every (url, sha256, binary) triple verified (or, under --list,
+#       triples were printed)
 #   1 - a download failure, sha256 mismatch, or missing binary was found
 #   2 - no formulae discovered (empty-suite regression guard)
 
@@ -39,12 +48,61 @@ FORMULA_DIR="${FORMULA_DIR:-$REPO_ROOT/Formula}"
 CURL="${CURL:-curl}"
 TAR="${TAR:-tar}"
 
+list_only=0
+for arg in "$@"; do
+  case "$arg" in
+    --list) list_only=1 ;;
+    *)
+      echo "verify_release_artifacts: unknown argument: $arg" >&2
+      exit 2
+      ;;
+  esac
+done
+
 sha256_of() {
   if command -v sha256sum >/dev/null 2>&1; then
     sha256sum "$1" | awk '{print $1}'
   else
     shasum -a 256 "$1" | awk '{print $1}'
   fi
+}
+
+# extract_triples <formula-file> — print one
+# "<url>\t<sha256>\t<bin_name>" line per (url, sha256, binary) triple
+# found in <formula-file>. Pulls ordered triples by scanning line-by-line
+# and tracking the most recently seen `url`/`sha256` until the next
+# `bin.install "..."` closes out the triple. Matches the consistent
+# GoReleaser-generated shape: url, then sha256, then
+# `define_method(:install) { bin.install "<name>" }` within the same
+# Hardware::CPU branch, repeated once per branch.
+#
+# This is the one bash owner of this extraction; formula_parser's Python
+# extract_release_triples() is the one Python owner, and
+# test_verify_release_artifacts_parser_parity.py asserts both agree on
+# every real Formula/*.rb (see kubestellar/homebrew-tap#647) — the same
+# shared-contract-plus-parity-test shape already used for
+# lib_emit_summary.sh / lib_emit_summary.py.
+extract_triples() {
+  local formula="$1"
+  local url="" sha="" bin_name=""
+  while IFS= read -r line; do
+    case "$line" in
+      *'url "'*)
+        url="${line#*url \"}"; url="${url%%\"*}"
+        sha=""
+        ;;
+      *'sha256 "'*)
+        sha="${line#*sha256 \"}"; sha="${sha%%\"*}"
+        ;;
+      *'bin.install "'*)
+        bin_name="${line#*bin.install \"}"; bin_name="${bin_name%%\"*}"
+        if [ -n "$url" ] && [ -n "$sha" ]; then
+          printf '%s\t%s\t%s\n' "$url" "$sha" "$bin_name"
+        fi
+        url="" sha=""
+        ;;
+    esac
+  done < "$formula"
 }
 
 fail_count=0
@@ -61,60 +119,48 @@ fi
 
 for formula in "${formulae[@]}"; do
   name="$(basename "$formula" .rb)"
-  # Pull ordered (url, sha256, bin_name) triples by scanning line-by-line
-  # and tracking the most recently seen `url`/`sha256` until the next
-  # `bin.install "..."` closes out the triple. Matches the consistent
-  # GoReleaser-generated shape: url, then sha256, then
-  # `define_method(:install) { bin.install "<name>" }` within the same
-  # Hardware::CPU branch, repeated once per branch.
-  url="" sha=""
-  while IFS= read -r line; do
-    case "$line" in
-      *'url "'*)
-        url="${line#*url \"}"; url="${url%%\"*}"
-        sha=""
-        ;;
-      *'sha256 "'*)
-        sha="${line#*sha256 \"}"; sha="${sha%%\"*}"
-        ;;
-      *'bin.install "'*)
-        bin_name="${line#*bin.install \"}"; bin_name="${bin_name%%\"*}"
-        if [ -n "$url" ] && [ -n "$sha" ]; then
-          checked_count=$((checked_count + 1))
-          echo "::group::verify $name: $(basename "$url")"
-          tmp="$(mktemp -d)"
-          tarball="$tmp/artifact.tar.gz"
-          if ! "$CURL" -fsSL -o "$tarball" "$url"; then
-            echo "::error title=Download failed::$name: could not fetch $url"
-            fail_count=$((fail_count + 1))
-            rm -rf "$tmp"
-            echo "::endgroup::"
-            url="" sha=""
-            continue
-          fi
-          actual_sha="$(sha256_of "$tarball")"
-          if [ "$actual_sha" != "$sha" ]; then
-            echo "::error title=sha256 mismatch::$name: $url expected $sha got $actual_sha"
-            fail_count=$((fail_count + 1))
-            rm -rf "$tmp"
-            echo "::endgroup::"
-            url="" sha=""
-            continue
-          fi
-          if ! "$TAR" -tzf "$tarball" | grep -qx "$bin_name"; then
-            echo "::error title=Binary missing from archive::$name: $bin_name not found in $(basename "$url")"
-            fail_count=$((fail_count + 1))
-          else
-            echo "verified: $name ($bin_name) sha256 + archive contents OK"
-          fi
-          rm -rf "$tmp"
-          echo "::endgroup::"
-          url="" sha=""
-        fi
-        ;;
-    esac
-  done < "$formula"
+
+  if [ "$list_only" -eq 1 ]; then
+    while IFS=$'\t' read -r url sha bin_name; do
+      printf '%s\t%s\t%s\t%s\n' "$name" "$url" "$sha" "$bin_name"
+    done < <(extract_triples "$formula")
+    continue
+  fi
+
+  while IFS=$'\t' read -r url sha bin_name; do
+    checked_count=$((checked_count + 1))
+    echo "::group::verify $name: $(basename "$url")"
+    tmp="$(mktemp -d)"
+    tarball="$tmp/artifact.tar.gz"
+    if ! "$CURL" -fsSL -o "$tarball" "$url"; then
+      echo "::error title=Download failed::$name: could not fetch $url"
+      fail_count=$((fail_count + 1))
+      rm -rf "$tmp"
+      echo "::endgroup::"
+      continue
+    fi
+    actual_sha="$(sha256_of "$tarball")"
+    if [ "$actual_sha" != "$sha" ]; then
+      echo "::error title=sha256 mismatch::$name: $url expected $sha got $actual_sha"
+      fail_count=$((fail_count + 1))
+      rm -rf "$tmp"
+      echo "::endgroup::"
+      continue
+    fi
+    if ! "$TAR" -tzf "$tarball" | grep -qx "$bin_name"; then
+      echo "::error title=Binary missing from archive::$name: $bin_name not found in $(basename "$url")"
+      fail_count=$((fail_count + 1))
+    else
+      echo "verified: $name ($bin_name) sha256 + archive contents OK"
+    fi
+    rm -rf "$tmp"
+    echo "::endgroup::"
+  done < <(extract_triples "$formula")
 done
+
+if [ "$list_only" -eq 1 ]; then
+  exit 0
+fi
 
 echo "verify_release_artifacts: checked $checked_count artifact(s), $fail_count failure(s)"
 if [ "$fail_count" -gt 0 ]; then
