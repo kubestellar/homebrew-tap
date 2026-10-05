@@ -113,3 +113,53 @@ def _extract_url_hosts(text: str) -> list[tuple[str, str, str]]:
         host = rest.split("/", 1)[0]
         hosts.append((url, scheme, host))
     return hosts
+
+
+# `bin.install "<name>"` — closes out the (url, sha256) pair most recently
+# seen above it into a triple. Mirrors the bash state machine in
+# scripts/verify_release_artifacts.sh's extract_triples(); see
+# extract_release_triples() below for why both exist.
+BIN_INSTALL_LINE_RE = re.compile(r'bin\.install\s+"([^"]+)"')
+
+
+def extract_release_triples(text: str) -> list[tuple[str, str, str]]:
+    """Return `(url, sha256, bin_name)` for every per-arch release branch
+    in a formula body, in order of appearance.
+
+    Python owner of the same (url, sha256, bin_name) extraction contract
+    that scripts/verify_release_artifacts.sh's bash `extract_triples()`
+    implements independently (that script downloads and verifies the
+    actual release tarballs, which is out of scope for a pure-Python
+    helper). scripts/test_verify_release_artifacts_parser_parity.py
+    asserts both agree on every real Formula/*.rb, the same
+    shared-contract-plus-parity-test shape used for
+    lib_emit_summary.py / lib_emit_summary.sh (see kubestellar/homebrew-
+    tap#647).
+
+    Scans line-by-line, tracking the most recently seen `url "..."` /
+    `sha256 "..."` pair until the next `bin.install "..."` closes it into
+    a triple — matching the GoReleaser-generated shape: url, then sha256,
+    then `define_method(:install) { bin.install "<name>" }`, repeated
+    once per Hardware::CPU branch.
+    """
+    triples: list[tuple[str, str, str]] = []
+    url = ""
+    sha = ""
+    for line in text.splitlines():
+        url_match = URL_INLINE_RE.search(line)
+        if url_match is not None:
+            url = url_match.group(1)
+            sha = ""
+            continue
+        sha_match = SHA256_LINE_RE.search(line)
+        if sha_match is not None:
+            sha = sha_match.group(1)
+            continue
+        bin_match = BIN_INSTALL_LINE_RE.search(line)
+        if bin_match is not None:
+            bin_name = bin_match.group(1)
+            if url and sha:
+                triples.append((url, sha, bin_name))
+            url = ""
+            sha = ""
+    return triples
