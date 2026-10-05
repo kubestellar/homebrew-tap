@@ -5,21 +5,21 @@
 class KcAgent < Formula
   desc "Local agent for KubeStellar Console: browser to kubeconfig"
   homepage "https://github.com/kubestellar/console"
-  version "0.3.43-nightly.20261004"
+  version "0.3.43-nightly.20261005"
   license "Apache-2.0"
 
   on_macos do
     if Hardware::CPU.intel?
-      url "https://github.com/kubestellar/console/releases/download/v0.3.43-nightly.20261004/kc-agent_0.3.43-nightly.20261004_darwin_amd64.tar.gz"
-      sha256 "d3662658f901b645c9338e47a3d67e3400fb84c590f37f886d475a74dad627c3"
+      url "https://github.com/kubestellar/console/releases/download/v0.3.43-nightly.20261005/kc-agent_0.3.43-nightly.20261005_darwin_amd64.tar.gz"
+      sha256 "b81948c2b405ca044115cc1e4dca0b5bfd1dc935c8e16c940aefe20f6b922823"
 
       define_method(:install) do
         bin.install "kc-agent"
       end
     end
     if Hardware::CPU.arm?
-      url "https://github.com/kubestellar/console/releases/download/v0.3.43-nightly.20261004/kc-agent_0.3.43-nightly.20261004_darwin_arm64.tar.gz"
-      sha256 "ca21f90649d13c5d6ac22529358fa9101024a50165b553f637ddd6e2bb28695d"
+      url "https://github.com/kubestellar/console/releases/download/v0.3.43-nightly.20261005/kc-agent_0.3.43-nightly.20261005_darwin_arm64.tar.gz"
+      sha256 "fad5d01ed6a56a540f80a1ed076af7728a538f4a14d25e84c3ffc71e6efbae6c"
 
       define_method(:install) do
         bin.install "kc-agent"
@@ -29,15 +29,15 @@ class KcAgent < Formula
 
   on_linux do
     if Hardware::CPU.intel? && Hardware::CPU.is_64_bit?
-      url "https://github.com/kubestellar/console/releases/download/v0.3.43-nightly.20261004/kc-agent_0.3.43-nightly.20261004_linux_amd64.tar.gz"
-      sha256 "f0a793bc260bb1a7119ae552742fe52512aa317b15587a4e28a7700ba5209f99"
+      url "https://github.com/kubestellar/console/releases/download/v0.3.43-nightly.20261005/kc-agent_0.3.43-nightly.20261005_linux_amd64.tar.gz"
+      sha256 "f8f6e2101a50ea8ffa53de275bca3f24fe8630dd47d97035cfba86769f0e465d"
       define_method(:install) do
         bin.install "kc-agent"
       end
     end
     if Hardware::CPU.arm? && Hardware::CPU.is_64_bit?
-      url "https://github.com/kubestellar/console/releases/download/v0.3.43-nightly.20261004/kc-agent_0.3.43-nightly.20261004_linux_arm64.tar.gz"
-      sha256 "c94ec72ec2112b96d7ea4b2e04c565b767a99e6842f04de1bb13edc099c03cb7"
+      url "https://github.com/kubestellar/console/releases/download/v0.3.43-nightly.20261005/kc-agent_0.3.43-nightly.20261005_linux_arm64.tar.gz"
+      sha256 "c582213f29dd7387766912b4eaf0f0c575eb57fe04a84dfceeaf442268912a5c"
       define_method(:install) do
         bin.install "kc-agent"
       end
