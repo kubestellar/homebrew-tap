@@ -16,6 +16,7 @@ pattern), so `unittest discover` never picks it up directly.
 """
 
 import re
+import sys
 from pathlib import Path
 
 FORMULA_DIR = Path(__file__).resolve().parent.parent / "Formula"
@@ -116,9 +117,7 @@ def _extract_url_hosts(text: str) -> list[tuple[str, str, str]]:
 
 
 # `bin.install "<name>"` — closes out the (url, sha256) pair most recently
-# seen above it into a triple. Mirrors the bash state machine in
-# scripts/verify_release_artifacts.sh's extract_triples(); see
-# extract_release_triples() below for why both exist.
+# seen above it into a triple; see extract_release_triples() below.
 BIN_INSTALL_LINE_RE = re.compile(r'bin\.install\s+"([^"]+)"')
 
 
@@ -126,15 +125,13 @@ def extract_release_triples(text: str) -> list[tuple[str, str, str]]:
     """Return `(url, sha256, bin_name)` for every per-arch release branch
     in a formula body, in order of appearance.
 
-    Python owner of the same (url, sha256, bin_name) extraction contract
-    that scripts/verify_release_artifacts.sh's bash `extract_triples()`
-    implements independently (that script downloads and verifies the
-    actual release tarballs, which is out of scope for a pure-Python
-    helper). scripts/test_verify_release_artifacts_parser_parity.py
-    asserts both agree on every real Formula/*.rb, the same
-    shared-contract-plus-parity-test shape used for
-    lib_emit_summary.py / lib_emit_summary.sh (see kubestellar/homebrew-
-    tap#647).
+    Single owner of the (url, sha256, bin_name) extraction contract.
+    scripts/verify_release_artifacts.sh (which downloads and verifies the
+    actual release tarballs) shells out to this function via the
+    `--triples` CLI below instead of keeping its own bash parser, and
+    scripts/test_verify_release_artifacts_parser_parity.py asserts that
+    shell-out path agrees with calling this function in-process on every
+    real Formula/*.rb (see kubestellar/homebrew-tap#647).
 
     Scans line-by-line, tracking the most recently seen `url "..."` /
     `sha256 "..."` pair until the next `bin.install "..."` closes it into
@@ -163,3 +160,22 @@ def extract_release_triples(text: str) -> list[tuple[str, str, str]]:
             url = ""
             sha = ""
     return triples
+
+
+def _main(argv: list[str]) -> int:
+    """CLI: `formula_parser.py --triples <Formula/foo.rb>` prints one
+    `url\\tsha256\\tbin_name` TSV line per extract_release_triples() triple,
+    for scripts/verify_release_artifacts.sh to consume without keeping a
+    second, un-sync'd bash implementation of the extraction (see
+    kubestellar/homebrew-tap#647)."""
+    if len(argv) != 2 or argv[0] != "--triples":
+        print("usage: formula_parser.py --triples <formula.rb>", file=sys.stderr)
+        return 2
+    text = Path(argv[1]).read_text(encoding="utf-8")
+    for url, sha, bin_name in extract_release_triples(text):
+        print(f"{url}\t{sha}\t{bin_name}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(_main(sys.argv[1:]))

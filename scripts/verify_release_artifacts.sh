@@ -29,11 +29,11 @@
 #   --list       - print "<name>\t<url>\t<sha256>\t<bin_name>" triples to
 #                  stdout instead of downloading/verifying anything. Lets
 #                  scripts/test_verify_release_artifacts_parser_parity.py
-#                  assert this bash matcher agrees with
-#                  formula_parser.extract_release_triples() (the Python
-#                  side of the same Formula/*.rb shape) without this
-#                  script growing a second, divergent implementation of
-#                  the extraction (see kubestellar/homebrew-tap#647).
+#                  assert this script's shell-out to
+#                  formula_parser.extract_release_triples() (the single
+#                  owner of the Formula/*.rb triple extraction) keeps
+#                  agreeing with calling it in-process (see
+#                  kubestellar/homebrew-tap#647).
 #
 # Exit codes:
 #   0 - every (url, sha256, binary) triple verified (or, under --list,
@@ -47,6 +47,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FORMULA_DIR="${FORMULA_DIR:-$REPO_ROOT/Formula}"
 CURL="${CURL:-curl}"
 TAR="${TAR:-tar}"
+PYTHON="${PYTHON:-python3}"
 
 list_only=0
 for arg in "$@"; do
@@ -69,40 +70,18 @@ sha256_of() {
 
 # extract_triples <formula-file> — print one
 # "<url>\t<sha256>\t<bin_name>" line per (url, sha256, binary) triple
-# found in <formula-file>. Pulls ordered triples by scanning line-by-line
-# and tracking the most recently seen `url`/`sha256` until the next
-# `bin.install "..."` closes out the triple. Matches the consistent
-# GoReleaser-generated shape: url, then sha256, then
-# `define_method(:install) { bin.install "<name>" }` within the same
-# Hardware::CPU branch, repeated once per branch.
+# found in <formula-file>, one per Hardware::CPU branch.
 #
-# This is the one bash owner of this extraction; formula_parser's Python
-# extract_release_triples() is the one Python owner, and
-# test_verify_release_artifacts_parser_parity.py asserts both agree on
-# every real Formula/*.rb (see kubestellar/homebrew-tap#647) — the same
-# shared-contract-plus-parity-test shape already used for
-# lib_emit_summary.sh / lib_emit_summary.py.
+# Thin shell-out to scripts/formula_parser.py's extract_release_triples()
+# via its `--triples` CLI — the single shared owner of this extraction —
+# rather than a second, un-sync'd bash parser (see
+# kubestellar/homebrew-tap#647).
+# test_verify_release_artifacts_parser_parity.py asserts this script's
+# --list output agrees with extract_release_triples() called in-process,
+# guarding the shell-out plumbing itself.
 extract_triples() {
   local formula="$1"
-  local url="" sha="" bin_name=""
-  while IFS= read -r line; do
-    case "$line" in
-      *'url "'*)
-        url="${line#*url \"}"; url="${url%%\"*}"
-        sha=""
-        ;;
-      *'sha256 "'*)
-        sha="${line#*sha256 \"}"; sha="${sha%%\"*}"
-        ;;
-      *'bin.install "'*)
-        bin_name="${line#*bin.install \"}"; bin_name="${bin_name%%\"*}"
-        if [ -n "$url" ] && [ -n "$sha" ]; then
-          printf '%s\t%s\t%s\n' "$url" "$sha" "$bin_name"
-        fi
-        url="" sha=""
-        ;;
-    esac
-  done < "$formula"
+  "$PYTHON" "$REPO_ROOT/scripts/formula_parser.py" --triples "$formula"
 }
 
 fail_count=0
