@@ -193,6 +193,18 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   [#479](https://github.com/kubestellar/homebrew-tap/pull/479), closing the
   gap previously tracked in
   [#425](https://github.com/kubestellar/homebrew-tap/issues/425).
+- **Formula CI health** also has a structured-summary record for the
+  `brew-ci.yml` tap-registration step itself:
+  `scripts/brew_tap_setup.sh` (the "Set up Homebrew tap" step) now emits a
+  bounded `BREW_TAP_SETUP_SUMMARY:` line (status/tap_result/trust_supported/
+  tap_name — no exporter, no external data flow) before every exit path,
+  matching the other `*_SUMMARY:` lines above. Before this, the step
+  emitted zero log output on any branch, which is the exact gap called out
+  in the
+  [`brew-ci.yml` Linux "untrusted tap"](postmortems/2026-08-31-brew-ci-linux-untrusted-tap.md)
+  postmortem's Action Items ("a smoke check that fails loudly instead of
+  silently degrading when tap-registration behavior changes"). Applied in
+  [#654](https://github.com/kubestellar/homebrew-tap/pull/654).
 
 ## Recommendations (no backend configured)
 
