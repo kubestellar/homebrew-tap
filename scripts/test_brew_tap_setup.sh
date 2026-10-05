@@ -70,6 +70,10 @@ output=$(env -i PATH="$stub2:/usr/bin:/bin" TAP_DIR="$work_dir/checkout2" \
 code=$?
 assert_exit_code "tap-ok trust-unsupported exit" 0 "$code"
 assert_not_contains "tap-ok trust-unsupported no plain trust call" "$(cat "$stub2/calls.log")" "trust kubestellar/tap"
+assert_contains "tap-ok trust-unsupported summary emitted" "$output" "BREW_TAP_SETUP_SUMMARY: "
+assert_contains "tap-ok trust-unsupported summary status" "$output" "\"status\":\"success\""
+assert_contains "tap-ok trust-unsupported summary tap_result" "$output" "\"tap_result\":\"clean\""
+assert_contains "tap-ok trust-unsupported summary trust_supported" "$output" "\"trust_supported\":\"no\""
 
 # --- Case 3: tap fails, trust supported -> trust called, exit 0 ---
 stub3="$work_dir/stub3"
