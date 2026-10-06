@@ -23,33 +23,30 @@ actually required before a PR can merge to `main`. Required contexts:
 - `brew audit + install smoke test (macos-latest)`
 - `unit tests + drift check`
 
-**Path-filter caveat (correction):** `brew-ci.yml` and `validate-formulae.yml`
-both trigger only on `paths: ['Formula/**', ...]`. Per [GitHub's own
-troubleshooting docs](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks),
+**Path-filter caveat (resolved):** `brew-ci.yml` and `validate-formulae.yml`
+previously triggered their `pull_request` jobs only on
+`paths: ['Formula/**', ...]`. Per [GitHub's own troubleshooting
+docs](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/collaborating-on-repositories-with-code-quality-features/troubleshooting-required-status-checks#handling-skipped-but-required-checks),
 GitHub does **not** treat a required status check as skipped-and-passing when
 its workflow's path filter doesn't match — the check stays "Pending" forever
-and **blocks merge indefinitely**. This is the opposite of what an earlier
-draft of this doc assumed. Concretely, most of this operations agent's own
-`runbooks/**`/`docs/**`-only PRs would never trigger `brew-ci.yml` or
-`validate-formulae.yml`, so enabling the three contexts below as required
-**today, as-is, would deadlock every doc-only PR**. Before enabling them,
-whoever applies this policy must first remove the `paths:` filter from these
-workflows' `pull_request` trigger and instead gate the actual work with a
-job/step-level `if:` that checks for changed paths (so the workflow always
-runs and reports a real "success" for non-matching PRs, satisfying the
-required check) — see GitHub's guidance linked above for the pattern, and
-[issue #640](https://github.com/kubestellar/homebrew-tap/issues/640) for the
-exact replacement YAML for both workflows (a `.github/workflows/**` change,
-so it needs a maintainer or an agent with `workflows` permission to apply).
+and **blocks merge indefinitely**. This was tracked in
+[#640](https://github.com/kubestellar/homebrew-tap/issues/640) and fixed by
+[#642](https://github.com/kubestellar/homebrew-tap/pull/642): the `paths:`
+filter was removed from both workflows' `pull_request` triggers, and each
+workflow now starts with a `detect-changes` job
+(`dorny/paths-filter`) that the main job gates on via a job-level `if:`, so
+the workflow always registers a status check — including a real "success"
+for doc-only PRs that don't touch `Formula/**` — instead of staying
+"Pending" forever. The three required contexts below are safe to enable as
+of that fix; #640 is closed.
 
 ## Applying
 
-**Do not enable the three contexts above as required until the path-filter
-fix in [#640](https://github.com/kubestellar/homebrew-tap/issues/640) lands**
-— doing so first would deadlock every PR that doesn't touch `Formula/**`
-(including this repo's own `docs/**`/`runbooks/**` operations PRs). A
-repository administrator must apply these settings via the
-GitHub Settings > Branches UI, or via:
+The path-filter blocker above is resolved (see "Path-filter caveat
+(resolved)"), so the three contexts below can now be enabled as required
+status checks without deadlocking doc-only PRs. A repository administrator
+must still apply these settings via the GitHub Settings > Branches UI, or
+via:
 
 ```bash
 gh api -X PUT "repos/kubestellar/homebrew-tap/branches/main/protection" --input policy.json
