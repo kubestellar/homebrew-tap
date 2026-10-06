@@ -11,12 +11,12 @@ Wraps the CI-side invocation from .github/workflows/validate-formulae.yml
 with coverage measurement and a configurable minimum threshold. Runs
 identically locally and in CI — see kubestellar/homebrew-tap#334.
 
-Why this file rather than editing the workflow directly: the quality-lane
-GitHub App does not carry the `workflows` permission scope, so any push
-that touches `.github/workflows/*.yml` is rejected. Landing this helper
-first lets a maintainer wire it into `validate-formulae.yml` with a
-one-line workflow change (see #334 comment thread for the exact diff)
-without needing the App to gain workflow-scope credentials.
+Already wired into CI: `.github/workflows/validate-formulae.yml`'s
+"Enforce 100% coverage gate" step runs
+`python3 scripts/coverage_gate.py --min 100 --report-only` (landed via
+#614/#618; the original gap this closed is tracked, closed, in #334).
+This module is not an unwired standalone helper awaiting a maintainer
+edit — it runs in CI on every push and pull request.
 
 Usage:
     python3 scripts/coverage_gate.py                        # default threshold (95)
