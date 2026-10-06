@@ -36,7 +36,7 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
 | SLI | Definition | Source |
 |-----|------------|--------|
 | **Formula CI health** | Fraction of `brew-ci.yml` runs on `main` that succeed (brew audit --strict + install smoke test, per OS) | [brew-ci.yml](../.github/workflows/brew-ci.yml) run history |
-| **Formula drift health** | Fraction of `validate-formulae.yml` runs on `main` that succeed (unit tests + drift check) | [validate-formulae.yml](../.github/workflows/validate-formulae.yml) run history |
+| **Formula drift health** | Fraction of `validate-formulae.yml` runs on `main` that succeed (unit tests + drift check + [`verify_release_artifacts.sh`](../scripts/verify_release_artifacts.sh): sha256 + binary-presence check of all 4 `Hardware::CPU` branches per formula, including the macos-intel and linux-arm64 branches `brew-ci.yml`'s 2-runner matrix never exercises) | [validate-formulae.yml](../.github/workflows/validate-formulae.yml) run history |
 | **Time to detect a broken release** | Time from a broken formula merging to `main` until CI reports failure or a `kind/bug` incident issue is filed | CI run timestamp vs. merge timestamp, or issue `created_at` |
 | **Time to rollback/mitigate** | Time from incident detection to a rollback PR merged or formula pinned per the [Formula Rollback Runbook](../runbooks/formula-rollback.md) | Incident issue timeline |
 | **Weekly security-scan health** | Fraction of scheduled `CodeQL Analysis` (`0 4 * * 1`) and `Scorecard analysis` (`0 6 * * 1`) runs that complete successfully | [codeql.yml](../.github/workflows/codeql.yml) / [scorecard.yml](../.github/workflows/scorecard.yml) run history |

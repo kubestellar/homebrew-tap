@@ -36,6 +36,7 @@ Use this runbook when a formula update ships and one or more of the following is
 | Signal | Where to look |
 |--------|--------------|
 | CI failure on `main` | [brew-ci.yml](../.github/workflows/brew-ci.yml) run results |
+| Release artifact drift on macos-intel/linux-arm64 (branches `brew-ci.yml`'s 2-runner matrix never runs `brew install` on) | [validate-formulae.yml](../.github/workflows/validate-formulae.yml) run results — `verify_release_artifacts.sh` step |
 | User-reported install failures | [Issues](https://github.com/kubestellar/homebrew-tap/issues) tagged `kind/bug` |
 | GoReleaser run with bad artifacts | [kubestellar-mcp releases](https://github.com/kubestellar/kubestellar-mcp/releases) |
 | SHA256 mismatch error | `brew install` output: `SHA256 mismatch` |
