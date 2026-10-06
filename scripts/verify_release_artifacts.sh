@@ -40,6 +40,17 @@
 #       triples were printed)
 #   1 - a download failure, sha256 mismatch, or missing binary was found
 #   2 - no formulae discovered (empty-suite regression guard)
+#
+# This is a local safeguard script, not a scheduled job: no exporter,
+# metrics backend, or external data flow is added, and it is not wired
+# into CI here (adding it to a workflow requires `workflows` permission
+# this script does not assume). Run it manually, or from a workflow a
+# maintainer wires up. In a non-list run it does emit the same
+# single-line '<PREFIX>: {json}' CI-observability record every sibling
+# scripts/*.sh verification helper emits (see
+# scripts/verify_release_health.sh), via the shared
+# scripts/lib_emit_summary.sh emitter, so once wired in the result is
+# grep-able/step-summary-visible like the rest of this repo's CI.
 
 set -uo pipefail
 
@@ -48,6 +59,9 @@ FORMULA_DIR="${FORMULA_DIR:-$REPO_ROOT/Formula}"
 CURL="${CURL:-curl}"
 TAR="${TAR:-tar}"
 PYTHON="${PYTHON:-python3}"
+
+# shellcheck source=scripts/lib_emit_summary.sh
+. "$REPO_ROOT/scripts/lib_emit_summary.sh"
 
 list_only=0
 for arg in "$@"; do
@@ -142,6 +156,21 @@ if [ "$list_only" -eq 1 ]; then
 fi
 
 echo "verify_release_artifacts: checked $checked_count artifact(s), $fail_count failure(s)"
+
+# Single-line JSON summary for CI-log observability via the shared
+# lib_emit_summary.sh emitter (the same contract as
+# VERIFY_RELEASE_HEALTH_SUMMARY in verify_release_health.sh): stdout-only,
+# no exporter, no external data flow, no unbounded labels — just bounded
+# integer counts so a future caller (manual or CI) can grep a structured
+# pass/fail record instead of parsing the free-text output above.
+if [ "$fail_count" -eq 0 ]; then
+  status="pass"
+else
+  status="fail"
+fi
+emit_ci_summary VERIFY_RELEASE_ARTIFACTS_SUMMARY \
+  status="$status" checked_count="$checked_count" fail_count="$fail_count"
+
 if [ "$fail_count" -gt 0 ]; then
   exit 1
 fi
