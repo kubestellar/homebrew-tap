@@ -140,3 +140,9 @@ jobs:
 
       - name: Run Formula drift check
         run: python3 -u scripts/validate_formulae.py Formula
+
+      - name: Verify release artifacts (all 4 OS/arch branches)
+        # Downloads every per-arch release tarball referenced by Formula/*.rb and
+        # checks sha256 + archive contents for all 4 Hardware::CPU branches, not
+        # just the 2 brew-ci.yml's matrix (macos-arm64, linux-amd64) reaches.
+        run: bash scripts/verify_release_artifacts.sh
