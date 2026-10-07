@@ -112,6 +112,9 @@ output=$(env -i PATH="$stub_dir:/usr/bin:/bin" FORMULA_DIR="$formula_dir" bash "
 code=$?
 assert_exit_code "happy-path-exit" 0 "$code"
 assert_contains "happy-path-output" "$output" "verified: widget (widget)"
+assert_grep "happy-path-summary-shape" "$output" \
+  '^VERIFY_RELEASE_ARTIFACTS_SUMMARY: {"status":"pass","checked_count":[0-9][0-9]*,"fail_count":0}$' \
+  "expected a pass-status VERIFY_RELEASE_ARTIFACTS_SUMMARY line matching the bounded-integer JSON contract"
 
 # --- Case 2: sha256 mismatch ---
 cat > "$formula_dir/widget.rb" <<RB
@@ -132,6 +135,9 @@ output=$(env -i PATH="$stub_dir:/usr/bin:/bin" FORMULA_DIR="$formula_dir" bash "
 code=$?
 assert_exit_code "sha-mismatch-exit" 1 "$code"
 assert_contains "sha-mismatch-output" "$output" "sha256 mismatch"
+assert_grep "sha-mismatch-summary-shape" "$output" \
+  '^VERIFY_RELEASE_ARTIFACTS_SUMMARY: {"status":"fail","checked_count":[0-9][0-9]*,"fail_count":[1-9][0-9]*}$' \
+  "expected a fail-status VERIFY_RELEASE_ARTIFACTS_SUMMARY line matching the bounded-integer JSON contract"
 
 # --- Case 3: binary missing from archive ---
 printf 'https://example.invalid/widget_darwin_arm64.tar.gz\t%s\n' "$wrong_bin_tarball" > "$map_file"
