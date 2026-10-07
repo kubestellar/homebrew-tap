@@ -41,15 +41,13 @@
 #   1 - a download failure, sha256 mismatch, or missing binary was found
 #   2 - no formulae discovered (empty-suite regression guard)
 #
-# This is a local safeguard script, not a scheduled job: no exporter,
-# metrics backend, or external data flow is added, and it is not wired
-# into CI here (adding it to a workflow requires `workflows` permission
-# this script does not assume). Run it manually, or from a workflow a
-# maintainer wires up. In a non-list run it does emit the same
-# single-line '<PREFIX>: {json}' CI-observability record every sibling
-# scripts/*.sh verification helper emits (see
-# scripts/verify_release_health.sh), via the shared
-# scripts/lib_emit_summary.sh emitter, so once wired in the result is
+# This is a safeguard script: no exporter, metrics backend, or external
+# data flow is added. It is wired into .github/workflows/validate-formulae.yml
+# (kubestellar/homebrew-tap#665) as the "Verify release artifacts (all 4
+# OS/arch branches)" step. In a non-list run it emits the same single-line
+# '<PREFIX>: {json}' CI-observability record every sibling scripts/*.sh
+# verification helper emits (see scripts/verify_release_health.sh), via the
+# shared scripts/lib_emit_summary.sh emitter, so its result is
 # grep-able/step-summary-visible like the rest of this repo's CI.
 
 set -uo pipefail
