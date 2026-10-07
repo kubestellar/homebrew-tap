@@ -55,7 +55,8 @@ jobs:
     name: brew audit + install smoke test
     needs: detect-changes
     if: |
-      github.event_name != 'pull_request' || needs.detect-changes.outputs.changed == 'true'
+      always() &&
+      (github.event_name != 'pull_request' || needs.detect-changes.outputs.changed == 'true')
     strategy:
       fail-fast: false
       matrix:

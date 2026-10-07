@@ -73,7 +73,8 @@ jobs:
     name: unit tests + drift check
     needs: detect-changes
     if: |
-      github.event_name != 'pull_request' || needs.detect-changes.outputs.changed == 'true'
+      always() &&
+      (github.event_name != 'pull_request' || needs.detect-changes.outputs.changed == 'true')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
