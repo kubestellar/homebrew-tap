@@ -18,6 +18,7 @@ concurrency:
 
 jobs:
   copilot-automation:
+    if: (github.event_name == 'pull_request_target' && github.event.pull_request.user.login == 'Copilot') || github.event_name == 'workflow_dispatch'
     permissions:
       contents: write
       pull-requests: write
