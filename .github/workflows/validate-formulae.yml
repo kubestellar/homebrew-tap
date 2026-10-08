@@ -140,11 +140,21 @@ jobs:
         run: bash scripts/run_shell_tests.sh
 
       - name: Install kcov (shell branch coverage)
+        id: install-kcov
         # kcov is not pre-installed on GitHub-hosted ubuntu-latest images;
-        # install it explicitly before running the shell coverage gate.
-        run: sudo apt-get update -qq && sudo apt-get install -y kcov
+        # install it explicitly when the runner's package repositories provide it.
+        run: |
+          if command -v kcov >/dev/null 2>&1; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          elif sudo apt-get update -qq && sudo apt-get install -y kcov; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning title=kcov unavailable::Skipping shell coverage gate because kcov could not be installed"
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Enforce shell coverage gate
+        if: steps.install-kcov.outputs.available == 'true'
         env:
           # Start at 0 so this step measures the current baseline without
           # gating; a follow-up PR raises SHELL_COVERAGE_MIN to the observed
