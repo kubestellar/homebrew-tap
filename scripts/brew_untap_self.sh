@@ -45,6 +45,21 @@
 # `if: always()`): every command that can legitimately fail in a state
 # this script tolerates is guarded with `|| true`, so the exit status is
 # always 0.
+#
+# Emits one BREW_UNTAP_SELF_SUMMARY: {...} line (via
+# scripts/lib_emit_summary.sh) before exiting, mirroring the structured
+# record brew_tap_setup.sh's BREW_TAP_SETUP_SUMMARY: already emits for the
+# paired "Set up Homebrew tap" step. Before this, this step produced zero
+# log output on any branch — the same silent-degradation gap the
+# untrusted-tap postmortem (docs/postmortems/2026-08-31-brew-ci-linux-untrusted-tap.md)
+# called out for its setup-side counterpart, except here a reader could
+# not even tell whether `brew untap` succeeded, how many formulae were
+# uninstalled first, or whether the tap directory needed to be forcibly
+# recreated.
+#
+# Stdout/$GITHUB_STEP_SUMMARY-only structured output: no exporter, metrics
+# backend, or off-box data flow is added, and labels are bounded
+# (status/untap_result/uninstalled_count/tap_dir_action only).
 
 set -uo pipefail
 
@@ -55,13 +70,20 @@ GITHUB_WORKSPACE="${GITHUB_WORKSPACE:-$(pwd)}"
 
 # shellcheck source=scripts/lib_formula_iter.sh
 . "$REPO_ROOT/scripts/lib_formula_iter.sh"
+# shellcheck source=scripts/lib_emit_summary.sh
+. "$REPO_ROOT/scripts/lib_emit_summary.sh"
 
+uninstalled_count=0
 while IFS= read -r name; do
-  brew uninstall --force --ignore-dependencies "$TAP_NAME/$name" 2>/dev/null || true
+  if brew uninstall --force --ignore-dependencies "$TAP_NAME/$name" 2>/dev/null; then
+    uninstalled_count=$((uninstalled_count + 1))
+  fi
 done < <(list_formula_names "$FORMULA_DIR")
 
-brew untap "$TAP_NAME" || true
+untap_result="clean"
+brew untap "$TAP_NAME" || untap_result="failed-tolerated"
 
+tap_dir_action="none"
 tap_dir="$(brew --repo "$TAP_NAME" 2>/dev/null || true)"
 if [ -n "$tap_dir" ]; then
   if [ -e "$tap_dir" ] || [ -L "$tap_dir" ]; then
@@ -69,4 +91,12 @@ if [ -n "$tap_dir" ]; then
   fi
   mkdir -p "$(dirname "$tap_dir")"
   ln -s "$GITHUB_WORKSPACE" "$tap_dir"
+  tap_dir_action="recreated-symlink"
 fi
+
+status="success"
+[ "$untap_result" = "failed-tolerated" ] && status="degraded"
+
+emit_ci_summary BREW_UNTAP_SELF_SUMMARY \
+  status="$status" untap_result="$untap_result" \
+  uninstalled_count="$uninstalled_count" tap_dir_action="$tap_dir_action"

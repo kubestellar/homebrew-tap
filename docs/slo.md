@@ -208,6 +208,19 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   postmortem's Action Items ("a smoke check that fails loudly instead of
   silently degrading when tap-registration behavior changes"). Applied in
   [#654](https://github.com/kubestellar/homebrew-tap/pull/654).
+- **Formula CI health** also has a structured-summary record for the
+  `brew-ci.yml` tap-*teardown* step, the paired counterpart to the
+  tap-registration step above: `scripts/brew_untap_self.sh` (the "Untap
+  self before post-cleanup" step) now emits a bounded
+  `BREW_UNTAP_SELF_SUMMARY:` line (status/untap_result/uninstalled_count/
+  tap_dir_action — no exporter, no external data flow) before its single
+  exit path, matching the other `*_SUMMARY:` lines above. Before this, the
+  step emitted zero log output on any branch — the same gap
+  `scripts/brew_tap_setup.sh` had before #654, except on the teardown side
+  a reader could not tell whether `brew untap` succeeded, how many
+  formulae were uninstalled first, or whether the tap directory needed to
+  be forcibly recreated. Closes
+  [#685](https://github.com/kubestellar/homebrew-tap/issues/685).
 
 ## Recommendations (no backend configured)
 
