@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # lib_formula_iter.sh — shared formula-stem iteration for scripts that
 # walk a directory of *.rb formula files.
 #
