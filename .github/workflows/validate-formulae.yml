@@ -139,6 +139,28 @@ jobs:
         # fail CI; the wrapper's self-exclusion guard prevents recursion.
         run: bash scripts/run_shell_tests.sh
 
+      - name: Install kcov (shell branch coverage)
+        # kcov is not pre-installed on GitHub-hosted ubuntu-latest images;
+        # install it explicitly before running the shell coverage gate.
+        run: sudo apt-get update -qq && sudo apt-get install -y kcov
+
+      - name: Enforce shell coverage gate
+        env:
+          # Start at 0 so this step measures the current baseline without
+          # gating; a follow-up PR raises SHELL_COVERAGE_MIN to the observed
+          # floor and we ratchet it up from there. Do not lower this value
+          # once it is set — same discipline as the Python 100% ratchet.
+          SHELL_COVERAGE_MIN: "0"
+        run: bash scripts/shell_coverage_gate.sh
+
+      - name: Upload shell coverage report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: validate-formulae-shell-coverage
+          path: coverage/shell
+          retention-days: 14
+
       - name: Run Formula drift check
         run: python3 -u scripts/validate_formulae.py Formula
 
