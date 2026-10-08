@@ -1,7 +1,7 @@
 # Postmortem: `brew-ci.yml` Linux leg refuses to load any formula ("untrusted tap")
 
 **Date of incident:** 2026-08-31 (root-cause escalation confirmed 2026-09-08)
-**Date of postmortem:** 2026-09-13 (last updated 2026-09-14)
+**Date of postmortem:** 2026-09-13 (last updated 2026-10-08)
 **Authors:** operations (automated audit)
 **Severity:** P2 — see [severity-levels.md](../severity-levels.md)
 
@@ -31,9 +31,15 @@
 > issue or postmortem previously existed despite meeting this threshold) and
 > [#373](https://github.com/kubestellar/homebrew-tap/issues/373) (root cause
 > and escalation detail). The **Action Items** table below tracks remaining
-> follow-up work (notably: no automated alert on `brew-ci.yml` failure yet
-> exists, per #316/#318, and no `[incident]`-template issue was ever filed for
-> this outage, per #409).
+> follow-up work. **Update (2026-10-08):** the two items noted here as
+> outstanding when this postmortem was last updated have since landed —
+> #316/#318 (automated alert / scheduled health check for `brew-ci.yml` and
+> `validate-formulae.yml`) were both closed 2026-09-15, and the `kc-agent.rb`
+> `redundant_version` audit finding was durably fixed (not just masked) by
+> [PR #515](https://github.com/kubestellar/homebrew-tap/pull/515) on
+> 2026-09-20 — see the Action Items table for details. The only item left
+> open is whether a backdated `[incident]`-template issue should still be
+> filed for this outage, a maintainer judgment call noted in #409.
 
 ---
 
@@ -247,8 +253,8 @@ Time from root-cause escalation (`2026-09-08T05:20Z`) to first tracked report
 |--------|------|-------|-----|-------|
 | ~~Fix Linux formula resolution (`No available formula or cask with the name "kubestellar/tap/kc-agent"`) surfaced after the #422 tap-trust fix~~ | mitigate | maintainer / `workflows`-permission agent | Done | [#426](https://github.com/kubestellar/homebrew-tap/issues/426) |
 | ~~Fix `setup-homebrew` post-cleanup `rm` failure introduced by the #426 untap fix~~ | mitigate | maintainer / `workflows`-permission agent | Done — [PR #487](https://github.com/kubestellar/homebrew-tap/pull/487) | [#486](https://github.com/kubestellar/homebrew-tap/issues/486) |
-| Fix the `kc-agent.rb` `brew audit --strict` finding (`Stable: version is redundant with version scanned from URL`) so it doesn't resurface on the next plain (non-nightly) version bump — currently masked, not fixed, by an incidental `-nightly.*` version string | mitigate | maintainer / formula owner | Before the next plain-version bump of `kc-agent.rb` | [#426](https://github.com/kubestellar/homebrew-tap/issues/426) |
-| Add a scheduled/`workflow_run` failure alert for `brew-ci.yml` and `validate-formulae.yml` on `main` so future breaks are detected without manual audit | detect | maintainer / `workflows`-permission agent | — | [#316](https://github.com/kubestellar/homebrew-tap/issues/316), [#318](https://github.com/kubestellar/homebrew-tap/issues/318) |
+| ~~Fix the `kc-agent.rb` `brew audit --strict` finding (`Stable: version is redundant with version scanned from URL`) so it doesn't resurface on the next plain (non-nightly) version bump — currently masked, not fixed, by an incidental `-nightly.*` version string~~ | mitigate | maintainer / formula owner | Done — [PR #515](https://github.com/kubestellar/homebrew-tap/pull/515) (merged 2026-09-20) made `scripts/brew_audit_all.sh` treat a sole `redundant_version` finding as a non-fatal `::warning::`, a durable fix rather than the nightly-string mask | [#426](https://github.com/kubestellar/homebrew-tap/issues/426), [#513](https://github.com/kubestellar/homebrew-tap/issues/513) |
+| ~~Add a scheduled/`workflow_run` failure alert for `brew-ci.yml` and `validate-formulae.yml` on `main` so future breaks are detected without manual audit~~ | detect | maintainer / `workflows`-permission agent | Done | [#316](https://github.com/kubestellar/homebrew-tap/issues/316) (closed 2026-09-15 — `scheduled-workflow-failure-issue.yml` now alerts on `main`-branch Homebrew CI/Validate Formulae failures), [#318](https://github.com/kubestellar/homebrew-tap/issues/318) (closed 2026-09-15 — daily `schedule:` triggers added to both workflows) |
 | Decide whether a backdated `[incident]`-template issue (per `.github/ISSUE_TEMPLATE/incident.md`) should still be filed for this now-resolved outage | process | maintainer | — | [#409](https://github.com/kubestellar/homebrew-tap/issues/409) |
 | ~~Pin the Homebrew version installed by `setup-homebrew`, or add a smoke check that fails loudly (rather than silently degrading) if tap-registration behavior changes~~ | prevent | maintainer / `workflows`-permission agent | Done — `scripts/brew_tap_setup.sh` now emits a `BREW_TAP_SETUP_SUMMARY:` line before every exit path ([#654](https://github.com/kubestellar/homebrew-tap/pull/654)); the Homebrew-version pin itself remains open | [#373](https://github.com/kubestellar/homebrew-tap/issues/373) |
-| Once the Linux leg is green and the `kc-agent.rb` audit finding is durably fixed (not just masked by version format), update this postmortem's Status/Timeline/Impact with the resolution time and close [#409](https://github.com/kubestellar/homebrew-tap/issues/409) | process | maintainer | after fix merges | [#409](https://github.com/kubestellar/homebrew-tap/issues/409) |
+| ~~Once the Linux leg is green and the `kc-agent.rb` audit finding is durably fixed (not just masked by version format), update this postmortem's Status/Timeline/Impact with the resolution time and close [#409](https://github.com/kubestellar/homebrew-tap/issues/409)~~ | process | maintainer | after fix merges | Done — [#409](https://github.com/kubestellar/homebrew-tap/issues/409) closed 2026-09-17 once this postmortem existed; the `kc-agent.rb` fix landed afterward via #515 and is reflected in this update. Still open: whether a backdated `[incident]`-template issue should also be filed (left to maintainer judgment in #409's closing comment) |
