@@ -27,9 +27,10 @@ FORMULA_DIR="${FORMULA_DIR:-$REPO_ROOT/Formula}"
 TAP_NAME="${TAP_NAME:-kubestellar/tap}"
 EVENT_NAME="${EVENT_NAME:-push}"
 
-for formula in "$FORMULA_DIR"/*.rb; do
-  [ -e "$formula" ] || continue
-  name="$(basename "$formula" .rb)"
+# shellcheck source=scripts/lib_formula_iter.sh
+. "$REPO_ROOT/scripts/lib_formula_iter.sh"
+
+while IFS= read -r name; do
   echo "::group::brew fetch $TAP_NAME/$name"
   if brew fetch --formula "$TAP_NAME/$name"; then
     echo "::endgroup::"
@@ -51,4 +52,4 @@ for formula in "$FORMULA_DIR"/*.rb; do
     exit 1
   fi
   echo "::endgroup::"
-done
+done < <(list_formula_names "$FORMULA_DIR")

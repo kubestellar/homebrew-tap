@@ -42,6 +42,8 @@ TAP_NAME="${TAP_NAME:-kubestellar/tap}"
 
 # shellcheck source=scripts/lib_emit_summary.sh
 . "$REPO_ROOT/scripts/lib_emit_summary.sh"
+# shellcheck source=scripts/lib_formula_iter.sh
+. "$REPO_ROOT/scripts/lib_formula_iter.sh"
 
 # Matches brew audit --strict's `* ` problem-line bullets, e.g.:
 #   * Stable: `version 0.9.15` is redundant with version scanned from URL
@@ -50,9 +52,7 @@ REDUNDANT_VERSION_PATTERN='is redundant with version scanned from URL'
 formula_count=0
 warned_count=0
 
-for formula in "$FORMULA_DIR"/*.rb; do
-  [ -e "$formula" ] || continue
-  name="$(basename "$formula" .rb)"
+while IFS= read -r name; do
   formula_count=$((formula_count + 1))
   echo "::group::brew audit --strict $TAP_NAME/$name"
 
@@ -79,7 +79,7 @@ for formula in "$FORMULA_DIR"/*.rb; do
   emit_ci_summary BREW_AUDIT_SUMMARY status=fail \
     formula_count="$formula_count" warned_count="$warned_count" failed_formula:str="$name"
   exit "$exit_code"
-done
+done < <(list_formula_names "$FORMULA_DIR")
 
 emit_ci_summary BREW_AUDIT_SUMMARY status=pass \
   formula_count="$formula_count" warned_count="$warned_count" failed_formula=null

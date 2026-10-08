@@ -31,9 +31,10 @@ if [ -z "${INSTALLED_FORMULAE+x}" ]; then
   installed_list="$(brew list --formula 2>/dev/null || true)"
 fi
 
-for formula in "$FORMULA_DIR"/*.rb; do
-  [ -e "$formula" ] || continue
-  name="$(basename "$formula" .rb)"
+# shellcheck source=scripts/lib_formula_iter.sh
+. "$REPO_ROOT/scripts/lib_formula_iter.sh"
+
+while IFS= read -r name; do
   if ! printf '%s\n' "$installed_list" | grep -qx "$name"; then
     echo "::notice title=Skipping test::$TAP_NAME/$name was not installed"
     continue
@@ -47,4 +48,4 @@ for formula in "$FORMULA_DIR"/*.rb; do
     exit "$rc"
   fi
   echo "::endgroup::"
-done
+done < <(list_formula_names "$FORMULA_DIR")
