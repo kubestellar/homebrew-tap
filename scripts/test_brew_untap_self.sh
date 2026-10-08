@@ -78,6 +78,11 @@ else
   fail "nonempty-dir replaced with symlink" "expected $tap_dir1 to be a symlink"
 fi
 assert_contains "nonempty-dir uninstalls alpha" "$(cat "$stub1/calls.log")" "uninstall --force --ignore-dependencies kubestellar/tap/alpha"
+assert_contains "nonempty-dir summary emitted" "$output" "BREW_UNTAP_SELF_SUMMARY: "
+assert_contains "nonempty-dir summary status" "$output" "\"status\":\"success\""
+assert_contains "nonempty-dir summary untap_result" "$output" "\"untap_result\":\"clean\""
+assert_contains "nonempty-dir summary uninstalled_count" "$output" "\"uninstalled_count\":2"
+assert_contains "nonempty-dir summary tap_dir_action" "$output" "\"tap_dir_action\":\"recreated-symlink\""
 
 # --- Case 2 (#426): `brew untap` fails (formulae still installed) ->
 # tolerated, tap dir still forced-removed and symlink recreated ---
@@ -94,6 +99,8 @@ if [ -L "$tap_dir2" ] && [ "$(readlink "$tap_dir2")" = "$workspace" ]; then
 else
   fail "untap-fails symlink points at workspace" "expected $tap_dir2 -> $workspace"
 fi
+assert_contains "untap-fails summary status" "$output" "\"status\":\"degraded\""
+assert_contains "untap-fails summary untap_result" "$output" "\"untap_result\":\"failed-tolerated\""
 
 # --- Case 3 (#486): tap dir already removed, but a symlink is still
 # expected by setup-homebrew's post-cleanup -> recreated ---
@@ -111,16 +118,18 @@ if [ -L "$tap_dir3" ] && [ "$(readlink "$tap_dir3")" = "$workspace" ]; then
 else
   fail "already-removed symlink recreated" "expected $tap_dir3 -> $workspace to exist"
 fi
+assert_contains "already-removed summary tap_dir_action" "$output" "\"tap_dir_action\":\"recreated-symlink\""
 
 # --- Case 4: happy path, `brew --repo` reports no tap (already gone) ->
 # script exits 0 without touching any path ---
 stub4="$work_dir/stub4"
 make_stub_brew "$stub4" "" 0 1
-# shellcheck disable=SC2034  # captured for parity with other cases; only the exit code matters here
 output=$(env -i PATH="$stub4:/usr/bin:/bin" FORMULA_DIR="$formula_dir" GITHUB_WORKSPACE="$workspace" \
   bash "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "no-tap-reported exits 0" 0 "$code"
+assert_contains "no-tap-reported summary tap_dir_action" "$output" "\"tap_dir_action\":\"none\""
+assert_contains "no-tap-reported summary status" "$output" "\"status\":\"success\""
 
 if [ "$fail_count" -gt 0 ]; then
   echo "$fail_count assertion(s) failed"
