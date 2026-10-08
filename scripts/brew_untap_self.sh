@@ -53,11 +53,12 @@ FORMULA_DIR="${FORMULA_DIR:-$REPO_ROOT/Formula}"
 TAP_NAME="${TAP_NAME:-kubestellar/tap}"
 GITHUB_WORKSPACE="${GITHUB_WORKSPACE:-$(pwd)}"
 
-for formula in "$FORMULA_DIR"/*.rb; do
-  [ -e "$formula" ] || continue
-  name="$(basename "$formula" .rb)"
+# shellcheck source=scripts/lib_formula_iter.sh
+. "$REPO_ROOT/scripts/lib_formula_iter.sh"
+
+while IFS= read -r name; do
   brew uninstall --force --ignore-dependencies "$TAP_NAME/$name" 2>/dev/null || true
-done
+done < <(list_formula_names "$FORMULA_DIR")
 
 brew untap "$TAP_NAME" || true
 
