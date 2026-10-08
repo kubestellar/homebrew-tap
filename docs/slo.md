@@ -91,10 +91,13 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   [#316](https://github.com/kubestellar/homebrew-tap/issues/316)).
 - **This detection window does not include a pre-merge gate for most
   `Formula/**` changes.** `goreleaserbot` pushes formula updates directly to
-  `main` on every upstream release, with no associated PR or review (see
-  [#414](https://github.com/kubestellar/homebrew-tap/issues/414), which also
-  flags that this contradicts `.github/branch-protection-policy.md`'s stated
-  "only maintainers via PR merge" rule). `brew-ci.yml`'s `on: push` run for
+  `main` on every upstream release, with no associated PR or review (originally
+  flagged in [#414](https://github.com/kubestellar/homebrew-tap/issues/414),
+  now closed — this contradicts `.github/branch-protection-policy.md`'s
+  stated "only maintainers via PR merge" rule, and the remaining
+  branch-protection action item is tracked in
+  [#678](https://github.com/kubestellar/homebrew-tap/issues/678)).
+  `brew-ci.yml`'s `on: push` run for
   that commit is the first automated check it receives, and it runs *after*
   the change is already live to `brew install`/`brew upgrade` — so "Time to
   detect a broken release" for these bot commits starts from an

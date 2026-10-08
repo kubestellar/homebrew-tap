@@ -94,8 +94,11 @@ that gap; see issue #340 for the full finding.
 `goreleaserbot` on every upstream release, with no associated pull request or
 review (see `CONTRIBUTING.md`'s "Release sync" section). This is a real,
 recurring exception to the "only maintainers via PR merge" rule above, not
-covered by any documented bypass at the time of writing (see
-[#414](https://github.com/kubestellar/homebrew-tap/issues/414)). If this
+covered by any documented bypass at the time of writing (originally tracked
+in [#414](https://github.com/kubestellar/homebrew-tap/issues/414), which is
+now closed — only its documentation items were resolved; the branch-protection
+action item below remains open, tracked in
+[#678](https://github.com/kubestellar/homebrew-tap/issues/678)). If this
 automated flow is intended to remain a direct push, it should be scoped as an
 explicit, narrow branch-protection exception for that bot identity; if not,
 the flow should be moved behind a PR. Until a maintainer resolves this, do not
