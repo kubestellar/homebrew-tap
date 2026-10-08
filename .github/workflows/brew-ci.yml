@@ -88,6 +88,9 @@ jobs:
       - name: brew test (installed formulae)
         run: scripts/brew_test_installed.sh
 
+      - name: Verify release artifacts for all OS/arch branches
+        run: scripts/verify_release_artifacts.sh
+
       - name: Untap self before post-cleanup
         # setup-homebrew's post-job cleanup on Linux does a plain `rm` (not
         # `rm -rf`) on its pre-registered tap directory. Because we retap
