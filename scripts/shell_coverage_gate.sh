@@ -233,28 +233,41 @@ fi
 # each run's summary into <out>/<tname>/coverage.json, but the aggregate
 # for gating purposes is kcov-merged/coverage.json. Newer kcov auto-
 # creates the merged dir; older kcov needs an explicit --merge pass.
-merged_json="$out_dir/kcov-merged/coverage.json"
-if [ ! -f "$merged_json" ]; then
-  # Explicit merge — pass the output dir and every per-test dir as inputs.
-  # kcov ignores the "input == output" case, so listing $out_dir first is safe.
-  "$kcov_bin" --merge "$out_dir/kcov-merged" "$out_dir"/*/ >/dev/null 2>&1 || true
-fi
+# kcov nests its report one level deeper than the output dir it is given
+# (<out>/<exe-name>/coverage.json, and <merge-out>/<name>/coverage.json),
+# so locate coverage.json with find instead of assuming a fixed path.
+find_coverage_json() {
+  find "$1" -type f -name coverage.json -print 2>/dev/null | sort | head -n1
+}
 
-if [ ! -f "$merged_json" ]; then
-  # Some kcov versions emit only per-test summaries; pick the highest-
-  # numbered one as an approximation so the gate degrades to "measured
-  # from one representative test" instead of failing opaquely.
-  first_json=""
+merged_json="$(find_coverage_json "$out_dir/kcov-merged")"
+if [ -z "$merged_json" ]; then
+  # Explicit merge over every per-test dir; keep stderr for diagnostics.
+  per_test_dirs=()
   for d in "$out_dir"/*/; do
-    if [ -f "$d/coverage.json" ]; then
-      first_json="$d/coverage.json"
-    fi
+    case "$d" in */kcov-merged/) continue ;; esac
+    per_test_dirs+=("${d%/}")
   done
-  merged_json="$first_json"
+  "$kcov_bin" --merge "$out_dir/kcov-merged" "${per_test_dirs[@]}" \
+    >"$out_dir/kcov-merge.stdout" 2>"$out_dir/kcov-merge.stderr" || true
+  merged_json="$(find_coverage_json "$out_dir/kcov-merged")"
 fi
 
-if [ -z "${merged_json:-}" ] || [ ! -f "$merged_json" ]; then
+if [ -z "$merged_json" ]; then
+  # Degrade to a per-test summary rather than failing opaquely.
+  merged_json="$(
+    find "$out_dir" -type f -name coverage.json -not -path '*/kcov-merged/*' -print 2>/dev/null \
+      | sort | tail -n1
+  )"
+fi
+
+if [ -z "$merged_json" ] || [ ! -f "$merged_json" ]; then
   echo "shell_coverage_gate: kcov produced no coverage.json under $out_dir" >&2
+  echo "--- kcov output tree ---" >&2
+  find "$out_dir" -maxdepth 3 2>/dev/null | head -n 50 >&2
+  for f in "$out_dir"/kcov-merge.stderr "$out_dir"/*/kcov.stderr; do
+    [ -s "$f" ] && { echo "--- $f ---" >&2; head -n 20 "$f" >&2; }
+  done
   exit 5
 fi
 
