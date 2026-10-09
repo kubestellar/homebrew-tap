@@ -13,6 +13,8 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(deps)"
+    cooldown:
+      default-days: 7
     groups:
       codeql-action:
         patterns:
@@ -30,3 +32,5 @@ updates:
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(deps)"
+    cooldown:
+      default-days: 7
