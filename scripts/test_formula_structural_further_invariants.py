@@ -36,7 +36,7 @@ existing test in scripts/ but silently break the tap:
 import re
 import unittest
 
-from formula_parser import load_formulae
+from formula_test_fixtures import FormulaLoader
 
 URL_LINE_RE = re.compile(
     r'^\s*url\s+"https://github\.com/[^"]+_(?P<os>darwin|linux)_(?P<arch>amd64|arm64)\.tar\.gz"',
@@ -87,12 +87,6 @@ OS_ARCH_TO_URL_ARCH = {
     ("linux", "intel"): "amd64",
     ("linux", "arm"): "arm64",
 }
-
-
-class FormulaLoader(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.formulae = load_formulae()
 
 
 class UrlArchContextInvariants(FormulaLoader):
