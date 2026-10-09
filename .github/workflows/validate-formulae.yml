@@ -141,20 +141,24 @@ jobs:
 
       - name: Install kcov (shell branch coverage)
         id: install-kcov
-        # kcov is not pre-installed on GitHub-hosted ubuntu-latest images;
-        # install it explicitly when the runner's package repositories provide it.
+        # kcov is not preinstalled on ubuntu-latest and was dropped from apt in
+        # Ubuntu 24.04, so build it from a pinned release. Fail loudly if it
+        # cannot be installed so the coverage gate never silently skips.
         run: |
-          if command -v kcov >/dev/null 2>&1; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          elif sudo apt-get update -qq && sudo apt-get install -y kcov; then
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::warning title=kcov unavailable::Skipping shell coverage gate because kcov could not be installed"
-            echo "available=false" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          if ! command -v kcov >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y --no-install-recommends cmake g++ pkg-config \
+              libcurl4-openssl-dev libdw-dev libelf-dev libssl-dev binutils-dev \
+              libiberty-dev zlib1g-dev python3
+            git clone --depth 1 --branch v43 https://github.com/SimonKagstrom/kcov.git "$RUNNER_TEMP/kcov-src"
+            cmake -S "$RUNNER_TEMP/kcov-src" -B "$RUNNER_TEMP/kcov-build"
+            cmake --build "$RUNNER_TEMP/kcov-build" -j"$(nproc)"
+            sudo cmake --install "$RUNNER_TEMP/kcov-build"
           fi
+          kcov --version
 
       - name: Enforce shell coverage gate
-        if: steps.install-kcov.outputs.available == 'true'
         env:
           # Start at 0 so this step measures the current baseline without
           # gating; a follow-up PR raises SHELL_COVERAGE_MIN to the observed
