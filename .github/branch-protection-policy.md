@@ -19,9 +19,15 @@ The `main` branch of this repository must have the following protection rules en
 incident, not routine noise — but that premise only holds if those checks are
 actually required before a PR can merge to `main`. Required contexts:
 
-- `brew audit + install smoke test (ubuntu-latest)`
-- `brew audit + install smoke test (macos-latest)`
+- `brew-ci gate` (summary job in `brew-ci.yml`; fails if either
+  `brew audit + install smoke test (<os>)` matrix leg fails, passes when
+  the matrix is legitimately skipped for a doc-only PR)
 - `unit tests + drift check`
+
+The matrix legs themselves cannot be required directly: when the gated
+matrix job is skipped it reports under the bare name
+`brew audit + install smoke test`, not the per-OS names, so a required
+per-OS context would stay "Expected" forever on doc-only PRs.
 
 **Path-filter caveat (resolved):** `brew-ci.yml` and `validate-formulae.yml`
 previously triggered their `pull_request` jobs only on
@@ -37,13 +43,13 @@ workflow now starts with a `detect-changes` job
 (`dorny/paths-filter`) that the main job gates on via a job-level `if:`, so
 the workflow always registers a status check — including a real "success"
 for doc-only PRs that don't touch `Formula/**` — instead of staying
-"Pending" forever. The three required contexts below are safe to enable as
+"Pending" forever. The required contexts below are safe to enable as
 of that fix; #640 is closed.
 
 ## Applying
 
 The path-filter blocker above is resolved (see "Path-filter caveat
-(resolved)"), so the three contexts below can now be enabled as required
+(resolved)"), so the contexts below can now be enabled as required
 status checks without deadlocking doc-only PRs. A repository administrator
 must still apply these settings via the GitHub Settings > Branches UI, or
 via:
@@ -59,8 +65,7 @@ Where `policy.json` contains:
   "required_status_checks": {
     "strict": false,
     "contexts": [
-      "brew audit + install smoke test (ubuntu-latest)",
-      "brew audit + install smoke test (macos-latest)",
+      "brew-ci gate",
       "unit tests + drift check"
     ]
   },
