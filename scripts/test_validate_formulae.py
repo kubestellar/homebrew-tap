@@ -9,7 +9,7 @@ import textwrap
 import unittest
 from pathlib import Path
 
-from formula_test_fixtures import VALID_DEPLOY, VALID_OPS
+from formula_test_fixtures import VALID_DEPLOY, VALID_OPS, write_fixture
 from validate_formulae import parse_formula, validate
 
 MULTI_URL_OPS = textwrap.dedent("""\
@@ -42,9 +42,7 @@ MULTI_URL_OPS = textwrap.dedent("""\
 
 
 def _write(directory: Path, name: str, content: str) -> Path:
-    p = directory / name
-    p.write_text(content)
-    return p
+    return write_fixture(directory, name, content)
 
 
 class TestParseFormula(unittest.TestCase):
