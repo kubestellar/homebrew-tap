@@ -23,6 +23,21 @@ pattern), so ``unittest discover`` never picks it up directly.
 """
 
 import textwrap
+import unittest
+
+from formula_parser import load_formulae
+
+
+class FormulaLoader(unittest.TestCase):
+    """Shared ``setUpClass`` base for ``test_formula_*_invariants.py``
+    modules that just need every ``Formula/*.rb`` body loaded once per
+    suite (see kubestellar/homebrew-tap#692): this was previously defined
+    identically in two separate invariant modules.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.formulae = load_formulae()
 
 
 # Synthetic Formula/*.rb bodies shared by scripts/test_validate_formulae.py

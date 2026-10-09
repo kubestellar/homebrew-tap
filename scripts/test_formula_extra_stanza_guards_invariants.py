@@ -43,8 +43,7 @@ offending formula individually.
 import re
 import unittest
 
-from formula_parser import load_formulae
-
+from formula_test_fixtures import FormulaLoader
 
 CONFLICTS_WITH_RE = re.compile(r'^\s*conflicts_with\b', re.MULTILINE)
 CAVEATS_RE = re.compile(r'^\s*(?:def\s+caveats\b|caveats\s+do\b)', re.MULTILINE)
@@ -57,12 +56,6 @@ POST_INSTALL_RE = re.compile(r'^\s*(?:def\s+post_install\b|post_install\s+do\b)'
                              re.MULTILINE)
 ENV_STANZA_RE = re.compile(r'^\s*env\s+:[a-z_]+\b', re.MULTILINE)
 BOTTLE_SYMBOL_RE = re.compile(r'^\s*bottle\s+:[a-z_]+\b', re.MULTILINE)
-
-
-class FormulaLoader(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.formulae = load_formulae()
 
 
 class StrayStanzaGuards(FormulaLoader):
