@@ -24,8 +24,21 @@ pattern), so ``unittest discover`` never picks it up directly.
 
 import textwrap
 import unittest
+from pathlib import Path
 
 from formula_parser import load_formulae
+
+
+def write_fixture(directory: Path, name: str, content: str) -> Path:
+    """Write ``content`` to ``directory/name`` and return the path.
+
+    Previously defined identically (as ``_write``) in both
+    ``test_validate_formulae.py`` and ``test_validate_formulae_step_summary.py``
+    (see kubestellar/homebrew-tap#541 for why those two files are split).
+    """
+    p = directory / name
+    p.write_text(content)
+    return p
 
 
 class FormulaLoader(unittest.TestCase):

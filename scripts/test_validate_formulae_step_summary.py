@@ -11,7 +11,7 @@ import textwrap
 import unittest
 from pathlib import Path
 
-from formula_test_fixtures import VALID_OPS
+from formula_test_fixtures import VALID_OPS, write_fixture
 
 SCRIPT = Path(__file__).parent / "validate_formulae.py"
 
@@ -29,9 +29,7 @@ BROKEN_SHA = textwrap.dedent("""\
 
 
 def _write(directory: Path, name: str, content: str) -> Path:
-    p = directory / name
-    p.write_text(content)
-    return p
+    return write_fixture(directory, name, content)
 
 
 def _run(formula_dir: Path, summary_path: Path | None):
