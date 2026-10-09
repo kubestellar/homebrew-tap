@@ -119,3 +119,22 @@ jobs:
           JOB_STATUS: ${{ job.status }}
           MATRIX_OS: ${{ matrix.os }}
         run: scripts/brew_ci_summary.sh
+
+  brew-ci-gate:
+    # Single stable context for branch protection. The matrix job above
+    # reports as "brew audit + install smoke test (<os>)" when it runs but
+    # as the bare name when skipped, so neither can be required directly.
+    name: brew-ci gate
+    needs: [detect-changes, brew-audit-and-install]
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: Fail if any brew-ci job failed or was cancelled
+        env:
+          DETECT_RESULT: ${{ needs.detect-changes.result }}
+          AUDIT_RESULT: ${{ needs.brew-audit-and-install.result }}
+        run: |
+          echo "detect-changes=$DETECT_RESULT brew-audit-and-install=$AUDIT_RESULT"
+          case "$DETECT_RESULT" in success) ;; *) echo "detect-changes did not succeed"; exit 1 ;; esac
+          case "$AUDIT_RESULT" in success|skipped) ;; *) echo "brew audit + install smoke test failed"; exit 1 ;; esac
