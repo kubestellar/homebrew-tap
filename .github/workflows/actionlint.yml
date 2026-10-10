@@ -54,6 +54,13 @@ jobs:
       - name: Run actionlint
         run: ${{ steps.get_actionlint.outputs.executable }} -color
 
+      - name: Emit CI-observability summary
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          JOB_NAME: actionlint
+        run: scripts/actionlint_summary.sh
+
   shellcheck:
     name: lint shell scripts
     runs-on: ubuntu-latest
@@ -73,3 +80,10 @@ jobs:
         # -P scripts: resolve source paths relative to scripts/ so absolute-
         # from-repo-root and relative directives both resolve.
         run: shellcheck -x -P scripts scripts/*.sh
+
+      - name: Emit CI-observability summary
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          JOB_NAME: shellcheck
+        run: scripts/actionlint_summary.sh
