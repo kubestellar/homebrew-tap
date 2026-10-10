@@ -60,6 +60,8 @@ output=$(env -i PATH="$stub1:/usr/bin:/bin" FORMULA_DIR="$formula_dir" EVENT_NAM
 code=$?
 assert_exit_code "happy path exit" 0 "$code"
 assert_contains "happy path installs alpha" "$output" "brew install"
+assert_contains "happy path summary status" "$output" "BREW_INSTALL_SMOKE_SUMMARY: {\"status\":\"success\""
+assert_contains "happy path summary counts" "$output" "\"formula_count\":3,\"installed_count\":3,\"skipped_count\":0"
 
 # --- Case 2: beta fetch fails, EVENT_NAME=pull_request -> skip + continue ---
 stub2="$work_dir/stub2"
@@ -70,6 +72,7 @@ code=$?
 assert_exit_code "pr-skip exit" 0 "$code"
 assert_contains "pr-skip notice for beta" "$output" "::notice title=Skipping install::Release artifact for kubestellar/tap/beta is not available yet"
 assert_contains "pr-skip reaches gamma" "$output" "kubestellar/tap/gamma"
+assert_contains "pr-skip summary counts" "$output" "BREW_INSTALL_SMOKE_SUMMARY: {\"status\":\"success\",\"formula_count\":3,\"installed_count\":2,\"skipped_count\":1}"
 
 # --- Case 3: beta fetch fails, EVENT_NAME=push -> hard fail, stop before gamma ---
 stub3="$work_dir/stub3"
@@ -80,6 +83,7 @@ code=$?
 assert_exit_code "push-hard-fail exit" 1 "$code"
 assert_contains "push-hard-fail error message" "$output" "::error title=Missing release artifact::kubestellar/tap/beta could not be fetched"
 assert_not_contains "push-hard-fail does not reach gamma" "$output" "kubestellar/tap/gamma"
+assert_contains "push-hard-fail summary status" "$output" "BREW_INSTALL_SMOKE_SUMMARY: {\"status\":\"failed\",\"formula_count\":2,\"installed_count\":1,\"skipped_count\":0}"
 
 # --- Case 4: beta fetch fails, EVENT_NAME=schedule -> also hard fail ---
 stub4="$work_dir/stub4"
@@ -96,6 +100,7 @@ output=$(env -i PATH="$stub5:/usr/bin:/bin" FORMULA_DIR="$formula_dir" EVENT_NAM
   bash "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "install-fails propagates exit code" 5 "$code"
+assert_contains "install-fails summary status" "$output" "BREW_INSTALL_SMOKE_SUMMARY: {\"status\":\"failed\",\"formula_count\":1,\"installed_count\":0,\"skipped_count\":0}"
 
 if [ "$fail_count" -gt 0 ]; then
   echo "$fail_count assertion(s) failed"

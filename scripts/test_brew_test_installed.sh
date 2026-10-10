@@ -55,6 +55,7 @@ assert_exit_code "none-installed exit" 0 "$code"
 assert_contains "none-installed skips alpha" "$output" "::notice title=Skipping test::kubestellar/tap/alpha was not installed"
 assert_contains "none-installed skips beta" "$output" "::notice title=Skipping test::kubestellar/tap/beta was not installed"
 assert_contains "none-installed skips gamma" "$output" "::notice title=Skipping test::kubestellar/tap/gamma was not installed"
+assert_contains "none-installed summary counts" "$output" "BREW_TEST_INSTALLED_SUMMARY: {\"status\":\"success\",\"formula_count\":3,\"tested_count\":0,\"skipped_count\":3}"
 
 # --- Case 2: all installed, all pass -> exit 0, one group per formula ---
 output=$(env -i PATH="$stub:/usr/bin:/bin" FORMULA_DIR="$formula_dir" \
@@ -63,6 +64,7 @@ code=$?
 assert_exit_code "all-installed-pass exit" 0 "$code"
 group_count=$(printf '%s\n' "$output" | grep -c '^::group::brew test')
 assert_exit_code "all-installed-pass group count" 3 "$group_count"
+assert_contains "all-installed-pass summary counts" "$output" "BREW_TEST_INSTALLED_SUMMARY: {\"status\":\"success\",\"formula_count\":3,\"tested_count\":3,\"skipped_count\":0}"
 
 # --- Case 3: beta installed but its test fails -> propagate exit code, stop before gamma ---
 make_stub_brew "$stub" "beta" 9
@@ -71,6 +73,7 @@ output=$(env -i PATH="$stub:/usr/bin:/bin" FORMULA_DIR="$formula_dir" \
 code=$?
 assert_exit_code "beta-test-fails propagates exit code" 9 "$code"
 assert_not_contains "beta-test-fails does not reach gamma" "$output" "brew test kubestellar/tap/gamma"
+assert_contains "beta-test-fails summary status" "$output" "BREW_TEST_INSTALLED_SUMMARY: {\"status\":\"failed\",\"formula_count\":2,\"tested_count\":1,\"skipped_count\":0}"
 
 # --- Case 4: only alpha installed -> beta/gamma skipped, alpha tested ---
 make_stub_brew "$stub" "" 0
@@ -80,6 +83,7 @@ code=$?
 assert_exit_code "only-alpha-installed exit" 0 "$code"
 assert_contains "only-alpha-installed tests alpha" "$output" "::group::brew test kubestellar/tap/alpha"
 assert_contains "only-alpha-installed skips beta" "$output" "::notice title=Skipping test::kubestellar/tap/beta was not installed"
+assert_contains "only-alpha-installed summary counts" "$output" "BREW_TEST_INSTALLED_SUMMARY: {\"status\":\"success\",\"formula_count\":3,\"tested_count\":1,\"skipped_count\":2}"
 
 if [ "$fail_count" -gt 0 ]; then
   echo "$fail_count assertion(s) failed"
