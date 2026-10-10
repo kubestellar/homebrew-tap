@@ -271,19 +271,18 @@ if [ -z "$merged_json" ] || [ ! -f "$merged_json" ]; then
   exit 5
 fi
 
-# Parse percent_covered from coverage.json without a hard python
-# dependency: the field is a top-level "percent_covered" string in
-# kcov's JSON output. Fall back to python if grep can't find it (older
-# kcov formats).
+# Parse percent_covered from coverage.json. Prefer python3's json
+# module: kcov's "files" array (one "percent_covered" per instrumented
+# file) is written BEFORE the top-level aggregate "percent_covered"
+# field, so a naive grep that takes the *first* match silently reports
+# one file's coverage (often 0.00 for an uninstrumented file) instead
+# of the aggregate — see kubestellar/homebrew-tap#697 fallout, where
+# this regressed the gate to "coverage 0.00% >= threshold 0%" passing
+# silently on every run despite ~59% real aggregate coverage. Only
+# fall back to grep if python3 is unavailable, and take the *last*
+# match there (the top-level field is always written last).
 percent="$(
-  grep -o '"percent_covered"[[:space:]]*:[[:space:]]*"[0-9.]*"' "$merged_json" \
-    | head -n1 \
-    | sed 's/.*"\([0-9.]*\)".*/\1/'
-)"
-
-if [ -z "$percent" ]; then
-  percent="$(
-    python3 - "$merged_json" <<'PY' 2>/dev/null || true
+  python3 - "$merged_json" <<'PY' 2>/dev/null || true
 import json, sys
 try:
     with open(sys.argv[1]) as f:
@@ -300,6 +299,13 @@ if val is None:
 if val is not None:
     print(val)
 PY
+)"
+
+if [ -z "$percent" ]; then
+  percent="$(
+    grep -o '"percent_covered"[[:space:]]*:[[:space:]]*"[0-9.]*"' "$merged_json" \
+      | tail -n1 \
+      | sed 's/.*"\([0-9.]*\)".*/\1/'
   )"
 fi
 

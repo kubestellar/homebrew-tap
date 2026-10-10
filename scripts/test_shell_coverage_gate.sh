@@ -24,6 +24,11 @@
 #  12. coverage >= threshold (exit 0 + summary line)
 #  13. SHELL_COVERAGE_MIN env override
 #  14. floor rounding: 79.9% must fail an 80 threshold
+#  16. realistic kcov JSON (per-file "files" array, 0.00 first entry,
+#      true aggregate last) must parse the aggregate, not the first
+#      file's percent_covered (regression guard for #697 fallout,
+#      where a `grep | head -n1` picked the wrong match and the gate
+#      silently reported 0.00% on every run)
 #
 # Usage: scripts/test_shell_coverage_gate.sh
 # Exit status: 0 if all assertions pass, 1 otherwise.
@@ -204,9 +209,70 @@ output=$(KCOV="$work_dir/kcov_edge" "$GATE" --tests-dir "$tests14" --min 80 --ou
 exit_code=$?
 assert_exit_code "floor-79.9-exit-2" 2 "$exit_code"
 
+# make_fake_kcov_realistic <path> <aggregate_percent> — like
+# make_fake_kcov, but writes a coverage.json shaped like real kcov
+# output: a "files" array (whose first entry is an uninstrumented file
+# at 0.00%) followed by the true top-level "percent_covered" field.
+# Only used on --merge, matching how shell_coverage_gate.sh reads the
+# aggregate exclusively from the merged report.
+make_fake_kcov_realistic() {
+  local path="$1" aggregate="$2"
+  mkdir -p "$(dirname "$path")"
+  cat >"$path" <<EOF
+#!/usr/bin/env bash
+set -u
+if [ "\${1:-}" = "--merge" ]; then
+  out_dir="\$2"
+  mkdir -p "\$out_dir"
+  cat >"\$out_dir/coverage.json" <<JSON
+{
+  "files": [
+    {"file": "/repo/scripts/untouched.sh", "percent_covered": "0.00", "covered_lines": "0", "total_lines": "10"},
+    {"file": "/repo/scripts/touched.sh", "percent_covered": "100.00", "covered_lines": "5", "total_lines": "5"}
+  ],
+  "percent_covered": "$aggregate",
+  "covered_lines": 5,
+  "total_lines": 15
+}
+JSON
+  exit 0
+fi
+out_dir=""
+for arg in "\$@"; do
+  case "\$arg" in
+    --include-path=*|--exclude-pattern=*) ;;
+    -*) ;;
+    *)
+      if [ -z "\$out_dir" ]; then
+        out_dir="\$arg"
+      fi
+      ;;
+  esac
+done
+mkdir -p "\$out_dir"
+printf '{"percent_covered":"0.00"}\n' > "\$out_dir/coverage.json"
+exit 0
+EOF
+  chmod +x "$path"
+}
+
 # 15. Same fake, threshold 79 → passes (79.9 floors to 79, which >= 79).
 output=$(KCOV="$work_dir/kcov_edge" "$GATE" --tests-dir "$tests14" --min 79 --out "$work_dir/out15" 2>&1)
 exit_code=$?
 assert_exit_code "floor-79.9-vs-79-exit-0" 0 "$exit_code"
+
+# 16. Realistic kcov JSON: first "files" entry is 0.00%, true aggregate
+#     (90.00) is the top-level field written last. The gate must report
+#     90, not 0 — guards against the #697 fallout where `head -n1`
+#     silently picked the first file's percent_covered instead of the
+#     aggregate.
+make_fake_kcov_realistic "$work_dir/kcov_realistic" "90.00"
+tests16="$work_dir/tests16"
+make_tests_dir "$tests16" 1
+output=$(KCOV="$work_dir/kcov_realistic" "$GATE" --tests-dir "$tests16" --min 80 --out "$work_dir/out16" 2>&1)
+exit_code=$?
+assert_exit_code "realistic-json-aggregate-exit-0" 0 "$exit_code"
+assert_grep "realistic-json-aggregate-percent" "$output" '"percent_covered":"90.00"' \
+  "expected aggregate 90.00 in summary, not the first file's 0.00. Got: $output"
 
 finish "shell_coverage_gate"
