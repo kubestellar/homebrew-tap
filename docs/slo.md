@@ -221,6 +221,19 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   formulae were uninstalled first, or whether the tap directory needed to
   be forcibly recreated. Closes
   [#685](https://github.com/kubestellar/homebrew-tap/issues/685).
+- **Formula CI health** also has structured-summary records for the two
+  remaining `brew-audit-and-install` job steps that had none:
+  `scripts/brew_install_smoke.sh` (the "brew install smoke test" step) now
+  emits a bounded `BREW_INSTALL_SMOKE_SUMMARY:` line
+  (status/formula_count/installed_count/skipped_count), and
+  `scripts/brew_test_installed.sh` (the "brew test (installed formulae)"
+  step) now emits a bounded `BREW_TEST_INSTALLED_SUMMARY:` line
+  (status/formula_count/tested_count/skipped_count) — no exporter, no
+  external data flow. Before this, the final `BREW_CI_SUMMARY:` line's
+  `installed_count` was the only structured signal for either step,
+  with no way to tell how many formulae were skipped (missing
+  `pull_request` release artifact, or never installed) versus actually
+  attempted.
 
 ## Recommendations (no backend configured)
 
