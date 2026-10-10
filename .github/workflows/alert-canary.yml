@@ -1,0 +1,55 @@
+# Canary for scheduled-workflow-failure-issue.yml (#708). That workflow cannot
+# safely watch itself (self-listing in workflow_run.workflows re-triggers on
+# every completion, including its own skipped runs), so this independently
+# scheduled workflow checks it has run at all recently. Stale Issues runs
+# daily, so >=1 alert-workflow run (even `skipped`) per 24h is expected;
+# zero means it stopped triggering (disabled, bad trigger list, etc.).
+name: Alert Workflow Canary
+
+on:
+  schedule:
+    - cron: "30 6 * * *"
+  workflow_dispatch:
+
+permissions: read-all  # default read; writes scoped to job below
+
+jobs:
+  canary:
+    permissions:
+      actions: read
+      issues: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check alert workflow ran in last 24h
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPOSITORY: ${{ github.repository }}
+          ALERT_FILE: scheduled-workflow-failure-issue.yml
+        run: |
+          SINCE=$(date -u -d '24 hours ago' +%Y-%m-%dT%H:%M:%SZ)
+          COUNT=$(gh run list --repo "$REPOSITORY" \
+            --workflow "$ALERT_FILE" --limit 100 \
+            --json createdAt \
+            --jq "[.[] | select(.createdAt >= \"$SINCE\")] | length")
+          echo "Alert workflow runs since $SINCE: $COUNT"
+          if [ "$COUNT" -gt 0 ]; then
+            exit 0
+          fi
+
+          TITLE="Workflow failure: Open Issue on Scheduled Workflow Failure"
+          export TITLE
+          EXISTING=$(gh issue list --repo "$REPOSITORY" --state open \
+            --label workflow-failure --json number,title \
+            --jq '.[] | select(.title == env.TITLE) | .number')
+          BODY="No run of \`$ALERT_FILE\` in the last 24h. It may be disabled (60 days of inactivity), have a broken \`workflow_run.workflows\` list, or be failing before it starts. Check https://github.com/$REPOSITORY/actions/workflows/$ALERT_FILE and see runbooks/scheduled-workflow-failure.md. Canary run: $GITHUB_SERVER_URL/$REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          if [ -n "$EXISTING" ]; then
+            gh issue comment "$EXISTING" --repo "$REPOSITORY" --body "$BODY"
+          else
+            gh label create workflow-failure --repo "$REPOSITORY" \
+              --description "Automated: scheduled or main-branch workflow failed" \
+              --color d93f0b 2>/dev/null || true
+            gh issue create --repo "$REPOSITORY" --title "$TITLE" \
+              --label "workflow-failure,kind/bug,lifecycle/frozen" --body "$BODY"
+          fi
+          exit 1
