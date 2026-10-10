@@ -23,6 +23,12 @@ This closes the alert gap described in [`docs/slo.md`](../docs/slo.md#slos-servi
 previously these scheduled/`main` runs could fail silently, with detection
 depending on someone noticing a red check.
 
+The alert workflow itself is monitored by
+[`alert-canary.yml`](../.github/workflows/alert-canary.yml) (daily): if
+`scheduled-workflow-failure-issue.yml` has no run in the last 24h, it files
+`Workflow failure: Open Issue on Scheduled Workflow Failure`. Check whether the
+workflow was disabled (60 days of inactivity) or its trigger list was broken.
+
 ## Immediate Triage
 
 1. Open the linked run from the auto-filed issue and read the failing step's
