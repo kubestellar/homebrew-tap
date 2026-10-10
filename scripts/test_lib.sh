@@ -53,6 +53,26 @@ make_fake_formulae() {
   done
 }
 
+# _make_fixture <dir> <name>... — build a self-contained tap fixture in
+# <dir> by copying $SCRIPT_SOURCE/$LIB_SOURCE (set by the caller) in and
+# initialising a real git repo (so `git log` works). Fixture layout:
+#   <dir>/scripts/<basename of $SCRIPT_SOURCE>
+#   <dir>/scripts/lib_emit_summary.sh
+#   <dir>/Formula/<name>.rb          (one per name in $2..$n)
+_make_fixture() {
+  local dir="$1"; shift
+  mkdir -p "$dir/scripts" "$dir/Formula"
+  cp "$SCRIPT_SOURCE" "$dir/scripts/$(basename "$SCRIPT_SOURCE")"
+  cp "$LIB_SOURCE" "$dir/scripts/lib_emit_summary.sh"
+  chmod +x "$dir/scripts/$(basename "$SCRIPT_SOURCE")"
+  for name in "$@"; do
+    printf 'class %s < Formula\nend\n' "$name" > "$dir/Formula/${name}.rb"
+  done
+  git -C "$dir" init -q -b main 2>/dev/null || git -C "$dir" init -q
+  git -C "$dir" -c user.email=t@t -c user.name=t add -A
+  git -C "$dir" -c user.email=t@t -c user.name=t commit -q -m "seed" >/dev/null
+}
+
 # make_stub_brew <dir> <failing_formula_or_empty> <exit_code> [<output>] —
 # write a `brew audit --strict <tap>/<name>` PATH-shim to "<dir>/brew" that
 # fails with <exit_code> only when <name> == <failing_formula_or_empty>;
