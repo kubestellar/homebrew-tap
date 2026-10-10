@@ -44,25 +44,7 @@ fi
 make_work_dir
 work_root="$work_dir"
 
-# ---------------------------------------------------------------------------
-# Helper: build a self-contained tap fixture in $1 with the script copied
-# in and a real git repo initialised (so `git log` works). Fixture layout:
-#   $1/scripts/verify_release_health.sh
-#   $1/Formula/<name>.rb          (one per name in $2..$n)
-# ---------------------------------------------------------------------------
-_make_fixture() {
-  local dir="$1"; shift
-  mkdir -p "$dir/scripts" "$dir/Formula"
-  cp "$SCRIPT_SOURCE" "$dir/scripts/verify_release_health.sh"
-  cp "$LIB_SOURCE" "$dir/scripts/lib_emit_summary.sh"
-  chmod +x "$dir/scripts/verify_release_health.sh"
-  for name in "$@"; do
-    printf 'class %s < Formula\nend\n' "$name" > "$dir/Formula/${name}.rb"
-  done
-  git -C "$dir" init -q -b main 2>/dev/null || git -C "$dir" init -q
-  git -C "$dir" -c user.email=t@t -c user.name=t add -A
-  git -C "$dir" -c user.email=t@t -c user.name=t commit -q -m "seed" >/dev/null
-}
+# _make_fixture is now shared via test_lib.sh (sourced above).
 
 # ---------------------------------------------------------------------------
 # Helper: write a stub `brew` executable to $1/bin/brew with the exit

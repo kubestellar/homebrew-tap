@@ -74,23 +74,7 @@ _make_ungitted_fixture() {
   # Deliberately NO `git init` here — that is the point of this fixture.
 }
 
-# ---------------------------------------------------------------------------
-# Helper: same as test_verify_release_health.sh's _make_fixture, but
-# duplicated here so the two files stay independent.
-# ---------------------------------------------------------------------------
-_make_fixture() {
-  local dir="$1"; shift
-  mkdir -p "$dir/scripts" "$dir/Formula"
-  cp "$SCRIPT_SOURCE" "$dir/scripts/verify_release_health.sh"
-  cp "$LIB_SOURCE" "$dir/scripts/lib_emit_summary.sh"
-  chmod +x "$dir/scripts/verify_release_health.sh"
-  for name in "$@"; do
-    printf 'class %s < Formula\nend\n' "$name" > "$dir/Formula/${name}.rb"
-  done
-  git -C "$dir" init -q -b main 2>/dev/null || git -C "$dir" init -q
-  git -C "$dir" -c user.email=t@t -c user.name=t add -A
-  git -C "$dir" -c user.email=t@t -c user.name=t commit -q -m "seed" >/dev/null
-}
+# _make_fixture is now shared via test_lib.sh (sourced above).
 
 # ---------------------------------------------------------------------------
 # Helper: brew stub that succeeds and emits a fixed marker string on
