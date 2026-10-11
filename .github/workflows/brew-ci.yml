@@ -11,6 +11,8 @@ on:
       - 'scripts/brew_test_installed.sh'
       - 'scripts/brew_untap_self.sh'
       - 'scripts/brew_ci_summary.sh'
+      - 'scripts/verify_release_artifacts.sh'
+      - 'scripts/lib_emit_summary.sh'
       - '.github/workflows/brew-ci.yml'
   pull_request:
     branches: [main]
