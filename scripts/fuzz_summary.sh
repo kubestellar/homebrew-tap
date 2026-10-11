@@ -37,15 +37,14 @@ FORMULA_DIR="${FORMULA_DIR:-$REPO_ROOT/Formula}"
 
 # shellcheck source=scripts/lib_emit_summary.sh
 . "$REPO_ROOT/scripts/lib_emit_summary.sh"
+# shellcheck source=scripts/lib_formula_iter.sh
+. "$REPO_ROOT/scripts/lib_formula_iter.sh"
 
 JOB_STATUS="${JOB_STATUS:-unknown}"
 
 formula_count=0
 if [ -d "$FORMULA_DIR" ]; then
-  for f in "$FORMULA_DIR"/*.rb; do
-    [ -e "$f" ] || continue
-    formula_count=$((formula_count + 1))
-  done
+  formula_count=$(list_formula_names "$FORMULA_DIR" | wc -l | tr -d ' ')
 fi
 
 emit_ci_summary FUZZ_SUMMARY status="$JOB_STATUS" formula_count="$formula_count"
