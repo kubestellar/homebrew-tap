@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import io
 import os
+import subprocess
 import sys
 import types
 import unittest
@@ -97,19 +98,31 @@ class ImportCoverageTests(unittest.TestCase):
 
 class MainGuardTests(unittest.TestCase):
     def test_missing_coverage_returns_exit_code_3(self):
-        with mock.patch.object(coverage_gate, "_import_coverage", return_value=False):
+        with mock.patch.object(coverage_gate, "_import_coverage", return_value=False), \
+             mock.patch.object(coverage_gate, "emit_ci_summary") as emit:
             self.assertEqual(coverage_gate.main([]), 3)
+        # Every exit path — including this early guard — must still leave a
+        # grep-able COVERAGE_GATE_SUMMARY record (see module docstring).
+        emit.assert_called_once_with(
+            "COVERAGE_GATE_SUMMARY",
+            {"status": "error", "threshold": coverage_gate.DEFAULT_THRESHOLD, "percent_covered": None},
+        )
 
     def test_missing_scripts_dir_returns_1(self):
         # Point SCRIPTS_DIR at a nonexistent path to exercise the guard
         # without touching the on-disk layout.
         with mock.patch.object(coverage_gate, "SCRIPTS_DIR", coverage_gate.REPO_ROOT / "nope-does-not-exist"):
-            with mock.patch.object(coverage_gate, "_import_coverage", return_value=True):
+            with mock.patch.object(coverage_gate, "_import_coverage", return_value=True), \
+                 mock.patch.object(coverage_gate, "emit_ci_summary") as emit:
                 stderr = io.StringIO()
                 with redirect_stderr(stderr):
                     rc = coverage_gate.main([])
                 self.assertEqual(rc, 1)
                 self.assertIn("scripts/ not found", stderr.getvalue())
+                emit.assert_called_once_with(
+                    "COVERAGE_GATE_SUMMARY",
+                    {"status": "error", "threshold": coverage_gate.DEFAULT_THRESHOLD, "percent_covered": None},
+                )
 
     def test_tests_failure_returns_1_without_reaching_report(self):
         # If `coverage run` exits non-zero (unittest failure), main() must
@@ -117,11 +130,16 @@ class MainGuardTests(unittest.TestCase):
         # otherwise mask the failure by returning a coverage-pass code).
         with mock.patch.object(coverage_gate, "_import_coverage", return_value=True), \
              mock.patch.object(coverage_gate, "_run_tests_under_coverage", return_value=1) as run, \
-             mock.patch.object(coverage_gate, "_report") as report:
+             mock.patch.object(coverage_gate, "_report") as report, \
+             mock.patch.object(coverage_gate, "emit_ci_summary") as emit:
             rc = coverage_gate.main([])
         self.assertEqual(rc, 1)
         self.assertEqual(run.call_count, 1)
         report.assert_not_called()
+        emit.assert_called_once_with(
+            "COVERAGE_GATE_SUMMARY",
+            {"status": "fail", "threshold": coverage_gate.DEFAULT_THRESHOLD, "percent_covered": None},
+        )
 
     def test_tests_pass_delegates_to_report(self):
         with mock.patch.object(coverage_gate, "_import_coverage", return_value=True), \
@@ -223,19 +241,33 @@ class RunTestsUnderCoverageTests(unittest.TestCase):
 
 
 class ReportTests(unittest.TestCase):
+    """`_report()` now shells out to `coverage report` via `subprocess.run`
+    (capturing stdout/stderr so the TOTAL row can be parsed for the summary
+    line) instead of `subprocess.call`; `coverage xml` still uses
+    `subprocess.call` unchanged, since its output isn't parsed."""
+
+    @staticmethod
+    def _fake_run(returncode: int, stdout: str = "", stderr: str = ""):
+        def fake_run(cmd, cwd=None, capture_output=None, text=None):
+            return subprocess.CompletedProcess(cmd, returncode, stdout=stdout, stderr=stderr)
+        return fake_run
+
     def test_report_builds_include_args_from_comma_separated_list(self):
         captured: dict = {}
+        total_output = (
+            "Name   Stmts   Miss Branch BrPart  Cover\n"
+            "TOTAL     10      0      0      0   100%\n"
+        )
 
-        def fake_call(cmd, cwd=None):
-            captured.setdefault("cmds", []).append(cmd)
-            return 0
+        def fake_run(cmd, cwd=None, capture_output=None, text=None):
+            captured["cmd"] = cmd
+            return subprocess.CompletedProcess(cmd, 0, stdout=total_output, stderr="")
 
-        with mock.patch.object(coverage_gate.subprocess, "call", side_effect=fake_call):
+        with mock.patch.object(coverage_gate.subprocess, "run", side_effect=fake_run), \
+             mock.patch.object(coverage_gate, "emit_ci_summary") as emit:
             rc = coverage_gate._report(95, "scripts/a.py, scripts/b.py", want_xml=False)
         self.assertEqual(rc, 0)
-        # Only one call (report); xml was False.
-        self.assertEqual(len(captured["cmds"]), 1)
-        cmd = captured["cmds"][0]
+        cmd = captured["cmd"]
         # `coverage report` only honors the LAST `--include` flag (later
         # ones silently override earlier ones), so the patterns must be
         # collapsed into a single comma-joined value under one `--include`.
@@ -243,28 +275,47 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(len(include_flags), 1)
         self.assertEqual(cmd[include_flags[0] + 1], "scripts/a.py,scripts/b.py")
         self.assertIn("--fail-under=95", cmd)
+        emit.assert_called_once_with(
+            "COVERAGE_GATE_SUMMARY",
+            {"status": "pass", "threshold": 95, "percent_covered": 100.0},
+        )
 
     def test_report_emits_xml_when_requested(self):
         captured: dict = {}
 
-        def fake_call(cmd, cwd=None):
-            captured.setdefault("cmds", []).append(cmd)
-            return 0
+        with mock.patch.object(
+            coverage_gate.subprocess, "run", side_effect=self._fake_run(0)
+        ), mock.patch.object(coverage_gate, "emit_ci_summary"):
+            def fake_call(cmd, cwd=None):
+                captured.setdefault("cmds", []).append(cmd)
+                return 0
 
-        with mock.patch.object(coverage_gate.subprocess, "call", side_effect=fake_call):
-            coverage_gate._report(95, "scripts/x.py", want_xml=True)
-        self.assertEqual(len(captured["cmds"]), 2)
-        xml_cmd = captured["cmds"][1]
+            with mock.patch.object(coverage_gate.subprocess, "call", side_effect=fake_call):
+                coverage_gate._report(95, "scripts/x.py", want_xml=True)
+        self.assertEqual(len(captured["cmds"]), 1)
+        xml_cmd = captured["cmds"][0]
         self.assertIn("xml", xml_cmd)
         self.assertIn("coverage.xml", xml_cmd)
 
     def test_report_below_threshold_returns_2(self):
-        with mock.patch.object(coverage_gate.subprocess, "call", return_value=2):
+        with mock.patch.object(
+            coverage_gate.subprocess, "run", side_effect=self._fake_run(2, "TOTAL 1 0 0 0 80%\n")
+        ), mock.patch.object(coverage_gate, "emit_ci_summary") as emit:
             self.assertEqual(coverage_gate._report(95, "scripts/x.py", False), 2)
+        emit.assert_called_once_with(
+            "COVERAGE_GATE_SUMMARY",
+            {"status": "fail", "threshold": 95, "percent_covered": 80.0},
+        )
 
     def test_report_other_nonzero_exit_propagates_as_is(self):
-        with mock.patch.object(coverage_gate.subprocess, "call", return_value=7):
+        with mock.patch.object(
+            coverage_gate.subprocess, "run", side_effect=self._fake_run(7, "No data to report.\n")
+        ), mock.patch.object(coverage_gate, "emit_ci_summary") as emit:
             self.assertEqual(coverage_gate._report(95, "scripts/x.py", False), 7)
+        emit.assert_called_once_with(
+            "COVERAGE_GATE_SUMMARY",
+            {"status": "error", "threshold": 95, "percent_covered": None},
+        )
 
     def test_report_skips_empty_include_patterns(self):
         # A comma-separated --include value with empty segments (e.g. from
@@ -274,14 +325,15 @@ class ReportTests(unittest.TestCase):
         # step exercises the pattern-filter branch.
         captured: dict = {}
 
-        def fake_call(cmd, cwd=None):
-            captured.setdefault("cmds", []).append(cmd)
-            return 0
+        def fake_run(cmd, cwd=None, capture_output=None, text=None):
+            captured["cmd"] = cmd
+            return subprocess.CompletedProcess(cmd, 0, stdout="TOTAL 1 0 0 0 100%\n", stderr="")
 
-        with mock.patch.object(coverage_gate.subprocess, "call", side_effect=fake_call):
+        with mock.patch.object(coverage_gate.subprocess, "run", side_effect=fake_run), \
+             mock.patch.object(coverage_gate, "emit_ci_summary"):
             rc = coverage_gate._report(95, "scripts/a.py,,  ,scripts/b.py", want_xml=False)
         self.assertEqual(rc, 0)
-        cmd = captured["cmds"][0]
+        cmd = captured["cmd"]
         include_flags = [i for i, arg in enumerate(cmd) if arg == "--include"]
         # Exactly one --include, joining only the real patterns.
         self.assertEqual(len(include_flags), 1)
@@ -293,15 +345,48 @@ class ReportTests(unittest.TestCase):
         # being handed an invalid empty include arg.
         captured: dict = {}
 
-        def fake_call(cmd, cwd=None):
-            captured.setdefault("cmds", []).append(cmd)
-            return 0
+        def fake_run(cmd, cwd=None, capture_output=None, text=None):
+            captured["cmd"] = cmd
+            return subprocess.CompletedProcess(cmd, 0, stdout="TOTAL 1 0 0 0 100%\n", stderr="")
 
-        with mock.patch.object(coverage_gate.subprocess, "call", side_effect=fake_call):
+        with mock.patch.object(coverage_gate.subprocess, "run", side_effect=fake_run), \
+             mock.patch.object(coverage_gate, "emit_ci_summary"):
             coverage_gate._report(95, " , ,   ,", want_xml=False)
-        cmd = captured["cmds"][0]
+        cmd = captured["cmd"]
         self.assertNotIn("--include", cmd)
+
+    def test_report_writes_captured_stdout_and_stderr(self):
+        # The table must still reach the real stdout/stderr (unchanged CI
+        # log / local-run behavior) even though it's now captured first.
+        with mock.patch.object(
+            coverage_gate.subprocess,
+            "run",
+            side_effect=self._fake_run(0, stdout="TABLE\nTOTAL 1 0 0 0 100%\n", stderr="warn\n"),
+        ), mock.patch.object(coverage_gate, "emit_ci_summary"):
+            out, err = io.StringIO(), io.StringIO()
+            with mock.patch.object(sys, "stdout", out), mock.patch.object(sys, "stderr", err):
+                coverage_gate._report(95, "scripts/x.py", False)
+        self.assertIn("TOTAL 1 0 0 0 100%", out.getvalue())
+        self.assertIn("warn", err.getvalue())
+
+
+class ParseTotalPercentTests(unittest.TestCase):
+    def test_parses_integer_percent_from_total_row(self):
+        output = (
+            "Name   Stmts   Miss Branch BrPart  Cover\n"
+            "------------------------------------------\n"
+            "TOTAL     53      0     14      0   100%\n"
+        )
+        self.assertEqual(coverage_gate._parse_total_percent(output), 100.0)
+
+    def test_parses_decimal_percent_from_total_row(self):
+        output = "TOTAL  200  10  40  2  94.50%\n"
+        self.assertEqual(coverage_gate._parse_total_percent(output), 94.5)
+
+    def test_returns_none_when_no_total_row(self):
+        self.assertIsNone(coverage_gate._parse_total_percent("No data to report.\n"))
 
 
 if __name__ == "__main__":
     unittest.main()
+

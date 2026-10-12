@@ -234,6 +234,18 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   with no way to tell how many formulae were skipped (missing
   `pull_request` release artifact, or never installed) versus actually
   attempted.
+- **Formula drift health** also has a structured-summary record for the
+  `validate-formulae.yml` "Enforce 100% coverage gate" step:
+  `scripts/coverage_gate.py` (tested in `scripts/test_coverage_gate.py`)
+  now emits a bounded `COVERAGE_GATE_SUMMARY:` line
+  (status/threshold/percent_covered — no exporter, no external data flow)
+  before every exit path, matching the `SHELL_COVERAGE_SUMMARY:` record its
+  sibling `scripts/shell_coverage_gate.sh` already emitted for the shell
+  branch-coverage gate in the same job. Before this, the step's only
+  outcome record was the raw `coverage report` table, so a reader had to
+  open the step log to tell whether/why the 100% ratchet passed, failed,
+  or could not run at all (missing `coverage` package, missing `scripts/`,
+  or an upstream test failure).
 
 ## Recommendations (no backend configured)
 
