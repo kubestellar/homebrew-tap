@@ -62,7 +62,7 @@ stub1="$work_dir/stub1"
 make_stub_gh "$stub1" "4321"
 output=$(env -i PATH="$stub1:/usr/bin:/bin" \
   REPOSITORY="kubestellar/homebrew-tap" WORKFLOW_NAME="Fuzzing" \
-  bash "$SCRIPT" check-existing-issue 2>&1)
+  "$SCRIPT" check-existing-issue 2>&1)
 code=$?
 assert_exit_code "match-found exit" 0 "$code"
 assert_contains "match-found exists=true" "$output" "exists=true"
@@ -83,7 +83,7 @@ stub2="$work_dir/stub2"
 make_stub_gh "$stub2" ""
 output=$(env -i PATH="$stub2:/usr/bin:/bin" \
   REPOSITORY="kubestellar/homebrew-tap" WORKFLOW_NAME="Homebrew CI" \
-  bash "$SCRIPT" check-existing-issue 2>&1)
+  "$SCRIPT" check-existing-issue 2>&1)
 code=$?
 assert_exit_code "no-match exit" 0 "$code"
 assert_contains "no-match exists=false" "$output" "exists=false"
@@ -98,7 +98,7 @@ stub3="$work_dir/stub3"
 make_stub_gh "$stub3" ""
 output=$(env -i PATH="$stub3:/usr/bin:/bin" \
   REPOSITORY="kubestellar/homebrew-tap" WORKFLOW_NAME="CodeQL Analysis" \
-  bash "$SCRIPT" check-existing-issue 2>&1)
+  "$SCRIPT" check-existing-issue 2>&1)
 code=$?
 assert_exit_code "search-term exit" 0 "$code"
 assert_contains "search-term exists=false" "$output" "exists=false"
@@ -109,7 +109,7 @@ assert_contains "search-term uses full exact workflow name" "$argv3" \
 # --- Case 4: missing REPOSITORY → exit 1, useful message ---
 output=$(env -i PATH="$stub1:/usr/bin:/bin" \
   WORKFLOW_NAME="Fuzzing" \
-  bash "$SCRIPT" check-existing-issue 2>&1)
+  "$SCRIPT" check-existing-issue 2>&1)
 code=$?
 assert_exit_code "missing REPOSITORY exit" 1 "$code"
 assert_contains "missing REPOSITORY message" "$output" \
@@ -118,7 +118,7 @@ assert_contains "missing REPOSITORY message" "$output" \
 # --- Case 5: missing WORKFLOW_NAME → exit 1, useful message ---
 output=$(env -i PATH="$stub1:/usr/bin:/bin" \
   REPOSITORY="kubestellar/homebrew-tap" \
-  bash "$SCRIPT" check-existing-issue 2>&1)
+  "$SCRIPT" check-existing-issue 2>&1)
 code=$?
 assert_exit_code "missing WORKFLOW_NAME exit" 1 "$code"
 assert_contains "missing WORKFLOW_NAME message" "$output" \
