@@ -60,7 +60,7 @@ STUB
 # --- Case 1: exact match found → exists=true + issue_number ---
 stub1="$work_dir/stub1"
 make_stub_gh "$stub1" "4321"
-output=$(env -i PATH="$stub1:/usr/bin:/bin" \
+output=$(PATH="$stub1:$PATH" \
   REPOSITORY="kubestellar/homebrew-tap" WORKFLOW_NAME="Fuzzing" \
   "$SCRIPT" check-existing-issue 2>&1)
 code=$?
@@ -81,7 +81,7 @@ assert_contains "match-found argv --json" "$argv" " --json number,title"
 # --- Case 2: no match → exists=false only, no issue_number ---
 stub2="$work_dir/stub2"
 make_stub_gh "$stub2" ""
-output=$(env -i PATH="$stub2:/usr/bin:/bin" \
+output=$(PATH="$stub2:$PATH" \
   REPOSITORY="kubestellar/homebrew-tap" WORKFLOW_NAME="Homebrew CI" \
   "$SCRIPT" check-existing-issue 2>&1)
 code=$?
@@ -96,7 +96,7 @@ assert_not_contains "no-match has no issue_number" "$output" "issue_number"
 # before the jq exact-match filter gets a chance to reject it.
 stub3="$work_dir/stub3"
 make_stub_gh "$stub3" ""
-output=$(env -i PATH="$stub3:/usr/bin:/bin" \
+output=$(PATH="$stub3:$PATH" \
   REPOSITORY="kubestellar/homebrew-tap" WORKFLOW_NAME="CodeQL Analysis" \
   "$SCRIPT" check-existing-issue 2>&1)
 code=$?
@@ -107,7 +107,7 @@ assert_contains "search-term uses full exact workflow name" "$argv3" \
   'in:title "Workflow failure: CodeQL Analysis"'
 
 # --- Case 4: missing REPOSITORY → exit 1, useful message ---
-output=$(env -i PATH="$stub1:/usr/bin:/bin" \
+output=$(env -u REPOSITORY PATH="$stub1:$PATH" \
   WORKFLOW_NAME="Fuzzing" \
   "$SCRIPT" check-existing-issue 2>&1)
 code=$?
@@ -116,7 +116,7 @@ assert_contains "missing REPOSITORY message" "$output" \
   'missing required env var REPOSITORY'
 
 # --- Case 5: missing WORKFLOW_NAME → exit 1, useful message ---
-output=$(env -i PATH="$stub1:/usr/bin:/bin" \
+output=$(env -u WORKFLOW_NAME PATH="$stub1:$PATH" \
   REPOSITORY="kubestellar/homebrew-tap" \
   "$SCRIPT" check-existing-issue 2>&1)
 code=$?
