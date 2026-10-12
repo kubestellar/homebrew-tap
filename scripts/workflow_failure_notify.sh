@@ -15,6 +15,7 @@
 #   workflow_failure_notify.sh comment-body
 #   workflow_failure_notify.sh issue-body
 #   workflow_failure_notify.sh failed-jobs
+#   workflow_failure_notify.sh check-existing-issue
 #
 # Required env vars (mirroring the workflow_run event context):
 #   WORKFLOW_NAME   - e.g. "Fuzzing"
@@ -37,6 +38,23 @@
 # "failure" for that run, or the empty string if `gh run view` errors
 # (matching the `2>/dev/null || echo ""` swallow-on-error contract the
 # workflow already relies on so the follow-up step is not blocked).
+#
+# check-existing-issue mode uses (called by the `Check for existing open
+# issue` step in .github/workflows/scheduled-workflow-failure-issue.yml,
+# which previously inlined the same `gh issue list … --jq …` dedup
+# snippet untested):
+#   REPOSITORY      - e.g. "kubestellar/homebrew-tap"
+#   WORKFLOW_NAME   - e.g. "Fuzzing"
+# check-existing-issue prints two lines, mirroring the step's
+# $GITHUB_OUTPUT contract:
+#   exists=true|false
+#   issue_number=<N>        (second line only when exists=true)
+# It searches open issues labeled "workflow-failure" whose title is
+# exactly "Workflow failure: <WORKFLOW_NAME>" (the `--search` full-text
+# query narrows the candidate set; the `select(.title == …)` jq filter
+# then enforces an exact match so a workflow name that is a substring of
+# another, e.g. "CodeQL" vs. "CodeQL Analysis", cannot dedup onto the
+# wrong issue).
 #
 # Exit status: 0 on success (including failed-jobs' swallow-on-error
 # case), 1 on missing mode or missing required env var.
@@ -105,8 +123,28 @@ case "$mode" in
       --jq '[.jobs[] | select(.conclusion == "failure") | .name] | join(", ")' \
       2>/dev/null || echo ""
     ;;
+  check-existing-issue)
+    require REPOSITORY
+    require WORKFLOW_NAME
+    search_title="Workflow failure: ${WORKFLOW_NAME}"
+    export SEARCH_TITLE="$search_title"
+    existing=$(gh issue list \
+      --repo "$REPOSITORY" \
+      --state open \
+      --label "workflow-failure" \
+      --search "in:title \"${search_title}\"" \
+      --json number,title \
+      --jq '.[] | select(.title == env.SEARCH_TITLE) | .number' \
+    )
+    if [ -n "$existing" ]; then
+      printf 'exists=true\n'
+      printf 'issue_number=%s\n' "$existing"
+    else
+      printf 'exists=false\n'
+    fi
+    ;;
   *)
-    echo "workflow_failure_notify.sh: unknown mode '$mode' (expected comment-body|issue-body|failed-jobs)" >&2
+    echo "workflow_failure_notify.sh: unknown mode '$mode' (expected comment-body|issue-body|failed-jobs|check-existing-issue)" >&2
     exit 1
     ;;
 esac
