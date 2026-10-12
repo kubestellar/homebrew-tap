@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # test_run_shell_tests.sh — regression guard for scripts/run_shell_tests.sh.
 #
-# Locks the four contracts the runner must honor for the CI wire-up
-# (a future workflow step will invoke it as a single line) to be safe:
+# Locks the five contracts the runner must honor for the CI wire-up
+# (validate-formulae.yml invokes it as a single line) to be safe:
 #
 #   1. exit 0 when every discovered test passes
 #   2. exit 1 when any single test fails, and replay that test's output
@@ -10,6 +10,11 @@
 #      renamed/moved test directory is not silently a green build
 #   4. skip the runner itself if a copy sits next to the pattern (i.e.
 #      the runner won't recursively invoke itself)
+#   5. every exit path also emits a grep-able RUN_SHELL_TESTS_SUMMARY:
+#      JSON line (status/pass/fail/total) via scripts/lib_emit_summary.sh,
+#      matching the *_SUMMARY: contract of every other CI-observability
+#      helper in this repo (brew_ci_summary.sh, fuzz_summary.sh,
+#      unittest_summary.sh) instead of only a free-text summary line.
 #
 # Style matches the sibling scripts/test_*.sh files.
 
@@ -51,6 +56,9 @@ elif ! printf '%s' "$output" | grep -q 'PASS test_beta.sh'; then
 elif ! printf '%s' "$output" | grep -q 'summary: 2 passed, 0 failed, 2 total'; then
   echo "FAIL (all-pass): wrong summary line: $output"
   fail_count=$((fail_count + 1))
+elif ! printf '%s' "$output" | grep -qE '^RUN_SHELL_TESTS_SUMMARY: \{"status":"pass","pass":2,"fail":0,"total":2\}$'; then
+  echo "FAIL (all-pass): missing/wrong RUN_SHELL_TESTS_SUMMARY: line. Got: $output"
+  fail_count=$((fail_count + 1))
 else
   echo "OK (all-pass)"
 fi
@@ -83,6 +91,9 @@ elif ! printf '%s' "$output" | grep -q 'assertion X tripped: expected 3, got 4';
 elif ! printf '%s' "$output" | grep -q 'summary: 1 passed, 1 failed, 2 total'; then
   echo "FAIL (mixed): wrong summary line: $output"
   fail_count=$((fail_count + 1))
+elif ! printf '%s' "$output" | grep -qE '^RUN_SHELL_TESTS_SUMMARY: \{"status":"fail","pass":1,"fail":1,"total":2\}$'; then
+  echo "FAIL (mixed): missing/wrong RUN_SHELL_TESTS_SUMMARY: line. Got: $output"
+  fail_count=$((fail_count + 1))
 else
   echo "OK (mixed)"
 fi
@@ -99,6 +110,9 @@ if [ "$rc" -ne 1 ]; then
 elif ! printf '%s' "$output" | grep -q 'no tests matched'; then
   echo "FAIL (empty): missing 'no tests matched' error. Got: $output"
   fail_count=$((fail_count + 1))
+elif ! printf '%s' "$output" | grep -qE '^RUN_SHELL_TESTS_SUMMARY: \{"status":"error","pass":0,"fail":0,"total":0\}$'; then
+  echo "FAIL (empty): missing/wrong RUN_SHELL_TESTS_SUMMARY: line. Got: $output"
+  fail_count=$((fail_count + 1))
 else
   echo "OK (empty)"
 fi
@@ -109,6 +123,12 @@ fi
 # workflow that dumps run_shell_tests.sh into scripts/ would recurse.
 mkdir -p "$work_dir/self"
 cp "$RUNNER" "$work_dir/self/run_shell_tests.sh"
+# The runner sources scripts/lib_emit_summary.sh relative to its own
+# location (../scripts/lib_emit_summary.sh, i.e. a sibling of the
+# directory containing the runner, matching this repo's real
+# <repo_root>/scripts/ layout), so the copy needs that path present too.
+mkdir -p "$work_dir/scripts"
+cp "$REPO_ROOT/scripts/lib_emit_summary.sh" "$work_dir/scripts/lib_emit_summary.sh"
 chmod +x "$work_dir/self/run_shell_tests.sh"
 cat > "$work_dir/self/test_sentinel.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -135,6 +155,9 @@ elif ! printf '%s' "$output" | grep -q 'PASS test_sentinel.sh'; then
 elif ! printf '%s' "$output" | grep -q 'summary: 1 passed, 0 failed, 1 total'; then
   echo "FAIL (self-skip): expected 1/0/1 summary (runner excluded). Got: $output"
   fail_count=$((fail_count + 1))
+elif ! printf '%s' "$output" | grep -qE '^RUN_SHELL_TESTS_SUMMARY: \{"status":"pass","pass":1,"fail":0,"total":1\}$'; then
+  echo "FAIL (self-skip): missing/wrong RUN_SHELL_TESTS_SUMMARY: line. Got: $output"
+  fail_count=$((fail_count + 1))
 else
   echo "OK (self-skip)"
 fi
@@ -151,6 +174,9 @@ elif printf '%s' "$output" | grep -q '^PASS '; then
   fail_count=$((fail_count + 1))
 elif ! printf '%s' "$output" | grep -q 'summary: 2 passed, 0 failed, 2 total'; then
   echo "FAIL (quiet): summary line missing/wrong. Got: $output"
+  fail_count=$((fail_count + 1))
+elif ! printf '%s' "$output" | grep -qE '^RUN_SHELL_TESTS_SUMMARY: \{"status":"pass","pass":2,"fail":0,"total":2\}$'; then
+  echo "FAIL (quiet): missing/wrong RUN_SHELL_TESTS_SUMMARY: line. Got: $output"
   fail_count=$((fail_count + 1))
 else
   echo "OK (quiet)"

@@ -15,6 +15,17 @@
 # it discovers `scripts/test_*.sh`, executes each, and reports a
 # summary.
 #
+# Unlike its Python-side counterpart (scripts/unittest_summary.sh, which
+# emits a UNITTEST_SUMMARY: line), this runner's only outcome record was
+# its own free-text "run_shell_tests.sh summary: N passed, M failed, T
+# total" line — not the grep-able, fixed-shape `*_SUMMARY:` JSON record
+# every other CI-observability helper in this repo emits via
+# scripts/lib_emit_summary.sh (brew_ci_summary.sh, fuzz_summary.sh,
+# unittest_summary.sh, verify_release_health.sh). This runner now emits a
+# matching `RUN_SHELL_TESTS_SUMMARY:` line (status/pass/fail/total) in
+# addition to the existing free-text line, which is left unchanged for
+# backward compatibility with any existing log greps.
+#
 # Exit status: 0 if every discovered test exits 0, 1 otherwise (or if
 # no tests are discovered — the empty-suite case is treated as a
 # regression, since it would mean the scripts/ dir was inadvertently
@@ -32,6 +43,10 @@
 set -uo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+# shellcheck source=scripts/lib_emit_summary.sh
+. "$repo_root/scripts/lib_emit_summary.sh"
+
 search_dir="${1:-$repo_root/scripts}"
 pattern="${SHELL_TEST_PATTERN:-test_*.sh}"
 quiet="${SHELL_TEST_QUIET:-0}"
@@ -40,6 +55,8 @@ self_basename="$(basename "${BASH_SOURCE[0]}")"
 
 if [ ! -d "$search_dir" ]; then
   echo "run_shell_tests.sh: search dir does not exist: $search_dir" >&2
+  emit_ci_summary RUN_SHELL_TESTS_SUMMARY \
+    status="error" pass=0 fail=0 total=0
   exit 1
 fi
 
@@ -68,6 +85,8 @@ test_files=("${filtered[@]}")
 total="${#test_files[@]}"
 if [ "$total" -eq 0 ]; then
   echo "run_shell_tests.sh: no tests matched '$pattern' under $search_dir" >&2
+  emit_ci_summary RUN_SHELL_TESTS_SUMMARY \
+    status="error" pass=0 fail=0 total=0
   exit 1
 fi
 
@@ -103,6 +122,10 @@ if [ "$fail" -ne 0 ]; then
   for n in "${failed_names[@]}"; do
     echo "  - $n"
   done
+  emit_ci_summary RUN_SHELL_TESTS_SUMMARY \
+    status="fail" pass="$pass" fail="$fail" total="$total"
   exit 1
 fi
+emit_ci_summary RUN_SHELL_TESTS_SUMMARY \
+  status="pass" pass="$pass" fail="$fail" total="$total"
 exit 0

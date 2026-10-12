@@ -246,6 +246,16 @@ for all three formulae, on macOS and Linux, amd64 and arm64.
   open the step log to tell whether/why the 100% ratchet passed, failed,
   or could not run at all (missing `coverage` package, missing `scripts/`,
   or an upstream test failure).
+- **Formula drift health** also has a structured-summary record for the
+  `validate-formulae.yml` "Run scripts/test_\*.sh shell regression tests"
+  step: `scripts/run_shell_tests.sh` now emits a bounded
+  `RUN_SHELL_TESTS_SUMMARY:` line (status/pass/fail/total — no exporter,
+  no external data flow) before every exit path, matching
+  `scripts/unittest_summary.sh`'s `UNITTEST_SUMMARY:` record for the
+  Python-side test-discovery step in the same job. Before this, the
+  runner's only outcome record was its own free-text "run_shell_tests.sh
+  summary: N passed, M failed, T total" line (still emitted unchanged),
+  not a grep-able, fixed-shape JSON record.
 
 ## Recommendations (no backend configured)
 
