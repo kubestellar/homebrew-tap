@@ -160,11 +160,10 @@ jobs:
 
       - name: Enforce shell coverage gate
         env:
-          # Start at 0 so this step measures the current baseline without
-          # gating; a follow-up PR raises SHELL_COVERAGE_MIN to the observed
-          # floor and we ratchet it up from there. Do not lower this value
-          # once it is set — same discipline as the Python 100% ratchet.
-          SHELL_COVERAGE_MIN: "0"
+          # Ratchet enforced at ~60% observed baseline across 3+ runs.
+          # Do not lower this value once it is set — same discipline as
+          # the Python 100% ratchet.
+          SHELL_COVERAGE_MIN: "60"
         run: bash scripts/shell_coverage_gate.sh
 
       - name: Upload shell coverage report
