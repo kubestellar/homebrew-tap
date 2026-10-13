@@ -17,18 +17,15 @@
 # coverage/kcov-merged, parse the merged coverage.json for
 # percent_covered, and fail the workflow if it falls below --min.
 #
-# Why this file rather than editing the workflow directly: the quality-
-# lane GitHub App does not carry the `workflows` permission scope, so any
-# push that touches .github/workflows/*.yml is rejected server-side.
-# Landing this helper first lets a maintainer wire it into
-# validate-formulae.yml with a one-line workflow change:
-#
-#     - name: Install kcov
-#       run: sudo apt-get update && sudo apt-get install -y kcov
-#     - name: Enforce shell coverage gate
-#       env:
-#         SHELL_COVERAGE_MIN: "0"   # measure once, then ratchet up
-#       run: bash scripts/shell_coverage_gate.sh
+# Already wired into CI: .github/workflows/validate-formulae.yml has an
+# "Install kcov (shell branch coverage)" step (building kcov v43 from
+# source, since apt no longer ships it — see below) and an "Enforce
+# shell coverage gate" step that runs `bash scripts/shell_coverage_gate.sh`
+# with `SHELL_COVERAGE_MIN: "60"` (the ratchet enforced at the ~60%
+# observed baseline; see that workflow's comment for the "do not lower"
+# rule, matching the Python 100% ratchet's discipline). This module is
+# not an unwired standalone helper awaiting a maintainer edit — it runs
+# in CI on every push and pull request, same as scripts/coverage_gate.py.
 #
 # kcov is NOT preinstalled on GitHub-hosted ubuntu-latest runners (the
 # image moved to Ubuntu 24.04 in Dec 2024/Jan 2025 and trimmed its
