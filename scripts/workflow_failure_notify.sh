@@ -16,6 +16,7 @@
 #   workflow_failure_notify.sh issue-body
 #   workflow_failure_notify.sh failed-jobs
 #   workflow_failure_notify.sh check-existing-issue
+#   workflow_failure_notify.sh canary-body
 #
 # Required env vars (mirroring the workflow_run event context):
 #   WORKFLOW_NAME   - e.g. "Fuzzing"
@@ -55,6 +56,22 @@
 # then enforces an exact match so a workflow name that is a substring of
 # another, e.g. "CodeQL" vs. "CodeQL Analysis", cannot dedup onto the
 # wrong issue).
+#
+# canary-body mode uses (called by the "Check alert workflow ran in last
+# 24h" step in .github/workflows/alert-canary.yml, which inlines the same
+# BODY= message untested — alert-canary.yml is itself the canary for
+# scheduled-workflow-failure-issue.yml, i.e. the one place a silent
+# formatting regression would have no other alerting layer to catch it):
+#   ALERT_FILE        - e.g. "scheduled-workflow-failure-issue.yml"
+#   REPOSITORY        - e.g. "kubestellar/homebrew-tap"
+#   GITHUB_SERVER_URL - e.g. "https://github.com"
+#   GITHUB_RUN_ID     - e.g. "123456789"
+# canary-body prints the single-line issue/comment body used when the
+# alert workflow itself hasn't run in 24h. The dedup check ahead of it
+# reuses the existing check-existing-issue mode verbatim (same
+# "Workflow failure: <WORKFLOW_NAME>" title contract), with
+# WORKFLOW_NAME="Open Issue on Scheduled Workflow Failure" — no new mode
+# needed for that half.
 #
 # Exit status: 0 on success (including failed-jobs' swallow-on-error
 # case), 1 on missing mode or missing required env var.
@@ -156,8 +173,16 @@ case "$mode" in
       printf 'exists=false\n'
     fi
     ;;
+  canary-body)
+    require ALERT_FILE
+    require REPOSITORY
+    require GITHUB_SERVER_URL
+    require GITHUB_RUN_ID
+    printf 'No run of `%s` in the last 24h. It may be disabled (60 days of inactivity), have a broken `workflow_run.workflows` list, or be failing before it starts. Check https://github.com/%s/actions/workflows/%s and see runbooks/scheduled-workflow-failure.md. Canary run: %s/%s/actions/runs/%s\n' \
+      "$ALERT_FILE" "$REPOSITORY" "$ALERT_FILE" "$GITHUB_SERVER_URL" "$REPOSITORY" "$GITHUB_RUN_ID"
+    ;;
   *)
-    echo "workflow_failure_notify.sh: unknown mode '$mode' (expected comment-body|issue-body|failed-jobs|check-existing-issue)" >&2
+    echo "workflow_failure_notify.sh: unknown mode '$mode' (expected comment-body|issue-body|failed-jobs|check-existing-issue|canary-body)" >&2
     exit 1
     ;;
 esac

@@ -75,6 +75,7 @@ output=$("$SCRIPT" bogus-mode 2>&1)
 code=$?
 assert_exit_code "unknown mode exit" 1 "$code"
 assert_contains "unknown mode message" "$output" "unknown mode 'bogus-mode'"
+assert_contains "unknown mode message lists canary-body" "$output" "canary-body"
 
 # --- error contract: missing required env var ---
 output=$(WORKFLOW_NAME="Fuzzing" "$SCRIPT" comment-body 2>&1)
