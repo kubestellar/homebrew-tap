@@ -24,8 +24,28 @@
 # Exit status: 0 if the title is valid, 1 otherwise (and a
 # ::error::-annotated help block is written to stdout for GitHub Actions
 # to surface as a check annotation).
+#
+# On every exit path this also emits a single-line
+# 'VERIFY_PR_TITLE_SUMMARY: {status,title_length}' record via the shared
+# scripts/lib_emit_summary.sh helper (the same contract every other
+# scripts/ gate uses: BREW_CI_SUMMARY, FUZZ_SUMMARY, UNITTEST_SUMMARY,
+# COVERAGE_GATE_SUMMARY, RUN_SHELL_TESTS_SUMMARY, VERIFY_RELEASE_HEALTH_SUMMARY).
+# Previously this was the one pass/fail gate in scripts/ whose only
+# machine-checkable outcome was its process exit code — a reader had to
+# re-run the script (or dig through the raw workflow log) to learn
+# whether a given CI run's title check passed or failed. `title_length`
+# (not the title text itself, which may be arbitrary/unbounded) is
+# included as a bounded integer so the record stays a fixed, grep-able
+# shape with no unbounded label values.
+#
+# Stdout-only structured output: no exporter, metrics backend, or
+# off-box data flow is added.
 
 set -uo pipefail
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+# shellcheck source=scripts/lib_emit_summary.sh
+. "$REPO_ROOT/scripts/lib_emit_summary.sh"
 
 pr_title="${1-${PR_TITLE-}}"
 
@@ -48,6 +68,8 @@ EMOJI_STYLE="^($LANE )?$EMOJI ($LANE )?.+"
 if printf '%s' "$pr_title" | grep -qE "$CONVENTIONAL" \
   || printf '%s' "$pr_title" | grep -qE "$EMOJI_STYLE"; then
   echo "PR title is valid: $pr_title"
+  emit_ci_summary VERIFY_PR_TITLE_SUMMARY \
+    status="pass" title_length="${#pr_title}"
   exit 0
 fi
 
@@ -66,4 +88,6 @@ echo "    📖 Document the release-sync gap"
 echo ""
 echo "Allowed types: feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert"
 echo "Allowed emoji: ✨ feature | 🐛 fix | 📖 docs | 📝 proposal | ⚠️ breaking | 🌱 other"
+emit_ci_summary VERIFY_PR_TITLE_SUMMARY \
+  status="fail" title_length="${#pr_title}"
 exit 1

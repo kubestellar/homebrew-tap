@@ -19,6 +19,10 @@
 #     (so a workflow rewired to call this script keeps the same
 #     GitHub Actions annotation as today's inlined step)
 #   - stdin/argv parity: PR_TITLE env var and $1 both work
+#   - every accept/reject path emits a VERIFY_PR_TITLE_SUMMARY:
+#     {status,title_length} record via scripts/lib_emit_summary.sh,
+#     matching the structured-summary contract every other scripts/
+#     gate uses
 
 set -uo pipefail
 
@@ -43,6 +47,7 @@ assert_accept() {
   rc=$?
   assert_exit_code "$name" 0 "$rc"
   assert_contains "$name" "$out" "PR title is valid"
+  assert_contains "$name" "$out" "VERIFY_PR_TITLE_SUMMARY: {\"status\":\"pass\",\"title_length\":${#title}}"
 }
 
 assert_reject() {
@@ -54,6 +59,7 @@ assert_reject() {
   assert_exit_code "$name" 1 "$rc"
   assert_contains "$name" "$out" "::error::"
   assert_contains "$name" "$out" "Allowed types:"
+  assert_contains "$name" "$out" "VERIFY_PR_TITLE_SUMMARY: {\"status\":\"fail\",\"title_length\":${#title}}"
 }
 
 # -----------------------------------------------------------------------
@@ -108,11 +114,13 @@ argv_accept_out="$(bash "$SCRIPT" "fix: correct typo" 2>&1)"
 argv_accept_rc=$?
 assert_exit_code "argv-accept" 0 "$argv_accept_rc"
 assert_contains "argv-accept" "$argv_accept_out" "PR title is valid"
+assert_contains "argv-accept" "$argv_accept_out" "VERIFY_PR_TITLE_SUMMARY: {\"status\":\"pass\""
 
 argv_reject_out="$(bash "$SCRIPT" "not a valid title" 2>&1)"
 argv_reject_rc=$?
 assert_exit_code "argv-reject" 1 "$argv_reject_rc"
 assert_contains "argv-reject" "$argv_reject_out" "::error::"
+assert_contains "argv-reject" "$argv_reject_out" "VERIFY_PR_TITLE_SUMMARY: {\"status\":\"fail\""
 
 # -----------------------------------------------------------------------
 # Help-block shape: preserve the exact top annotation so a workflow
