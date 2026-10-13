@@ -25,6 +25,7 @@
 #
 # Usage: scripts/test_workflow_failure_notify_canary.sh
 # Exit status: 0 if all assertions pass, 1 otherwise.
+# shellcheck disable=SC2016  # literal backtick/markdown strings in single quotes, not variable expansion
 
 set -uo pipefail
 
@@ -76,7 +77,8 @@ assert_exit_code "canary-body missing REPOSITORY exit" 1 "$code"
 assert_contains "canary-body missing REPOSITORY message" "$output" \
   'missing required env var REPOSITORY'
 
-output=$(ALERT_FILE="scheduled-workflow-failure-issue.yml" \
+output=$(env -u GITHUB_SERVER_URL \
+  ALERT_FILE="scheduled-workflow-failure-issue.yml" \
   REPOSITORY="kubestellar/homebrew-tap" \
   GITHUB_RUN_ID="999" \
   "$SCRIPT" canary-body 2>&1)
@@ -85,7 +87,8 @@ assert_exit_code "canary-body missing GITHUB_SERVER_URL exit" 1 "$code"
 assert_contains "canary-body missing GITHUB_SERVER_URL message" "$output" \
   'missing required env var GITHUB_SERVER_URL'
 
-output=$(ALERT_FILE="scheduled-workflow-failure-issue.yml" \
+output=$(env -u GITHUB_RUN_ID \
+  ALERT_FILE="scheduled-workflow-failure-issue.yml" \
   REPOSITORY="kubestellar/homebrew-tap" \
   GITHUB_SERVER_URL="https://github.com" \
   "$SCRIPT" canary-body 2>&1)
