@@ -117,11 +117,24 @@ case "$mode" in
     # `Fetch failed jobs for comment` / `Fetch failed job details` steps:
     # swallow any `gh run view` failure to an empty string so the calling
     # workflow step keeps its exit-0 contract and downstream steps still run.
-    gh run view "$RUN_ID" \
+    #
+    # Unlike the snippet it replaced, a `gh` failure is still logged (to
+    # this script's own stderr, which the calling workflow step does not
+    # redirect) instead of being fully discarded via `2>/dev/null`. Before
+    # this, a `gh run view` failure here (auth hiccup, rate limit, API
+    # outage) left no trace at all: the comment/issue body would just
+    # silently omit the "Failed jobs" row with nothing in the CI log
+    # explaining why.
+    if ! jobs_output=$(gh run view "$RUN_ID" \
       --repo "$REPOSITORY" \
       --json jobs \
       --jq '[.jobs[] | select(.conclusion == "failure") | .name] | join(", ")' \
-      2>/dev/null || echo ""
+      2>&1); then
+      echo "workflow_failure_notify.sh: failed-jobs: gh run view failed for repo=$REPOSITORY run=$RUN_ID: ${jobs_output}" >&2
+      echo ""
+    else
+      printf '%s\n' "$jobs_output"
+    fi
     ;;
   check-existing-issue)
     require REPOSITORY

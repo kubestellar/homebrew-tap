@@ -81,22 +81,33 @@ assert_contains "gh-success argv --jq filter" "$argv" \
   '.jobs[] | select(.conclusion == "failure") | .name'
 assert_contains "gh-success argv --jq join" "$argv" 'join(", ")'
 
-# --- Case 2: gh exits non-zero → swallow to empty stdout, exit 0 ---
-# Mirrors the workflow's `2>/dev/null || echo ""` contract so a transient
-# `gh run view` failure (e.g. a rate limit on the workflow_run trigger)
-# does not block the "Open new issue" step.
+# --- Case 2: gh exits non-zero → swallow to empty stdout, exit 0, but
+# the failure is now logged to stderr instead of fully discarded ---
+# Mirrors the pre-existing `|| echo ""` contract (so a transient
+# `gh run view` failure, e.g. a rate limit on the workflow_run trigger,
+# does not block the "Open new issue" step), while fixing the prior
+# silent-discard behavior: a `gh` failure must leave a trace in the CI
+# log instead of vanishing with no record at all.
 stub2="$work_dir/stub2"
 make_stub_gh "$stub2" 1 "this-should-not-appear"
+stderr_file="$work_dir/case2-stderr.txt"
 output=$(env -i PATH="$stub2:/usr/bin:/bin" \
   REPOSITORY="kubestellar/homebrew-tap" RUN_ID="42" \
-  bash "$SCRIPT" failed-jobs 2>&1)
+  bash "$SCRIPT" failed-jobs 2>"$stderr_file")
 code=$?
+stderr_output=$(cat "$stderr_file")
 assert_exit_code "gh-failure exit is still 0" 0 "$code"
-# stderr from the fake gh is 2>/dev/null'd; stdout from the fake is
-# emitted before its non-zero exit, but the `|| echo ""` in the helper
-# should still fire (it does not, however, discard stdout that was
-# already flushed). Regardless of that flushed-stdout quirk, the exit
-# code must remain 0 so the workflow's follow-up steps run.
+# stdout must be the empty-string contract only — the failing gh
+# invocation's stdout ("this-should-not-appear") must NOT leak through,
+# since it is now captured (not executed uncaptured) and discarded on
+# failure.
+if [ -n "$output" ]; then
+  fail "gh-failure stdout is empty" "expected empty stdout, got: '$output'"
+fi
+# The failure must be logged to stderr with enough context to debug it
+# (repo, run id), instead of being silently dropped via `2>/dev/null`.
+assert_contains "gh-failure logs to stderr" "$stderr_output" \
+  "gh run view failed for repo=kubestellar/homebrew-tap run=42"
 
 # --- Case 3: empty jq result (no failed jobs) → empty stdout, exit 0 ---
 stub3="$work_dir/stub3"
