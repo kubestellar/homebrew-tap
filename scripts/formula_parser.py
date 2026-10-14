@@ -46,6 +46,19 @@ DESC_LINE_RE = re.compile(r'^\s*desc\s+"([^"]+)"', re.MULTILINE)
 LICENSE_LINE_RE = re.compile(r'^\s*license\s+"([^"]+)"', re.MULTILINE)
 SHA256_LINE_RE = re.compile(r'sha256\s+"([^"]+)"')
 
+# `on_macos do` / `on_linux do` block openers — previously re-declared
+# character-for-character (modulo the re.MULTILINE flag, which is a
+# no-op for the single-line .match() callers) in
+# test_formula_hardware_guard_invariants.py,
+# test_formula_further_invariants.py, and
+# test_formula_platform_arm_url_alignment_invariants.py. re.MULTILINE
+# is harmless for callers that `.match()` one line at a time (no
+# embedded newline means the flag changes nothing) and is required for
+# callers that `.findall()`/`.finditer()` over the whole file text, so
+# one compiled pattern serves both calling styles.
+ON_MACOS_RE = re.compile(r"^\s*on_macos\s+do\b", re.MULTILINE)
+ON_LINUX_RE = re.compile(r"^\s*on_linux\s+do\b", re.MULTILINE)
+
 # Unanchored/inline variants — intentionally distinct from the anchored
 # forms above (see note above); do not merge them.
 URL_INLINE_RE = re.compile(r'url\s+"([^"]+)"')

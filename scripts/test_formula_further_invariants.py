@@ -29,11 +29,15 @@ import unittest
 from datetime import date, datetime, timezone
 from pathlib import Path
 
-from formula_parser import HOMEPAGE_LINE_RE, VERSION_LINE_RE, list_formula_paths
+from formula_parser import (
+    HOMEPAGE_LINE_RE,
+    ON_LINUX_RE,
+    ON_MACOS_RE,
+    VERSION_LINE_RE,
+    list_formula_paths,
+)
 
 NIGHTLY_RE = re.compile(r"^\d+\.\d+\.\d+-nightly\.(?P<stamp>\d{8})$")
-ON_MACOS_RE = re.compile(r"^\s*on_macos\s+do\b", re.MULTILINE)
-ON_LINUX_RE = re.compile(r"^\s*on_linux\s+do\b", re.MULTILINE)
 TEST_BLOCK_RE = re.compile(r"^\s*test\s+do\b", re.MULTILINE)
 
 

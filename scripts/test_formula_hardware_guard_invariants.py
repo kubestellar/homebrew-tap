@@ -29,10 +29,8 @@ tarball-suffix checks and only surface as a broken ``brew install``.
 import re
 import unittest
 
-from formula_parser import load_formulae as _load_formulae
+from formula_parser import ON_LINUX_RE, ON_MACOS_RE, load_formulae as _load_formulae
 
-ON_MACOS_RE = re.compile(r"^\s*on_macos\s+do\b")
-ON_LINUX_RE = re.compile(r"^\s*on_linux\s+do\b")
 END_RE = re.compile(r"^\s*end\s*$")
 HARDWARE_IF_RE = re.compile(r"^\s*if\s+Hardware::CPU\.(intel|arm)\?")
 

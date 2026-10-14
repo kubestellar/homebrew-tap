@@ -58,10 +58,12 @@ Run:
 import re
 import unittest
 
-from formula_parser import FORMULA_DIR, load_formulae as _load_formulae
-
-ON_MACOS_START_RE = re.compile(r"^\s*on_macos\s+do\b")
-ON_LINUX_START_RE = re.compile(r"^\s*on_linux\s+do\b")
+from formula_parser import (
+    FORMULA_DIR,
+    ON_LINUX_RE as ON_LINUX_START_RE,
+    ON_MACOS_RE as ON_MACOS_START_RE,
+    load_formulae as _load_formulae,
+)
 
 URL_RE = re.compile(r'url\s+"[^"]*_(?P<os>darwin|linux)_(?P<arch>amd64|arm64)\.tar\.gz"')
 SHA256_RE = re.compile(r'sha256\s+"[0-9a-f]{64}"')
