@@ -17,6 +17,20 @@
 # coverage/kcov-merged, parse the merged coverage.json for
 # percent_covered, and fail the workflow if it falls below --min.
 #
+# KNOWN BLIND SPOT (kubestellar/homebrew-tap#741): kcov only instruments
+# the single bash process it directly launches (`kcov <out> <test_file>`).
+# A handful of scripts/test_*.sh files exercise their target script by
+# spawning it as a fresh child process (`bash "$SCRIPT"`, sometimes via
+# `env -i PATH=... bash "$SCRIPT"`) rather than `source`-ing it into the
+# already-measured process. kcov cannot see into that child, so the
+# target script reads as 0% covered in coverage.json even though it has
+# a real, passing test suite. As of #741 this affects brew_tap_setup.sh,
+# verify_release_artifacts.sh, brew_untap_self.sh, brew_test_installed.sh,
+# brew_install_smoke.sh, and brew_audit_all.sh (~33% of measured lines).
+# The aggregate percent_covered and the 60% threshold below are not
+# meaningful protection against regressions in those six files until this
+# is fixed — see #741 for remediation options.
+#
 # Already wired into CI: .github/workflows/validate-formulae.yml has an
 # "Install kcov (shell branch coverage)" step (building kcov v43 from
 # source, since apt no longer ships it — see below) and an "Enforce
