@@ -29,20 +29,16 @@ that duplicates a metadata line, or a manual edit that leaves an old
 stanza in place, fails the unit-test job directly.
 """
 
-import re
 import unittest
 
 from formula_parser import (
     DESC_LINE_RE,
     HOMEPAGE_LINE_RE,
     LICENSE_LINE_RE,
+    TEST_DO_PRESENCE_RE,
     VERSION_LINE_RE,
     list_formula_paths,
 )
-
-# `test do` at start of a line (allowing indentation). Only the opening
-# marker is counted — Homebrew allows exactly one such block per formula.
-TEST_DO_RE = re.compile(r'^\s*test\s+do\b', re.MULTILINE)
 
 
 class TestMetadataSingletons(unittest.TestCase):
@@ -103,7 +99,7 @@ class TestTestBlockSingleton(unittest.TestCase):
         for f in self.formula_paths:
             with self.subTest(formula=f.name):
                 text = f.read_text()
-                matches = TEST_DO_RE.findall(text)
+                matches = TEST_DO_PRESENCE_RE.findall(text)
                 self.assertEqual(
                     len(matches),
                     1,
@@ -164,7 +160,7 @@ class TestMetadataSingletonSelfCheck(unittest.TestCase):
             '  test do\n    system bin/"kubestellar-synthetic", "--help"\n  end\nend\n',
             1,
         )
-        self.assertEqual(len(TEST_DO_RE.findall(text)), 2)
+        self.assertEqual(len(TEST_DO_PRESENCE_RE.findall(text)), 2)
 
 
 if __name__ == "__main__":

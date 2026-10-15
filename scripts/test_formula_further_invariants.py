@@ -33,12 +33,12 @@ from formula_parser import (
     HOMEPAGE_LINE_RE,
     ON_LINUX_RE,
     ON_MACOS_RE,
+    TEST_DO_PRESENCE_RE,
     VERSION_LINE_RE,
     list_formula_paths,
 )
 
 NIGHTLY_RE = re.compile(r"^\d+\.\d+\.\d+-nightly\.(?P<stamp>\d{8})$")
-TEST_BLOCK_RE = re.compile(r"^\s*test\s+do\b", re.MULTILINE)
 
 
 def _binary_name(formula_path: Path) -> str:
@@ -110,13 +110,13 @@ class TestFormulaFurtherInvariants(unittest.TestCase):
             text = f.read_text()
             with self.subTest(formula=f.name):
                 self.assertEqual(
-                    len(TEST_BLOCK_RE.findall(text)),
+                    len(TEST_DO_PRESENCE_RE.findall(text)),
                     1,
                     f"{f.name}: expected exactly one test do block",
                 )
                 # Extract the test block body and confirm it references the
                 # binary that install actually places on PATH.
-                idx = TEST_BLOCK_RE.search(text).end()
+                idx = TEST_DO_PRESENCE_RE.search(text).end()
                 # naive scan to matching `end` at column 2 (the block indent).
                 # For these small files we just check that the binary name
                 # appears somewhere in the remainder of the file after `test`.

@@ -72,6 +72,15 @@ TEST_BLOCK_RE = re.compile(
     re.DOTALL | re.MULTILINE,
 )
 
+# `test do` opener presence/count check — distinct from the body-capturing
+# TEST_BLOCK_RE above (this one only locates/counts the opener, it does not
+# capture a body). Previously re-declared character-for-character identical
+# (same pattern, same re.MULTILINE flag — only the local name differed) in
+# test_formula_further_invariants.py (as TEST_BLOCK_RE) and
+# test_formula_metadata_singleton_invariants.py (as TEST_DO_RE). See
+# kubestellar/homebrew-tap#745.
+TEST_DO_PRESENCE_RE = re.compile(r"^\s*test\s+do\b", re.MULTILINE)
+
 # Unanchored/inline variants — intentionally distinct from the anchored
 # forms above (see note above); do not merge them.
 URL_INLINE_RE = re.compile(r'url\s+"([^"]+)"')
