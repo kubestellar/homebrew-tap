@@ -59,6 +59,19 @@ SHA256_LINE_RE = re.compile(r'sha256\s+"([^"]+)"')
 ON_MACOS_RE = re.compile(r"^\s*on_macos\s+do\b", re.MULTILINE)
 ON_LINUX_RE = re.compile(r"^\s*on_linux\s+do\b", re.MULTILINE)
 
+# `test do ... end` — body-capturing form, previously re-declared
+# character-for-character identical (same pattern, same
+# re.DOTALL | re.MULTILINE flags, same `body` named group) in
+# test_formula_bin_install_locality_invariants.py and
+# test_formula_test_block_readonly_invariants.py. The closing `end` is
+# matched non-greedily so it stops at the first `end` after the `test do`
+# header (every formula here ships a single `test do` block followed
+# directly by a plain `end`).
+TEST_BLOCK_RE = re.compile(
+    r"^\s*test\s+do\s*\n(?P<body>.*?)\n\s*end\s*$",
+    re.DOTALL | re.MULTILINE,
+)
+
 # Unanchored/inline variants — intentionally distinct from the anchored
 # forms above (see note above); do not merge them.
 URL_INLINE_RE = re.compile(r'url\s+"([^"]+)"')

@@ -40,15 +40,7 @@ from __future__ import annotations
 import re
 import unittest
 
-from formula_parser import load_formulae
-
-# Match a ``test do ... end`` block.  We stop at the *last* ``end`` before
-# the outer ``class ... end`` closer — in practice ``test do`` is always
-# the last stanza so a non-greedy match up to the next ``end`` is enough.
-TEST_BLOCK_RE = re.compile(
-    r"^\s*test\s+do\s*\n(?P<body>.*?)\n\s*end\s*$",
-    re.DOTALL | re.MULTILINE,
-)
+from formula_parser import TEST_BLOCK_RE, load_formulae
 
 # Match a ``system bin/"<name>", "<arg>"`` invocation.  The Ruby form
 # allows either ``bin/"foo"`` or ``bin/"foo",`` with optional trailing

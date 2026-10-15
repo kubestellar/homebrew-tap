@@ -46,7 +46,7 @@ from __future__ import annotations
 import re
 import unittest
 
-from formula_parser import FORMULA_DIR, load_formulae as _load_formulae
+from formula_parser import FORMULA_DIR, TEST_BLOCK_RE, load_formulae as _load_formulae
 
 # `bin.install "<name>"` — capture the binary-name argument. A GoReleaser
 # emit is always the double-quoted single-string form; we deliberately do
@@ -61,15 +61,6 @@ BIN_INSTALL_RE = re.compile(r'\bbin\.install\s+"([^"]+)"')
 DEFINE_METHOD_BLOCK_RE = re.compile(
     r"define_method\(:install\)\s+do\s*\n(?P<body>.*?)\n\s*end\b",
     re.DOTALL,
-)
-
-# `test do ... end` — used to prove no `bin.install` line has drifted
-# into the test block. The closing `end` is matched non-greedily so we
-# stop at the first one after the `test do` header (all three formulae
-# ship a single-line body followed by a plain `end`).
-TEST_BLOCK_RE = re.compile(
-    r"^\s*test\s+do\s*\n(?P<body>.*?)\n\s*end\s*$",
-    re.DOTALL | re.MULTILINE,
 )
 
 
