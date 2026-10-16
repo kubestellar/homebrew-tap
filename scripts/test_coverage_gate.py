@@ -31,6 +31,8 @@ class ParseArgsTests(unittest.TestCase):
     def tearDown(self):
         if self._saved_env is not None:
             os.environ["COVERAGE_MIN"] = self._saved_env
+        else:
+            os.environ.pop("COVERAGE_MIN", None)
 
     def test_default_threshold_matches_module_constant(self):
         args = coverage_gate._parse_args([])
