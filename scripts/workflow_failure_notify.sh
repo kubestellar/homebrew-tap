@@ -58,8 +58,7 @@
 # wrong issue).
 #
 # canary-body mode uses (called by the "Check alert workflow ran in last
-# 24h" step in .github/workflows/alert-canary.yml, which inlines the same
-# BODY= message untested — alert-canary.yml is itself the canary for
+# 24h" step in .github/workflows/alert-canary.yml; alert-canary.yml is itself the canary for
 # scheduled-workflow-failure-issue.yml, i.e. the one place a silent
 # formatting regression would have no other alerting layer to catch it):
 #   ALERT_FILE        - e.g. "scheduled-workflow-failure-issue.yml"

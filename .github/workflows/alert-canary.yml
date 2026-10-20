@@ -18,9 +18,14 @@ jobs:
     permissions:
       actions: read
       issues: write
+      contents: read  # checkout for scripts/workflow_failure_notify.sh
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
       - name: Check alert workflow ran in last 24h
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -37,12 +42,14 @@ jobs:
             exit 0
           fi
 
-          TITLE="Workflow failure: Open Issue on Scheduled Workflow Failure"
-          export TITLE
-          EXISTING=$(gh issue list --repo "$REPOSITORY" --state open \
-            --label workflow-failure --json number,title \
-            --jq '.[] | select(.title == env.TITLE) | .number')
-          BODY="No run of \`$ALERT_FILE\` in the last 24h. It may be disabled (60 days of inactivity), have a broken \`workflow_run.workflows\` list, or be failing before it starts. Check https://github.com/$REPOSITORY/actions/workflows/$ALERT_FILE and see runbooks/scheduled-workflow-failure.md. Canary run: $GITHUB_SERVER_URL/$REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          # Dedup + body rendering delegated to scripts/workflow_failure_notify.sh
+          # (tested by test_workflow_failure_notify_{check_existing,canary}.sh)
+          WORKFLOW_NAME="Open Issue on Scheduled Workflow Failure"
+          TITLE="Workflow failure: $WORKFLOW_NAME"
+          export WORKFLOW_NAME
+          EXISTING=$(scripts/workflow_failure_notify.sh check-existing-issue \
+            | sed -n 's/^issue_number=//p')
+          BODY=$(scripts/workflow_failure_notify.sh canary-body)
           if [ -n "$EXISTING" ]; then
             gh issue comment "$EXISTING" --repo "$REPOSITORY" --body "$BODY"
           else
