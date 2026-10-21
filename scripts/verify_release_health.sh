@@ -21,6 +21,8 @@ FORMULA_DIR="$REPO_ROOT/Formula"
 
 # shellcheck source=scripts/lib_emit_summary.sh
 . "$REPO_ROOT/scripts/lib_emit_summary.sh"
+# shellcheck source=scripts/lib_formula_iter.sh
+. "$REPO_ROOT/scripts/lib_formula_iter.sh"
 
 if ! command -v brew >/dev/null 2>&1; then
   echo "verify_release_health.sh: 'brew' is not on PATH — install Homebrew first." >&2
@@ -31,9 +33,9 @@ if [ "$#" -gt 0 ]; then
   formulae=("$@")
 else
   formulae=()
-  for f in "$FORMULA_DIR"/*.rb; do
-    formulae+=("$(basename "${f%.rb}")")
-  done
+  while IFS= read -r name; do
+    formulae+=("$name")
+  done < <(list_formula_names "$FORMULA_DIR")
 fi
 
 overall_status=0

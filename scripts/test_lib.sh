@@ -58,12 +58,14 @@ make_fake_formulae() {
 # initialising a real git repo (so `git log` works). Fixture layout:
 #   <dir>/scripts/<basename of $SCRIPT_SOURCE>
 #   <dir>/scripts/lib_emit_summary.sh
+#   <dir>/scripts/lib_formula_iter.sh
 #   <dir>/Formula/<name>.rb          (one per name in $2..$n)
 _make_fixture() {
   local dir="$1"; shift
   mkdir -p "$dir/scripts" "$dir/Formula"
   cp "$SCRIPT_SOURCE" "$dir/scripts/$(basename "$SCRIPT_SOURCE")"
   cp "$LIB_SOURCE" "$dir/scripts/lib_emit_summary.sh"
+  cp "$(repo_root)/scripts/lib_formula_iter.sh" "$dir/scripts/lib_formula_iter.sh"
   chmod +x "$dir/scripts/$(basename "$SCRIPT_SOURCE")"
   for name in "$@"; do
     printf 'class %s < Formula\nend\n' "$name" > "$dir/Formula/${name}.rb"

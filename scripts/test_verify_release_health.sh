@@ -32,8 +32,9 @@ source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/test_lib.sh"
 
 REPO_ROOT="$(repo_root)"
 SCRIPT_SOURCE="$REPO_ROOT/scripts/verify_release_health.sh"
-# The script sources scripts/lib_emit_summary.sh relative to its own
-# location, so every fixture copies the library alongside it.
+# The script sources scripts/lib_emit_summary.sh and scripts/lib_formula_iter.sh
+# relative to its own location, so every fixture copies both libraries
+# alongside it (_make_fixture copies lib_formula_iter.sh unconditionally).
 LIB_SOURCE="$REPO_ROOT/scripts/lib_emit_summary.sh"
 
 if [ ! -f "$SCRIPT_SOURCE" ]; then
