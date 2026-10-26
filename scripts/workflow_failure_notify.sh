@@ -29,8 +29,7 @@
 #   NOW             - override the timestamp line (used by tests); defaults
 #                     to the current UTC time.
 #
-# failed-jobs mode uses (called by the `Fetch failed jobs for comment` and
-# `Fetch failed job details` steps in
+# failed-jobs mode uses (called by the single `Fetch failed jobs` step in
 # .github/workflows/scheduled-workflow-failure-issue.yml, which previously
 # inlined the same `gh run view … --jq …` snippet twice):
 #   REPOSITORY      - e.g. "kubestellar/homebrew-tap"

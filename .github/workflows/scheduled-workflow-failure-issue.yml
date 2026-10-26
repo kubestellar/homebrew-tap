@@ -60,31 +60,22 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPOSITORY: ${{ github.repository }}
           WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
+        # Dedup logic is delegated to scripts/workflow_failure_notify.sh
+        # check-existing-issue (regression-tested by
+        # scripts/test_workflow_failure_notify_check_existing.sh), the same
+        # mode alert-canary.yml already uses. Its output lines
+        # (exists=true|false, issue_number=<N>) match this step's
+        # $GITHUB_OUTPUT contract verbatim.
         run: |
-          LABEL="workflow-failure"
-          SEARCH_TITLE="Workflow failure: ${WORKFLOW_NAME}"
-          export SEARCH_TITLE
-
-          EXISTING=$(gh issue list \
-            --repo "$REPOSITORY" \
-            --state open \
-            --label "$LABEL" \
-            --search "in:title \"${SEARCH_TITLE}\"" \
-            --json number,title \
-            --jq '.[] | select(.title == env.SEARCH_TITLE) | .number' \
-          )
-
+          OUTPUT=$(scripts/workflow_failure_notify.sh check-existing-issue)
+          printf '%s\n' "$OUTPUT" >> "$GITHUB_OUTPUT"
+          EXISTING=$(printf '%s\n' "$OUTPUT" | sed -n 's/^issue_number=//p')
           if [ -n "$EXISTING" ]; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "issue_number=$EXISTING" >> "$GITHUB_OUTPUT"
             echo "Found existing issue #${EXISTING}"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Fetch failed jobs for comment
-        if: steps.check.outputs.exists == 'true'
-        id: comment-details
+      - name: Fetch failed jobs
+        id: details
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPOSITORY: ${{ github.repository }}
@@ -93,7 +84,9 @@ jobs:
         # failed-jobs (regression-tested by
         # scripts/test_workflow_failure_notify_failed_jobs.sh) rather than an
         # inline `gh run view … --jq …` snippet, so the swallow-on-error
-        # contract survives edits.
+        # contract survives edits. Computed once and shared by both the
+        # "exists" and "doesn't exist" branches below — it takes no
+        # branch-specific input.
         run: |
           FAILED_JOBS=$(scripts/workflow_failure_notify.sh failed-jobs)
           echo "failed_jobs=${FAILED_JOBS}" >> "$GITHUB_OUTPUT"
@@ -107,7 +100,7 @@ jobs:
           WORKFLOW_NAME: ${{ github.event.workflow_run.name }}
           RUN_URL: ${{ github.event.workflow_run.html_url }}
           RUN_ID: ${{ github.event.workflow_run.id }}
-          FAILED_JOBS: ${{ steps.comment-details.outputs.failed_jobs }}
+          FAILED_JOBS: ${{ steps.details.outputs.failed_jobs }}
         # Body rendering is delegated to scripts/workflow_failure_notify.sh
         # (regression-tested by scripts/test_workflow_failure_notify.sh)
         # rather than inlined here, so the markdown contract survives edits.
@@ -132,22 +125,6 @@ jobs:
             --description "Automated: scheduled or main-branch workflow failed" \
             --color "d93f0b" \
             2>/dev/null || true
-
-      - name: Fetch failed job details
-        if: steps.check.outputs.exists == 'false'
-        id: details
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REPOSITORY: ${{ github.repository }}
-          RUN_ID: ${{ github.event.workflow_run.id }}
-        # Failed-job lookup is delegated to scripts/workflow_failure_notify.sh
-        # failed-jobs (regression-tested by
-        # scripts/test_workflow_failure_notify_failed_jobs.sh) rather than an
-        # inline `gh run view … --jq …` snippet, so the swallow-on-error
-        # contract survives edits.
-        run: |
-          FAILED_JOBS=$(scripts/workflow_failure_notify.sh failed-jobs)
-          echo "failed_jobs=${FAILED_JOBS}" >> "$GITHUB_OUTPUT"
 
       - name: Open new issue
         if: steps.check.outputs.exists == 'false'
