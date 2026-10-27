@@ -75,7 +75,11 @@ jobs:
     if: |
       always() &&
       (github.event_name != 'pull_request' || needs.detect-changes.outputs.changed == 'true')
-    runs-on: ubuntu-latest
+    # Pinned: when ubuntu-latest moved to ubuntu-26.04, kcov v43 reported
+    # 48.51% shell coverage for unchanged code (60.17% on ubuntu-24.04),
+    # tripping the shell coverage gate (#763). Re-validate the kcov baseline
+    # before moving this job to a newer image.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read  # needed: checkout repository
