@@ -75,7 +75,9 @@ jobs:
     if: |
       always() &&
       (github.event_name != 'pull_request' || needs.detect-changes.outputs.changed == 'true')
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04, where kcov v43 reports ~48.5% (vs ~60.2% on
+    # 24.04) and trips the shell coverage ratchet. Unpin once the gate is validated there.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read  # needed: checkout repository
