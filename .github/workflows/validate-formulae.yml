@@ -75,7 +75,13 @@ jobs:
     if: |
       always() &&
       (github.event_name != 'pull_request' || needs.detect-changes.outputs.changed == 'true')
-    runs-on: ubuntu-latest
+    # Pinned to ubuntu-24.04: when ubuntu-latest rolled to the ubuntu-26.04
+    # image (2026-10-27), kcov v43's bash instrumentation stopped seeing most
+    # of shell_coverage_gate.sh's executed lines (81% -> 11% with an identical
+    # tree), pushing aggregate shell coverage from 60.17% to 48.51% and
+    # hard-failing the 60% ratchet on every push to main. Re-evaluate the pin
+    # once kcov instruments the 26.04 image's bash correctly.
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read  # needed: checkout repository
