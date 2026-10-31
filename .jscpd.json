@@ -1,0 +1,12 @@
+{
+  "threshold": 1.0,
+  "reporters": ["console"],
+  "path": ["scripts", "Formula"],
+  "ignore": [
+    "**/node_modules/**"
+  ],
+  "format": ["bash", "python", "ruby"],
+  "minLines": 10,
+  "minTokens": 50,
+  "gitignore": true
+}
