@@ -15,6 +15,10 @@ on:
       - 'scripts/test_*.py'
       - 'scripts/*.sh'
       - 'scripts/test_*.sh'
+      - 'scripts/jscpd-ratchet.mjs'
+      - 'scripts/test_jscpd_ratchet.mjs'
+      - '.jscpd.json'
+      - 'jscpd-baseline.json'
       - '.coveragerc'
       - 'requirements-dev.txt'
       - 'requirements-dev.in'
@@ -64,6 +68,14 @@ jobs:
               - 'scripts/test_*.py'
               - 'scripts/*.sh'
               - 'scripts/test_*.sh'
+              - 'scripts/jscpd-ratchet.mjs'
+              - 'scripts/test_jscpd_ratchet.mjs'
+              - '.jscpd.json'
+              - 'jscpd-baseline.json'
+      - 'scripts/jscpd-ratchet.mjs'
+      - 'scripts/test_jscpd_ratchet.mjs'
+      - '.jscpd.json'
+      - 'jscpd-baseline.json'
               - '.coveragerc'
               - 'requirements-dev.txt'
               - 'requirements-dev.in'
@@ -144,6 +156,20 @@ jobs:
         # test_run_shell_tests.sh itself, so wrapper regressions still
         # fail CI; the wrapper's self-exclusion guard prevents recursion.
         run: bash scripts/run_shell_tests.sh
+
+      - name: Run scripts/test_jscpd_ratchet.mjs regression tests
+        # Regression-tests scripts/jscpd-ratchet.mjs itself (added in
+        # #768/#770) before the gate below runs for real, same discipline
+        # as the Python/shell suites above. Uses a fake `npx` on PATH so it
+        # never shells out to the real jscpd binary or the network.
+        run: node --test scripts/test_jscpd_ratchet.mjs
+
+      - name: Enforce duplication ratchet (jscpd)
+        # Added in #768/#770 but never wired into CI until now (#771).
+        # Fails only when the clone count exceeds the committed
+        # jscpd-baseline.json; a PR that reduces duplication should lower
+        # the baseline in the same PR.
+        run: node scripts/jscpd-ratchet.mjs
 
       - name: Install kcov (shell branch coverage)
         id: install-kcov
