@@ -15,6 +15,9 @@ on:
       - 'scripts/test_*.py'
       - 'scripts/*.sh'
       - 'scripts/test_*.sh'
+      - 'scripts/*.mjs'
+      - '.jscpd.json'
+      - 'jscpd-baseline.json'
       - '.coveragerc'
       - 'requirements-dev.txt'
       - 'requirements-dev.in'
@@ -64,6 +67,9 @@ jobs:
               - 'scripts/test_*.py'
               - 'scripts/*.sh'
               - 'scripts/test_*.sh'
+              - 'scripts/*.mjs'
+              - '.jscpd.json'
+              - 'jscpd-baseline.json'
               - '.coveragerc'
               - 'requirements-dev.txt'
               - 'requirements-dev.in'
@@ -144,6 +150,14 @@ jobs:
         # test_run_shell_tests.sh itself, so wrapper regressions still
         # fail CI; the wrapper's self-exclusion guard prevents recursion.
         run: bash scripts/run_shell_tests.sh
+
+      - name: Run scripts/test_jscpd_ratchet.mjs regression tests
+        # jscpd-ratchet.mjs and its tests were never wired into CI (#774).
+        run: node --test scripts/test_jscpd_ratchet.mjs
+
+      - name: Enforce duplication ratchet gate
+        # Fails only if duplication grows past committed jscpd-baseline.json.
+        run: node scripts/jscpd-ratchet.mjs
 
       - name: Install kcov (shell branch coverage)
         id: install-kcov
