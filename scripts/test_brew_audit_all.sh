@@ -34,7 +34,7 @@ make_fake_formulae "$formula_dir" alpha beta gamma
 # --- Case 1: happy path, every formula passes ---
 stub1="$work_dir/stub1"
 make_stub_brew "$stub1" "" 0
-output=$(env -i PATH="$stub1:/usr/bin:/bin" FORMULA_DIR="$formula_dir" ${SHELL_COVERAGE_BASH:-bash} "$SCRIPT" 2>&1)
+output=$(env -i PATH="$stub1:/usr/bin:/bin" FORMULA_DIR="$formula_dir" "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "happy path exit" 0 "$code"
 group_count=$(printf '%s\n' "$output" | grep -c '^::group::brew audit --strict')
@@ -50,7 +50,7 @@ assert_contains "happy path summary line" "$output" \
 # --- Case 2: beta fails -> stop before gamma, propagate exit code ---
 stub2="$work_dir/stub2"
 make_stub_brew "$stub2" "beta" 7
-output=$(env -i PATH="$stub2:/usr/bin:/bin" FORMULA_DIR="$formula_dir" ${SHELL_COVERAGE_BASH:-bash} "$SCRIPT" 2>&1)
+output=$(env -i PATH="$stub2:/usr/bin:/bin" FORMULA_DIR="$formula_dir" "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "beta-fails propagates exit code" 7 "$code"
 assert_not_contains "beta-fails does not reach gamma" "$output" "kubestellar/tap/gamma"
@@ -63,7 +63,7 @@ assert_contains "beta-fails summary line names beta" "$output" \
 stub3="$work_dir/stub3"
 make_stub_brew "$stub3" "" 0
 output=$(env -i PATH="$stub3:/usr/bin:/bin" FORMULA_DIR="$formula_dir" TAP_NAME="other/tap" \
-  ${SHELL_COVERAGE_BASH:-bash} "$SCRIPT" 2>&1)
+  "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "tap-name-override exit" 0 "$code"
 assert_contains "tap-name-override used in output" "$output" "other/tap/alpha"
@@ -75,7 +75,7 @@ stub4="$work_dir/stub4"
 redundant_output='kubestellar/tap/beta
   * Stable: `version 1.2.3` is redundant with version scanned from URL'
 make_stub_brew "$stub4" "beta" 1 "$redundant_output"
-output=$(env -i PATH="$stub4:/usr/bin:/bin" FORMULA_DIR="$formula_dir" ${SHELL_COVERAGE_BASH:-bash} "$SCRIPT" 2>&1)
+output=$(env -i PATH="$stub4:/usr/bin:/bin" FORMULA_DIR="$formula_dir" "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "redundant-version-only exit" 0 "$code"
 assert_contains "redundant-version-only warns" "$output" "::warning::"
@@ -93,7 +93,7 @@ mixed_output='kubestellar/tap/beta
   * Stable: `version 1.2.3` is redundant with version scanned from URL
   * some other real audit problem'
 make_stub_brew "$stub5" "beta" 3 "$mixed_output"
-output=$(env -i PATH="$stub5:/usr/bin:/bin" FORMULA_DIR="$formula_dir" ${SHELL_COVERAGE_BASH:-bash} "$SCRIPT" 2>&1)
+output=$(env -i PATH="$stub5:/usr/bin:/bin" FORMULA_DIR="$formula_dir" "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "redundant-version-plus-other propagates exit code" 3 "$code"
 assert_not_contains "redundant-version-plus-other does not reach gamma" "$output" "kubestellar/tap/gamma"

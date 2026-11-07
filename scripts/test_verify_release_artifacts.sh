@@ -108,7 +108,7 @@ printf 'https://example.invalid/widget_darwin_arm64.tar.gz\t%s\n' "$good_tarball
 make_stub_curl "$stub_dir" "$map_file" "0"
 
 # --- Case 1: happy path — sha256 + binary both match ---
-output=$(env -i PATH="$stub_dir:/usr/bin:/bin" FORMULA_DIR="$formula_dir" ${SHELL_COVERAGE_BASH:-bash} "$SCRIPT" 2>&1)
+output=$(env -i PATH="$stub_dir:/usr/bin:/bin" FORMULA_DIR="$formula_dir" "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "happy-path-exit" 0 "$code"
 assert_contains "happy-path-output" "$output" "verified: widget (widget)"
@@ -131,7 +131,7 @@ class Widget < Formula
   end
 end
 RB
-output=$(env -i PATH="$stub_dir:/usr/bin:/bin" FORMULA_DIR="$formula_dir" ${SHELL_COVERAGE_BASH:-bash} "$SCRIPT" 2>&1)
+output=$(env -i PATH="$stub_dir:/usr/bin:/bin" FORMULA_DIR="$formula_dir" "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "sha-mismatch-exit" 1 "$code"
 assert_contains "sha-mismatch-output" "$output" "sha256 mismatch"
@@ -155,7 +155,7 @@ class Widget < Formula
   end
 end
 RB
-output=$(env -i PATH="$stub_dir:/usr/bin:/bin" FORMULA_DIR="$formula_dir" ${SHELL_COVERAGE_BASH:-bash} "$SCRIPT" 2>&1)
+output=$(env -i PATH="$stub_dir:/usr/bin:/bin" FORMULA_DIR="$formula_dir" "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "missing-binary-exit" 1 "$code"
 assert_contains "missing-binary-output" "$output" "Binary missing from archive"
@@ -178,7 +178,7 @@ end
 RB
 fail_stub_dir="$work_dir/stub_fail"
 make_stub_curl "$fail_stub_dir" "$map_file" "1"
-output=$(env -i PATH="$fail_stub_dir:/usr/bin:/bin" FORMULA_DIR="$formula_dir" ${SHELL_COVERAGE_BASH:-bash} "$SCRIPT" 2>&1)
+output=$(env -i PATH="$fail_stub_dir:/usr/bin:/bin" FORMULA_DIR="$formula_dir" "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "download-fail-exit" 1 "$code"
 assert_contains "download-fail-output" "$output" "Download failed"
@@ -186,7 +186,7 @@ assert_contains "download-fail-output" "$output" "Download failed"
 # --- Case 5: empty Formula dir — regression guard ---
 empty_dir="$work_dir/EmptyFormula"
 mkdir -p "$empty_dir"
-output=$(env -i PATH="$stub_dir:/usr/bin:/bin" FORMULA_DIR="$empty_dir" ${SHELL_COVERAGE_BASH:-bash} "$SCRIPT" 2>&1)
+output=$(env -i PATH="$stub_dir:/usr/bin:/bin" FORMULA_DIR="$empty_dir" "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "empty-dir-exit" 2 "$code"
 assert_contains "empty-dir-output" "$output" "No formulae found"
@@ -206,17 +206,17 @@ class Widget < Formula
   end
 end
 RB
-output=$(env -i PATH="$stub_dir:/usr/bin:/bin" PYTHON=/bin/false FORMULA_DIR="$formula_dir" ${SHELL_COVERAGE_BASH:-bash} "$SCRIPT" 2>&1)
+output=$(env -i PATH="$stub_dir:/usr/bin:/bin" PYTHON=/bin/false FORMULA_DIR="$formula_dir" "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "parser-fail-exit" 1 "$code"
 assert_contains "parser-fail-output" "$output" "Triple extraction failed"
-output=$(env -i PATH="$stub_dir:/usr/bin:/bin" PYTHON=/bin/false FORMULA_DIR="$formula_dir" ${SHELL_COVERAGE_BASH:-bash} "$SCRIPT" --list 2>&1)
+output=$(env -i PATH="$stub_dir:/usr/bin:/bin" PYTHON=/bin/false FORMULA_DIR="$formula_dir" "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" --list 2>&1)
 code=$?
 assert_exit_code "parser-fail-list-exit" 1 "$code"
 
 # --- Case 7: formula yielding zero triples fails verify mode ---
 printf 'class Widget < Formula\nend\n' > "$formula_dir/widget.rb"
-output=$(env -i PATH="$stub_dir:/usr/bin:/bin" FORMULA_DIR="$formula_dir" ${SHELL_COVERAGE_BASH:-bash} "$SCRIPT" 2>&1)
+output=$(env -i PATH="$stub_dir:/usr/bin:/bin" FORMULA_DIR="$formula_dir" "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "zero-triples-exit" 1 "$code"
 assert_contains "zero-triples-output" "$output" "Triple extraction failed"
