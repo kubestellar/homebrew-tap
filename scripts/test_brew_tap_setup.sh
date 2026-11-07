@@ -54,7 +54,7 @@ STUB
 stub1="$work_dir/stub1"
 make_stub_brew "$stub1" 0 0 0
 output=$(env -i PATH="$stub1:/usr/bin:/bin" TAP_DIR="$work_dir/checkout1" \
-  bash "$SCRIPT" 2>&1)
+  "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "tap-ok trust-supported exit" 0 "$code"
 assert_contains "tap-ok trust-supported trust called" "$(cat "$stub1/calls.log")" "trust kubestellar/tap"
@@ -66,7 +66,7 @@ assert_contains "tap-ok trust-supported summary tap_result" "$output" "\"tap_res
 stub2="$work_dir/stub2"
 make_stub_brew "$stub2" 0 1 0
 output=$(env -i PATH="$stub2:/usr/bin:/bin" TAP_DIR="$work_dir/checkout2" \
-  bash "$SCRIPT" 2>&1)
+  "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "tap-ok trust-unsupported exit" 0 "$code"
 assert_not_contains "tap-ok trust-unsupported no plain trust call" "$(cat "$stub2/calls.log")" "trust kubestellar/tap"
@@ -79,7 +79,7 @@ assert_contains "tap-ok trust-unsupported summary trust_supported" "$output" "\"
 stub3="$work_dir/stub3"
 make_stub_brew "$stub3" 1 0 0
 output=$(env -i PATH="$stub3:/usr/bin:/bin" TAP_DIR="$work_dir/checkout3" \
-  bash "$SCRIPT" 2>&1)
+  "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "tap-failed trust-supported exit" 0 "$code"
 assert_contains "tap-failed trust-supported trust called" "$(cat "$stub3/calls.log")" "trust kubestellar/tap"
@@ -88,7 +88,7 @@ assert_contains "tap-failed trust-supported trust called" "$(cat "$stub3/calls.l
 stub4="$work_dir/stub4"
 make_stub_brew "$stub4" 1 1 0
 output=$(env -i PATH="$stub4:/usr/bin:/bin" TAP_DIR="$work_dir/checkout4" \
-  bash "$SCRIPT" 2>&1)
+  "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "tap-failed trust-unsupported exit" 1 "$code"
 assert_contains "tap-failed trust-unsupported summary status" "$output" "\"status\":\"failure\""
@@ -100,7 +100,7 @@ stub5="$work_dir/stub5"
 make_stub_brew "$stub5" 0 0 3
 # shellcheck disable=SC2034  # captured for parity with other cases; only the exit code matters here
 output=$(env -i PATH="$stub5:/usr/bin:/bin" TAP_DIR="$work_dir/checkout5" \
-  bash "$SCRIPT" 2>&1)
+  "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "trust-call-fails propagates its exit code" 3 "$code"
 assert_contains "trust-call-fails summary status" "$output" "\"status\":\"failure\""
@@ -109,7 +109,7 @@ assert_contains "trust-call-fails summary status" "$output" "\"status\":\"failur
 stub6="$work_dir/stub6"
 make_stub_brew "$stub6" 0 0 0
 env -i PATH="$stub6:/usr/bin:/bin" TAP_DIR="$work_dir/checkout6" \
-  bash "$SCRIPT" >/dev/null 2>&1
+  "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" >/dev/null 2>&1
 mapfile -t calls < "$stub6/calls.log"
 assert_contains "ordering: first call is untap" "${calls[0]}" "untap kubestellar/tap"
 assert_contains "ordering: second call is tap" "${calls[1]}" "tap kubestellar/tap"

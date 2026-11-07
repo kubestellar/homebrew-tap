@@ -56,7 +56,7 @@ make_fake_formulae "$formula_dir" alpha beta gamma
 stub1="$work_dir/stub1"
 make_stub_brew "$stub1" "" "" 0
 output=$(env -i PATH="$stub1:/usr/bin:/bin" FORMULA_DIR="$formula_dir" EVENT_NAME="push" \
-  bash "$SCRIPT" 2>&1)
+  "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "happy path exit" 0 "$code"
 assert_contains "happy path installs alpha" "$output" "brew install"
@@ -67,7 +67,7 @@ assert_contains "happy path summary counts" "$output" "\"formula_count\":3,\"ins
 stub2="$work_dir/stub2"
 make_stub_brew "$stub2" "beta" "" 0
 output=$(env -i PATH="$stub2:/usr/bin:/bin" FORMULA_DIR="$formula_dir" EVENT_NAME="pull_request" \
-  bash "$SCRIPT" 2>&1)
+  "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "pr-skip exit" 0 "$code"
 assert_contains "pr-skip notice for beta" "$output" "::notice title=Skipping install::Release artifact for kubestellar/tap/beta is not available yet"
@@ -78,7 +78,7 @@ assert_contains "pr-skip summary counts" "$output" "BREW_INSTALL_SMOKE_SUMMARY: 
 stub3="$work_dir/stub3"
 make_stub_brew "$stub3" "beta" "" 0
 output=$(env -i PATH="$stub3:/usr/bin:/bin" FORMULA_DIR="$formula_dir" EVENT_NAME="push" \
-  bash "$SCRIPT" 2>&1)
+  "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "push-hard-fail exit" 1 "$code"
 assert_contains "push-hard-fail error message" "$output" "::error title=Missing release artifact::kubestellar/tap/beta could not be fetched"
@@ -89,7 +89,7 @@ assert_contains "push-hard-fail summary status" "$output" "BREW_INSTALL_SMOKE_SU
 stub4="$work_dir/stub4"
 make_stub_brew "$stub4" "beta" "" 0
 output=$(env -i PATH="$stub4:/usr/bin:/bin" FORMULA_DIR="$formula_dir" EVENT_NAME="schedule" \
-  bash "$SCRIPT" 2>&1)
+  "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "schedule-hard-fail exit" 1 "$code"
 
@@ -97,7 +97,7 @@ assert_exit_code "schedule-hard-fail exit" 1 "$code"
 stub5="$work_dir/stub5"
 make_stub_brew "$stub5" "" "alpha" 5
 output=$(env -i PATH="$stub5:/usr/bin:/bin" FORMULA_DIR="$formula_dir" EVENT_NAME="push" \
-  bash "$SCRIPT" 2>&1)
+  "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "install-fails propagates exit code" 5 "$code"
 assert_contains "install-fails summary status" "$output" "BREW_INSTALL_SMOKE_SUMMARY: {\"status\":\"failed\",\"formula_count\":1,\"installed_count\":0,\"skipped_count\":0}"

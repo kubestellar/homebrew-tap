@@ -17,19 +17,17 @@
 # coverage/kcov-merged, parse the merged coverage.json for
 # percent_covered, and fail the workflow if it falls below --min.
 #
-# KNOWN BLIND SPOT (kubestellar/homebrew-tap#741): kcov only instruments
-# the single bash process it directly launches (`kcov <out> <test_file>`).
-# A handful of scripts/test_*.sh files exercise their target script by
-# spawning it as a fresh child process (`bash "$SCRIPT"`, sometimes via
-# `env -i PATH=... bash "$SCRIPT"`) rather than `source`-ing it into the
-# already-measured process. kcov cannot see into that child, so the
-# target script reads as 0% covered in coverage.json even though it has
-# a real, passing test suite. As of #741 this affects brew_tap_setup.sh,
-# verify_release_artifacts.sh, brew_untap_self.sh, brew_test_installed.sh,
-# brew_install_smoke.sh, and brew_audit_all.sh (~33% of measured lines).
-# The aggregate percent_covered and the 60% threshold below are not
-# meaningful protection against regressions in those six files until this
-# is fixed — see #741 for remediation options.
+# Child-process coverage (kubestellar/homebrew-tap#741): kcov only
+# instruments the bash process it launches directly, so tests that spawn
+# their target via `bash "$SCRIPT"` / `env -i PATH=... bash "$SCRIPT"`
+# (brew_tap_setup.sh, verify_release_artifacts.sh, brew_untap_self.sh,
+# brew_test_installed.sh, brew_install_smoke.sh, brew_audit_all.sh) used to
+# read as 0% covered. This gate now exports SHELL_COVERAGE_BASH, the
+# absolute path of a generated wrapper that runs `kcov <child-outdir> bash
+# "$@"`; those tests invoke `${SHELL_COVERAGE_BASH:-bash} "$SCRIPT"` (the
+# expansion happens before `env -i` clears the environment). Every child
+# outdir under <out>/children/ is merged with the per-test outdirs. Outside
+# the gate the variable is unset and tests run plain bash.
 #
 # Already wired into CI: .github/workflows/validate-formulae.yml has an
 # "Install kcov (shell branch coverage)" step (building kcov v43 from
@@ -72,7 +70,7 @@
 set -uo pipefail
 
 usage() {
-  sed -n '2,59p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
+  sed -n '2,68p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//'
 }
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -205,6 +203,23 @@ fi
 rm -rf "$out_dir"
 mkdir -p "$out_dir"
 
+# Wrapper that routes child bash invocations through kcov. Uses only shell
+# builtins so test stubs shadowing PATH commands cannot break it.
+children_dir="$out_dir/children"
+mkdir -p "$children_dir"
+kcov_abs="$(command -v "$kcov_bin")"
+child_wrapper="$out_dir/kcov-bash-wrapper.sh"
+cat >"$child_wrapper" <<WRAP
+#!/bin/bash
+exec "$kcov_abs" \\
+  --include-path="$repo_root/scripts" \\
+  --exclude-pattern=/test_,/coverage/ \\
+  "$children_dir/child-\$\$" \\
+  /bin/bash "\$@"
+WRAP
+chmod +x "$child_wrapper"
+export SHELL_COVERAGE_BASH="$child_wrapper"
+
 fail_count=0
 failed_names=()
 
@@ -256,8 +271,11 @@ if [ -z "$merged_json" ]; then
   # Explicit merge over every per-test dir; keep stderr for diagnostics.
   per_test_dirs=()
   for d in "$out_dir"/*/; do
-    case "$d" in */kcov-merged/) continue ;; esac
+    case "$d" in */kcov-merged/|*/children/) continue ;; esac
     per_test_dirs+=("${d%/}")
+  done
+  for d in "$children_dir"/*/; do
+    [ -d "$d" ] && per_test_dirs+=("${d%/}")
   done
   "$kcov_bin" --merge "$out_dir/kcov-merged" "${per_test_dirs[@]}" \
     >"$out_dir/kcov-merge.stdout" 2>"$out_dir/kcov-merge.stderr" || true

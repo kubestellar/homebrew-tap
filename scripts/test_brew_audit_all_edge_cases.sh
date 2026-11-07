@@ -52,7 +52,7 @@ empty_dir="$work_dir/Formula-empty"
 mkdir -p "$empty_dir"
 stub1="$work_dir/stub1"
 make_stub_brew "$stub1" "" 0
-output=$(env -i PATH="$stub1:/usr/bin:/bin" FORMULA_DIR="$empty_dir" bash "$SCRIPT" 2>&1)
+output=$(env -i PATH="$stub1:/usr/bin:/bin" FORMULA_DIR="$empty_dir" "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "empty-formula-dir exit" 0 "$code"
 assert_contains "empty-formula-dir summary line" "$output" \
@@ -63,7 +63,7 @@ assert_not_contains "empty-formula-dir no ::group::" "$output" '::group::'
 missing_dir="$work_dir/Formula-missing"
 stub2="$work_dir/stub2"
 make_stub_brew "$stub2" "" 0
-output=$(env -i PATH="$stub2:/usr/bin:/bin" FORMULA_DIR="$missing_dir" bash "$SCRIPT" 2>&1)
+output=$(env -i PATH="$stub2:/usr/bin:/bin" FORMULA_DIR="$missing_dir" "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "missing-formula-dir exit" 0 "$code"
 assert_contains "missing-formula-dir summary line" "$output" \
@@ -76,7 +76,7 @@ formula_dir="$work_dir/Formula"
 make_fake_formulae "$formula_dir" alpha beta gamma
 stub3="$work_dir/stub3"
 make_stub_brew "$stub3" "alpha" 5
-output=$(env -i PATH="$stub3:/usr/bin:/bin" FORMULA_DIR="$formula_dir" bash "$SCRIPT" 2>&1)
+output=$(env -i PATH="$stub3:/usr/bin:/bin" FORMULA_DIR="$formula_dir" "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "alpha-fails propagates exit code" 5 "$code"
 assert_contains "alpha-fails summary counts only alpha" "$output" \

@@ -49,7 +49,7 @@ stub="$work_dir/stub"
 # --- Case 1: none installed -> every formula skipped, exit 0 ---
 make_stub_brew "$stub" "" 0
 output=$(env -i PATH="$stub:/usr/bin:/bin" FORMULA_DIR="$formula_dir" INSTALLED_FORMULAE="" \
-  bash "$SCRIPT" 2>&1)
+  "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "none-installed exit" 0 "$code"
 assert_contains "none-installed skips alpha" "$output" "::notice title=Skipping test::kubestellar/tap/alpha was not installed"
@@ -59,7 +59,7 @@ assert_contains "none-installed summary counts" "$output" "BREW_TEST_INSTALLED_S
 
 # --- Case 2: all installed, all pass -> exit 0, one group per formula ---
 output=$(env -i PATH="$stub:/usr/bin:/bin" FORMULA_DIR="$formula_dir" \
-  INSTALLED_FORMULAE="$(printf 'alpha\nbeta\ngamma')" bash "$SCRIPT" 2>&1)
+  INSTALLED_FORMULAE="$(printf 'alpha\nbeta\ngamma')" "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "all-installed-pass exit" 0 "$code"
 group_count=$(printf '%s\n' "$output" | grep -c '^::group::brew test')
@@ -69,7 +69,7 @@ assert_contains "all-installed-pass summary counts" "$output" "BREW_TEST_INSTALL
 # --- Case 3: beta installed but its test fails -> propagate exit code, stop before gamma ---
 make_stub_brew "$stub" "beta" 9
 output=$(env -i PATH="$stub:/usr/bin:/bin" FORMULA_DIR="$formula_dir" \
-  INSTALLED_FORMULAE="$(printf 'alpha\nbeta\ngamma')" bash "$SCRIPT" 2>&1)
+  INSTALLED_FORMULAE="$(printf 'alpha\nbeta\ngamma')" "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "beta-test-fails propagates exit code" 9 "$code"
 assert_not_contains "beta-test-fails does not reach gamma" "$output" "brew test kubestellar/tap/gamma"
@@ -78,7 +78,7 @@ assert_contains "beta-test-fails summary status" "$output" "BREW_TEST_INSTALLED_
 # --- Case 4: only alpha installed -> beta/gamma skipped, alpha tested ---
 make_stub_brew "$stub" "" 0
 output=$(env -i PATH="$stub:/usr/bin:/bin" FORMULA_DIR="$formula_dir" \
-  INSTALLED_FORMULAE="alpha" bash "$SCRIPT" 2>&1)
+  INSTALLED_FORMULAE="alpha" "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "only-alpha-installed exit" 0 "$code"
 assert_contains "only-alpha-installed tests alpha" "$output" "::group::brew test kubestellar/tap/alpha"
