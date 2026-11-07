@@ -69,7 +69,7 @@ mkdir -p "$tap_dir1/some-stale-file-dir"
 stub1="$work_dir/stub1"
 make_stub_brew "$stub1" "$tap_dir1" 0 0
 output=$(env -i PATH="$stub1:/usr/bin:/bin" FORMULA_DIR="$formula_dir" GITHUB_WORKSPACE="$workspace" \
-  bash "$SCRIPT" 2>&1)
+  ${SHELL_COVERAGE_BASH:-bash} "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "nonempty-dir always exits 0" 0 "$code"
 if [ -L "$tap_dir1" ]; then
@@ -91,7 +91,7 @@ mkdir -p "$tap_dir2/leftover"
 stub2="$work_dir/stub2"
 make_stub_brew "$stub2" "$tap_dir2" 1 0
 output=$(env -i PATH="$stub2:/usr/bin:/bin" FORMULA_DIR="$formula_dir" GITHUB_WORKSPACE="$workspace" \
-  bash "$SCRIPT" 2>&1)
+  ${SHELL_COVERAGE_BASH:-bash} "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "untap-fails still exits 0" 0 "$code"
 if [ -L "$tap_dir2" ] && [ "$(readlink "$tap_dir2")" = "$workspace" ]; then
@@ -110,7 +110,7 @@ mkdir -p "$(dirname "$tap_dir3")"
 stub3="$work_dir/stub3"
 make_stub_brew "$stub3" "$tap_dir3" 0 0
 output=$(env -i PATH="$stub3:/usr/bin:/bin" FORMULA_DIR="$formula_dir" GITHUB_WORKSPACE="$workspace" \
-  bash "$SCRIPT" 2>&1)
+  ${SHELL_COVERAGE_BASH:-bash} "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "already-removed exits 0" 0 "$code"
 if [ -L "$tap_dir3" ] && [ "$(readlink "$tap_dir3")" = "$workspace" ]; then
@@ -125,7 +125,7 @@ assert_contains "already-removed summary tap_dir_action" "$output" "\"tap_dir_ac
 stub4="$work_dir/stub4"
 make_stub_brew "$stub4" "" 0 1
 output=$(env -i PATH="$stub4:/usr/bin:/bin" FORMULA_DIR="$formula_dir" GITHUB_WORKSPACE="$workspace" \
-  bash "$SCRIPT" 2>&1)
+  ${SHELL_COVERAGE_BASH:-bash} "$SCRIPT" 2>&1)
 code=$?
 assert_exit_code "no-tap-reported exits 0" 0 "$code"
 assert_contains "no-tap-reported summary tap_dir_action" "$output" "\"tap_dir_action\":\"none\""
