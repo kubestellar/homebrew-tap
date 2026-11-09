@@ -143,7 +143,11 @@ for formula in "${formulae[@]}"; do
     echo "::group::verify $name: $(basename "$url")"
     tmp="$(mktemp -d)"
     tarball="$tmp/artifact.tar.gz"
-    if ! "$CURL" -fsSL -o "$tarball" "$url"; then
+    # --retry covers transient HTTP 408/429/5xx and timeouts: GitHub's
+    # release CDN intermittently returns 504, which must not fail the
+    # scheduled run on an artifact that is actually fine (#784). A real
+    # 404 (missing asset) is not retried and still fails immediately.
+    if ! "$CURL" -fsSL --retry 4 --retry-delay 5 --retry-connrefused -o "$tarball" "$url"; then
       echo "::error title=Download failed::$name: could not fetch $url"
       fail_count=$((fail_count + 1))
       rm -rf "$tmp"
