@@ -11,6 +11,6 @@
 # and automatically reapplies the explanatory header comment block at the
 # top of requirements-dev.txt (pip-compile --no-header would otherwise
 # drop it). Do not call pip-compile directly against requirements-dev.txt.
-pytest==9.1.1
+pytest==9.2.0
 pytest-cov==7.1.0
 coverage==7.17.0
