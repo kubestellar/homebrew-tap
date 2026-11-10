@@ -42,7 +42,7 @@ const { join } = require('path')
 const args = process.argv.slice(2)
 const outDir = args[args.indexOf('--output') + 1]
 const clones = Number(process.env.FAKE_CLONES || '0')
-console.log(\`fake jscpd: emitting \${clones} clone(s)\`)
+console.log(\`fake jscpd: emitting \${clones} clone(s) args: \${args.join(' ')}\`)
 writeFileSync(join(outDir, 'jscpd-report.json'), JSON.stringify({ statistics: { total: { clones } } }))
 `,
   );
@@ -84,6 +84,13 @@ test('exits 0 and reports the clone count when clones stay at the baseline', () 
     assert.equal(result.status, 0);
     assert.match(result.stdout, /jscpd ratchet: 5 clone\(s\) found, baseline 5/);
     assert.doesNotMatch(result.stdout, /::notice::/);
+  });
+});
+
+test('runs jscpd at an exact pinned version, never an unversioned or ranged spec', () => {
+  withTempRepo(dir => {
+    const result = runScript(dir, { baselineClones: 5, fakeClones: 5 });
+    assert.match(result.stdout, /args: --yes jscpd@\d+\.\d+\.\d+ --config/);
   });
 });
 
