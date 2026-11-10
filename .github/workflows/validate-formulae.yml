@@ -168,6 +168,11 @@ jobs:
             git clone --depth 1 https://github.com/SimonKagstrom/kcov.git "$RUNNER_TEMP/kcov-src"
             git -C "$RUNNER_TEMP/kcov-src" fetch --depth 1 origin a39874f938ce13f7a65f253120d1ec946b349ffe
             git -C "$RUNNER_TEMP/kcov-src" checkout --quiet a39874f938ce13f7a65f253120d1ec946b349ffe
+            # The shallow SHA fetch above brings no tags, so kcov's CMake
+            # `git describe` produces an empty version and the build fails.
+            # Recreate the v43 tag locally at the pinned commit: the version
+            # string is derived from our own pin, not the mutable remote tag.
+            git -C "$RUNNER_TEMP/kcov-src" tag -f v43 a39874f938ce13f7a65f253120d1ec946b349ffe
             cmake -S "$RUNNER_TEMP/kcov-src" -B "$RUNNER_TEMP/kcov-build"
             cmake --build "$RUNNER_TEMP/kcov-build" -j"$(nproc)"
             sudo cmake --install "$RUNNER_TEMP/kcov-build"
