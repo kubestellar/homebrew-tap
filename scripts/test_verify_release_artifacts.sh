@@ -42,15 +42,22 @@ make_fixture_tarball() {
   rm -rf "$build_dir"
 }
 
-# make_stub_curl <dir> <url-to-tarball-map-file-or-empty> <fail>
+# make_stub_curl <dir> <url-to-tarball-map-file-or-empty> <fail> [<argv-log-file>]
 #   <url-to-tarball-map-file>: a file with lines "<url><TAB><tarball-path>"
 #   <fail>: "1" to make every invocation fail (simulated download error)
+#   <argv-log-file>: when non-empty, every invocation's full argv is
+#     appended to this file (one invocation per line), so a caller can
+#     assert on the exact curl flags the script passed (e.g. --retry).
 make_stub_curl() {
-  local dir="$1" map_file="$2" fail="$3"
+  local dir="$1" map_file="$2" fail="$3" argv_log="${4:-}"
   mkdir -p "$dir"
   cat > "$dir/curl" <<STUB
 #!/usr/bin/env bash
 fail="$fail"
+argv_log="$argv_log"
+if [ -n "\$argv_log" ]; then
+  printf '%s\n' "\$*" >> "\$argv_log"
+fi
 if [ "\$fail" = "1" ]; then
   exit 22
 fi
@@ -220,5 +227,42 @@ output=$(env -i PATH="$stub_dir:/usr/bin:/bin" FORMULA_DIR="$formula_dir" "${SHE
 code=$?
 assert_exit_code "zero-triples-exit" 1 "$code"
 assert_contains "zero-triples-output" "$output" "Triple extraction failed"
+
+# --- Case 8: curl is invoked with the transient-error retry flags
+#   (--retry/--retry-delay/--retry-connrefused) — regression guard for
+#   #784/#787: a scheduled Validate Formulae run failed on a transient
+#   GitHub CDN 504 because the original single-shot curl call had no
+#   retry flags. Asserting the literal argv (rather than only the
+#   happy-path exit code, which a single-shot curl would also satisfy)
+#   is required so a future edit that silently drops the flags fails
+#   this test instead of only failing intermittently in CI months later.
+cat > "$formula_dir/widget.rb" <<RB
+class Widget < Formula
+  on_macos do
+    if Hardware::CPU.arm?
+      url "https://example.invalid/widget_darwin_arm64.tar.gz"
+      sha256 "$good_sha"
+
+      define_method(:install) do
+        bin.install "widget"
+      end
+    end
+  end
+end
+RB
+printf 'https://example.invalid/widget_darwin_arm64.tar.gz\t%s\n' "$good_tarball" > "$map_file"
+retry_stub_dir="$work_dir/stub_retry"
+argv_log="$work_dir/curl_argv.log"
+rm -f "$argv_log"
+make_stub_curl "$retry_stub_dir" "$map_file" "0" "$argv_log"
+output=$(env -i PATH="$retry_stub_dir:/usr/bin:/bin" FORMULA_DIR="$formula_dir" "${SHELL_COVERAGE_BASH:-bash}" "$SCRIPT" 2>&1)
+code=$?
+assert_exit_code "retry-flags-exit" 0 "$code"
+argv="$(cat "$argv_log" 2>/dev/null)"
+# Leading space on each needle keeps grep -F from parsing a "--..." needle
+# as one of its own options.
+assert_contains "retry-flags-retry" "$argv" " --retry 4"
+assert_contains "retry-flags-delay" "$argv" " --retry-delay 5"
+assert_contains "retry-flags-connrefused" "$argv" " --retry-connrefused"
 
 finish "verify_release_artifacts"
