@@ -41,6 +41,11 @@ class GlobTests(unittest.TestCase):
         self.assertFalse(gate.path_covered("scripts/a/b.sh", ["scripts/*.sh"]))
         self.assertTrue(gate.path_covered("scripts/lib_x.sh", ["scripts/lib_*.sh"]))
 
+    def test_question_mark_matches_single_non_separator_char(self):
+        self.assertTrue(gate.path_covered("scripts/lib_x.sh", ["scripts/lib_?.sh"]))
+        self.assertFalse(gate.path_covered("scripts/lib_xy.sh", ["scripts/lib_?.sh"]))
+        self.assertFalse(gate.path_covered("scripts/lib_/.sh", ["scripts/lib_?.sh"]))
+
     def test_negation_removes_earlier_match(self):
         self.assertFalse(gate.path_covered("scripts/x.sh", ["scripts/**", "!scripts/x.sh"]))
 
@@ -52,6 +57,54 @@ class ParseTests(unittest.TestCase):
 
     def test_workflow_without_filters_is_ignored(self):
         self.assertEqual(gate.parse_path_filters("on:\n  push:\n    branches: [main]\n"), {})
+
+    def test_paths_block_under_non_gated_trigger_is_skipped(self):
+        # `schedule:` has no `paths:` key in real workflows, but the parser
+        # must still ignore one if present rather than treating it as push
+        # or pull_request (covers the `trigger not in TRIGGERS` branch).
+        text = "on:\n  schedule:\n    paths:\n      - 'a/**'\njobs: {}\n"
+        self.assertEqual(gate.parse_path_filters(text), {})
+
+    def test_paths_block_with_no_preceding_key_has_no_trigger(self):
+        # A `paths:` line with nothing shallower before it (e.g. top of
+        # file) never finds a trigger; the reversed-lines scan runs to
+        # exhaustion without breaking.
+        text = "    paths:\n      - 'a/**'\n"
+        self.assertEqual(gate.parse_path_filters(text), {})
+
+    def test_paths_items_run_to_end_of_file_without_break(self):
+        # No line follows the last `paths:` item, so the item-collection
+        # loop exhausts `lines[idx + 1:]` without hitting its `break`.
+        text = "on:\n  push:\n    paths:\n      - 'a/**'\n      - 'b/**'"
+        self.assertEqual(gate.parse_path_filters(text), {"push": ["a/**", "b/**"]})
+
+
+class HelperTests(unittest.TestCase):
+    def test_existing_ignores_candidates_that_are_neither_file_nor_dir(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "scripts").mkdir()
+            (root / "scripts/real.sh").write_text("true\n")
+            found = gate._existing(root, {"scripts/real.sh", "scripts/missing.sh"})
+            self.assertEqual(found, {"scripts/real.sh"})
+
+    def test_transitive_deps_ignores_non_shell_non_python_files(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "scripts").mkdir()
+            (root / "scripts/data.json").write_text('{"lib_helper.sh": true}\n')
+            self.assertEqual(gate.transitive_deps(root, "scripts/data.json"), set())
+
+
+class CheckWorkflowTests(unittest.TestCase):
+    def test_workflow_without_paths_filter_reports_no_violations(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / ".github/workflows").mkdir(parents=True)
+            workflow = root / ".github/workflows/unfiltered.yml"
+            workflow.write_text("name: unfiltered\non:\n  push:\n    branches: [main]\njobs: {}\n")
+            self.assertEqual(gate.check_workflow(root, ".github/workflows/unfiltered.yml"), [])
+            self.assertEqual(gate.check_all(root), [])
 
 
 class RepoTests(unittest.TestCase):
