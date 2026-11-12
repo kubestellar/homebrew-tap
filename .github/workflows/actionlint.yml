@@ -6,13 +6,13 @@ on:
     paths:
       - '.github/workflows/**'
       - '.github/actions/**'
-      - 'scripts/**.sh'
+      - 'scripts/**'
   pull_request:
     branches: [main]
     paths:
       - '.github/workflows/**'
       - '.github/actions/**'
-      - 'scripts/**.sh'
+      - 'scripts/**'
   schedule:
     # Weekly catch-all so a floating-tag or shellcheck regression is
     # caught even absent a workflow-file diff. Matches codeql.yml's
@@ -86,4 +86,27 @@ jobs:
         env:
           JOB_STATUS: ${{ job.status }}
           JOB_NAME: shellcheck
+        run: scripts/actionlint_summary.sh
+
+  workflow-paths:
+    name: path filters cover invoked files
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read  # needed: checkout repository
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check every workflow's paths filter covers the files it invokes
+        # Gate for #539/#566/#790: a workflow's `paths:` must include the
+        # workflow file itself and every script/config it executes or reads,
+        # or a PR touching only a helper skips the CI that exercises it.
+        run: python3 scripts/check_workflow_paths.py
+
+      - name: Emit CI-observability summary
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          JOB_NAME: workflow-paths
         run: scripts/actionlint_summary.sh

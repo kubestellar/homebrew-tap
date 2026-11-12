@@ -13,6 +13,7 @@ on:
       - 'scripts/brew_ci_summary.sh'
       - 'scripts/verify_release_artifacts.sh'
       - 'scripts/lib_emit_summary.sh'
+      - 'scripts/lib_formula_iter.sh'
       - '.github/workflows/brew-ci.yml'
   pull_request:
     branches: [main]
@@ -53,6 +54,7 @@ jobs:
               - 'scripts/brew_ci_summary.sh'
               - 'scripts/verify_release_artifacts.sh'
               - 'scripts/lib_emit_summary.sh'
+              - 'scripts/lib_formula_iter.sh'
               - '.github/workflows/brew-ci.yml'
 
   brew-audit-and-install:
